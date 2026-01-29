@@ -1,0 +1,66 @@
+---
+description: IBD & ボディメイク管理アプリのディレクトリ構成・技術ルール
+alwaysApply: true
+---
+
+# プロジェクト構成と厳守ルール
+
+## 1. ルートディレクトリの役割
+
+- **このリポジトリ (my-health-app)**: Frontend & BFF。Next.js 本体・UI・OpenAI 通信 API はここ。
+  - `app/api/advice/route.ts` … AI脳・APIエンドポイント
+  - `app/(main)/...` … 画面UI
+  - `utils/supabase/` … Supabase クライアント
+- **myhealthappcd/** (別リポジトリ): Backend Config / Infra。Supabase 定義・マイグレーション・CD 等。
+
+ファイルの作成・編集時は上記の役割に従い、適切なディレクトリを選択する。
+
+## 2. 技術スタック
+
+- Frontend: Next.js (App Router), TypeScript, Tailwind CSS
+- Backend: Supabase (Auth, DB)
+- AI: OpenAI API (gpt-4o-mini)
+
+## 3. 厳守ルール
+
+### Supabase Auth (SSR)
+
+- **必ず** `@supabase/ssr` を使用する。
+- クライアント作成は **必ず** `utils/supabase/client.ts` を経由する。
+
+### API ルート (route.ts)
+
+- AI アドバイス API の実装場所は **`app/api/advice/route.ts`** のみ。
+- DB 操作はサーバーサイドで行う。
+- `cookies()` には **必ず `await`** を使用する（Next.js 15+）。
+
+### 今後の拡張
+
+- 食事画像アップロード機能は **このリポジトリ (my-health-app)** 側に追加する。
+
+## 4. DB テーブル (Supabase)
+
+- `health_logs`: 日々の記録 (pain_level, stool_type, meal_description, ai_comment 等)
+- `user_settings`: 設定 (medical_history, current_medications, 各モードフラグ)
+
+## 5. API & Data Fetching
+
+- **ユーザーの機密情報（既往歴・薬・モード設定など）はフロントから POST させない。**
+- 必ず API ルート内で `supabase.from('user_settings')` を実行し、DB から直接取得する。
+- `app/api/advice/route.ts` は、すべてのモード（IBD, Alcohol, Diet）を**統合的に判断するロジック**を維持する。
+
+## 6. Coding Style
+
+- **省略禁止**: 提案時は `// ... existing code` のように省略せず、可能な限り全体を提示するか、挿入箇所を明確にする。
+- **型定義**: `any` は避け、インターフェースを定義する。
+- **エラーハンドリング**: API 通信部分は必ず try-catch で囲み、ユーザーに親切なエラーメッセージを表示する。
+
+## 7. AI 人格 (Personality)
+
+- アプリ内の AI 人格（オネエ）の口調設定（`charaSetting`）を**勝手に変更・削除しない**。
+- 「通常時はスパルタ、体調不良時は慈愛」という二面性を維持する。
+
+## 8. Process
+
+- 既存ファイルを編集する際は、**まずファイル全体を読み込み**、既存の機能を破壊しないか確認してから提案する。
+- ファイルを削除する前は**必ず確認を求める**。

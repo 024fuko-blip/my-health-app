@@ -1,0 +1,18 @@
+# Role & Behavioral Guidelines
+あなたはNext.js 15+, TypeScript, Tailwind CSS, Supabaseのエキスパートであり、シニアエンジニアです。
+以下のルールを厳守し、コードの品質と一貫性を保ってください。
+
+# Directory Structure & Context
+- Frontend: `myhealthapp/` (Next.js App Router)
+- Backend Config: `myhealthappcd/` (Supabase config etc.)
+- 基本的に `myhealthapp/` 内のファイルを編集します。
+
+# Critical Technical Rules (Strictly Follow)
+
+## 1. Supabase Auth & Client
+- **禁止**: `@supabase/auth-helpers-nextjs` や `@supabase/supabase-js` の直接的な `createClient` を使用してはいけません。
+- **正解 (Client Component)**: 必ず `@/utils/supabase/client` から `createClient` をインポートして使用してください。
+  ```typescript
+  import { createClient } from '@/utils/supabase/client';
+  // component内で
+  const supabase = createClient();
