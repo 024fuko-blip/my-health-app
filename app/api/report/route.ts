@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' });
 
 interface ReportRequestBody {
   period: 7 | 30;
@@ -98,6 +98,12 @@ ${charaSetting}
 
     const userPrompt = `これが過去${period}日分の記録よ！ 因果関係を暴いてちょうだい！\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ダイエット=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logs ?? [], null, 2)}`;
 
+    if (!process.env.OPENAI_API_KEY?.trim()) {
+      return NextResponse.json(
+        { report: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
+        { status: 503 }
+      );
+    }
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
