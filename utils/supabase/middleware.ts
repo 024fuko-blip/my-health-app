@@ -8,11 +8,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key';
-  if (supabaseUrl === 'https://dummy.supabase.co' || supabaseAnonKey === 'dummy-key') {
-    return response;
-  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   try {
     const supabase = createServerClient(

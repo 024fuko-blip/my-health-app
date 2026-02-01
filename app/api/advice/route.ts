@@ -1,19 +1,19 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'; // ★ここが最新版
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
     // ---------------------------------------------------------
     // 1. セキュリティ & ユーザー特定 (Supabase Auth / SSR)
     // ---------------------------------------------------------
-    const cookieStore = await cookies(); // ★Next.js 15以降は await が必須
+    const cookieStore = await cookies();
 
-    // ★あなたが貼ってくれたコードはここに入ります
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key',
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
@@ -47,22 +47,30 @@ export async function POST(req: Request) {
     }
     const { mode, logs, meal_image_base64: mealImageBase64, ...dailyInput } = body;
 
-    // DBから設定取得（モードフラグ含む）
-    const { data: userSettings } = await supabase
-      .from('user_settings')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .single();
+    // DBから設定取得（Prisma）
+    const userSettings = await prisma.userSettings.findUnique({
+      where: { userId: session.user.id },
+    });
 
-    const settings = userSettings || {
-      medical_history: 'なし',
-      current_medications: 'なし',
-      gender: '不明',
-      mode_ibd: false,
-      mode_diet: false,
-      mode_alcohol: false,
-      mode_mental: false,
-    };
+    const settings = userSettings
+      ? {
+          medical_history: userSettings.medicalHistory ?? 'なし',
+          current_medications: userSettings.currentMedications ?? 'なし',
+          gender: userSettings.gender ?? '不明',
+          mode_ibd: userSettings.modeIbd,
+          mode_diet: userSettings.modeDiet,
+          mode_alcohol: userSettings.modeAlcohol,
+          mode_mental: userSettings.modeMental,
+        }
+      : {
+          medical_history: 'なし',
+          current_medications: 'なし',
+          gender: '不明',
+          mode_ibd: false,
+          mode_diet: false,
+          mode_alcohol: false,
+          mode_mental: false,
+        };
 
     // 値が存在する項目だけを「今日の記録」に含める（ホリスティック用）
     const recordLabels: Record<string, string> = {

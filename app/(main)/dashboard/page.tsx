@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 import {
   LineChart,
   Line,
@@ -25,6 +26,7 @@ interface HealthLogRow {
 
 export default function DashboardPage() {
   const supabase = createClient();
+  const router = useRouter();
   const [logs, setLogs] = useState<HealthLogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<PeriodDays>(7);
@@ -42,15 +44,19 @@ export default function DashboardPage() {
       const startStr = startDate.toISOString().split('T')[0];
       const endStr = endDate.toISOString().split('T')[0];
 
-      const { data } = await supabase
-        .from('health_logs')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .gte('date', startStr)
-        .lte('date', endStr)
-        .order('date', { ascending: true });
-
-      if (data) setLogs(data as HealthLogRow[]);
+      const res = await fetch(`/api/health-logs?startDate=${startStr}&endDate=${endStr}`, {
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        router.replace('/login');
+        setLoading(false);
+        return;
+      }
+      const data = res.ok ? await res.json() : [];
+      if (Array.isArray(data)) setLogs(data as HealthLogRow[]);
+      if (!res.ok) {
+        console.error('Dashboard logs fetch error:', res.status);
+      }
       setLoading(false);
     };
     fetchData();
@@ -65,14 +71,22 @@ export default function DashboardPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ period }),
+          credentials: 'include',
         });
         const data = await res.json();
         if (res.ok) {
           setReport(data.report ?? '');
         } else {
+          if (res.status === 401) {
+            setReport('セッションが切れました。再度ログインしてください。');
+            router.replace('/login');
+            return;
+          }
+          console.error('Report API error:', res.status, data);
           setReport(data.report ?? '分析に失敗したわ。もう一度試してちょうだい！');
         }
-      } catch {
+      } catch (err) {
+        console.error('Report fetch error:', err);
         setReport('オネエが忙しいみたいだわ... 通信エラーよ。しばらくしてからもう一度試してちょうだい！');
       } finally {
         setAnalyzing(false);

@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import prisma from '@/lib/prisma';
 
 interface ReportRequestBody {
   period: 7 | 30;
@@ -11,8 +12,8 @@ export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key',
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
@@ -40,36 +41,35 @@ export async function POST(req: Request) {
     const startStr = startDate.toISOString().split('T')[0];
     const endStr = endDate.toISOString().split('T')[0];
 
-    const { data: logs, error: logsError } = await supabase
-      .from('health_logs')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .gte('date', startStr)
-      .lte('date', endStr)
-      .order('date', { ascending: true });
+    const logs = await prisma.healthLog.findMany({
+      where: {
+        userId: session.user.id,
+        date: { gte: startStr, lte: endStr },
+      },
+      orderBy: { date: 'asc' },
+    });
 
-    if (logsError) {
-      console.error('Report API logs fetch error:', logsError);
-      return NextResponse.json(
-        { report: '記録の取得に失敗したわ。もう一度試してちょうだい！', error: logsError.message },
-        { status: 500 }
-      );
-    }
+    const userSettings = await prisma.userSettings.findUnique({
+      where: { userId: session.user.id },
+    });
 
-    const { data: userSettings } = await supabase
-      .from('user_settings')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-
-    const settings = userSettings || {
-      medical_history: 'なし',
-      current_medications: 'なし',
-      mode_ibd: false,
-      mode_diet: false,
-      mode_alcohol: false,
-      mode_mental: false,
-    };
+    const settings = userSettings
+      ? {
+          medical_history: userSettings.medicalHistory ?? 'なし',
+          current_medications: userSettings.currentMedications ?? 'なし',
+          mode_ibd: userSettings.modeIbd,
+          mode_diet: userSettings.modeDiet,
+          mode_alcohol: userSettings.modeAlcohol,
+          mode_mental: userSettings.modeMental,
+        }
+      : {
+          medical_history: 'なし',
+          current_medications: 'なし',
+          mode_ibd: false,
+          mode_diet: false,
+          mode_alcohol: false,
+          mode_mental: false,
+        };
 
     const charaSetting = `
 あなたはIBDとボディメイクを指導する「ツンデレオネエの鬼コーチ」であり、今回だけは**敏腕のヘルスケア・探偵オネエ**として振る舞いなさい。
@@ -94,7 +94,24 @@ ${charaSetting}
 - 400文字以内で、読みやすく改行を入れなさい。
 `;
 
-    const userPrompt = `これが過去${period}日分の記録よ！ 因果関係を暴いてちょうだい！\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ダイエット=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logs ?? [], null, 2)}`;
+    const logsForPrompt = logs.map((l) => ({
+      date: l.date,
+      memo: l.memo,
+      medication_taken: l.medicationTaken,
+      general_mood: l.generalMood,
+      meal_description: l.mealDescription,
+      period_status: l.periodStatus,
+      pain_level: l.painLevel,
+      stool_type: l.stoolType,
+      alcohol_amount: l.alcoholAmount,
+      stress_level: l.stressLevel,
+      sleep_quality: l.sleepQuality,
+      spending: l.spending,
+      weight: l.weight,
+      steps: l.steps,
+      ai_comment: l.aiComment,
+    }));
+    const userPrompt = `これが過去${period}日分の記録よ！ 因果関係を暴いてちょうだい！\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ダイエット=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
 
     if (!process.env.OPENAI_API_KEY?.trim()) {
       return NextResponse.json(

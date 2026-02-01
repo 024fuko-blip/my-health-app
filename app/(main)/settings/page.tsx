@@ -23,17 +23,25 @@ export default function SettingsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
 
-      const { data } = await supabase.from('user_settings').select('*').eq('user_id', session.user.id).single();
-      if (data) {
+      const res = await fetch('/api/user-settings', { credentials: 'include' });
+      if (res.status === 401) {
+        router.push('/login');
+        setLoading(false);
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
         setSettings({
-          mode_ibd: data.mode_ibd,
-          mode_alcohol: data.mode_alcohol,
-          mode_mental: data.mode_mental,
-          mode_diet: data.mode_diet,
+          mode_ibd: data.mode_ibd ?? true,
+          mode_alcohol: data.mode_alcohol ?? false,
+          mode_mental: data.mode_mental ?? false,
+          mode_diet: data.mode_diet ?? false,
           medical_history: data.medical_history || '',
           current_medications: data.current_medications || '',
           gender: data.gender || 'unspecified',
         });
+      } else {
+        console.error('Settings fetch error:', res.status);
       }
       setLoading(false);
     };
@@ -44,19 +52,23 @@ export default function SettingsPage() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // ★ update ではなく upsert を使うのが正解！
-    // これなら「初めての保存」でも自動で行を作ってくれます
-    const { error } = await supabase.from('user_settings').upsert({
-      user_id: session.user.id, // IDを明示的に含める
-      ...settings,
-      updated_at: new Date().toISOString() // 更新日時もあると便利
+    const res = await fetch('/api/user-settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+      credentials: 'include',
     });
 
-    if (!error) {
+    if (res.ok) {
       alert('設定を保存したわよ！これであんたのことをもっと厳しく指導できるわ💋');
     } else {
-      console.error(error);
-      alert('保存エラーよ！: ' + error.message);
+      if (res.status === 401) {
+        alert('セッションが切れました。再度ログインしてください。');
+        router.push('/login');
+        return;
+      }
+      console.error('Settings save error:', res.status);
+      alert('保存エラーよ！: ' + res.statusText);
     }
   };
   

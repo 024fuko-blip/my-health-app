@@ -201,11 +201,12 @@ export default function RecordPage() {
           router.replace('/login');
           return;
         }
-        const { data: settings } = await supabase
-          .from('user_settings')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+        const settingsRes = await fetch('/api/user-settings', { credentials: 'include' });
+        if (settingsRes.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        const settings = settingsRes.ok ? await settingsRes.json() : null;
         if (settings) {
           setModes({
             mode_ibd: Boolean(settings.mode_ibd),
@@ -217,12 +218,12 @@ export default function RecordPage() {
           setMedicalHistory((settings.medical_history as string) || '');
         }
         const today = new Date().toISOString().split('T')[0];
-        const { data: log } = await supabase
-          .from('health_logs')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('date', today)
-          .maybeSingle();
+        const logRes = await fetch(`/api/health-logs?date=${today}`, { credentials: 'include' });
+        if (logRes.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        const log = logRes.ok ? await logRes.json() : null;
         applyLogToForm((log as HealthLogRow) ?? null);
       } catch (err) {
         console.error('Record init error:', err);
@@ -238,12 +239,9 @@ export default function RecordPage() {
     const loadLogForDate = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data: log } = await supabase
-        .from('health_logs')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .eq('date', date)
-        .maybeSingle();
+      const logRes = await fetch(`/api/health-logs?date=${date}`, { credentials: 'include' });
+      if (logRes.status === 401) return;
+      const log = logRes.ok ? await logRes.json() : null;
       applyLogToForm((log as HealthLogRow) ?? null);
     };
     loadLogForDate();
@@ -354,13 +352,16 @@ export default function RecordPage() {
       exercise_minutes: modes.mode_diet && exerciseMinutes ? parseInt(exerciseMinutes) : null,
     };
 
-    const { error: saveError } = await supabase
-      .from('health_logs')
-      .upsert(payload, { onConflict: 'user_id,date' });
+    const saveRes = await fetch('/api/health-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
 
     setIsSubmitting(false);
 
-    if (!saveError) {
+    if (saveRes.ok) {
       setResultModal({ show: true, msg: aiComment });
       setMemo('');
       setAddedDrinks([]);
@@ -368,7 +369,14 @@ export default function RecordPage() {
       setMealImageBase64(null);
       setPreviousAlcoholSummary('');
     } else {
-      alert('保存エラー: ' + saveError.message);
+      if (saveRes.status === 401) {
+        alert('セッションが切れました。再度ログインしてください。');
+        router.replace('/login');
+        return;
+      }
+      const errData = await saveRes.json().catch(() => ({}));
+      console.error('Record save error:', saveRes.status, errData);
+      alert('保存エラー: ' + (errData.error || saveRes.statusText));
     }
   };
 

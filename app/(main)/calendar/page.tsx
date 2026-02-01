@@ -1,14 +1,11 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
-
-// プレレンダ時もビルドを通すためダミーを明示（本番では Cloud Run で環境変数設定）
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dummy.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "dummy-key"
-);
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function CalendarPage() {
+  const supabase = createClient();
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [logs, setLogs] = useState<any[]>([]);
   const [selectedLog, setSelectedLog] = useState<any>(null);
@@ -27,19 +24,27 @@ export default function CalendarPage() {
   const fetchLogs = async () => {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
 
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDate}`;
 
-    const { data } = await supabase
-      .from('health_logs')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .gte('date', startDate)
-      .lte('date', endDate);
-
-    if (data) setLogs(data);
+    const res = await fetch(`/api/health-logs?startDate=${startDate}&endDate=${endDate}`, {
+      credentials: 'include',
+    });
+    if (res.status === 401) {
+      router.replace('/login');
+      setLoading(false);
+      return;
+    }
+    const data = res.ok ? await res.json() : [];
+    if (Array.isArray(data)) setLogs(data);
+    if (!res.ok) {
+      console.error('Calendar fetch error:', res.status, await res.text().catch(() => ''));
+    }
     setLoading(false);
   };
 
@@ -66,38 +71,56 @@ export default function CalendarPage() {
   const handleDelete = async () => {
     if (!confirm('本当に削除しますか？この操作は取り消せません。')) return;
 
-    const { error } = await supabase.from('health_logs').delete().eq('id', selectedLog.id);
+    const res = await fetch(`/api/health-logs?id=${selectedLog.id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
 
-    if (!error) {
+    if (res.ok) {
       alert('削除しました🗑️');
       setSelectedLog(null);
       fetchLogs(); // カレンダー再読み込み
     } else {
-      alert('削除エラー: ' + error.message);
+      if (res.status === 401) {
+        alert('セッションが切れました。再度ログインしてください。');
+        router.replace('/login');
+        return;
+      }
+      console.error('Delete error:', res.status);
+      alert('削除エラー: ' + res.statusText);
     }
   };
 
   // 💾 更新処理
   const handleUpdate = async () => {
-    const { error } = await supabase
-      .from('health_logs')
-      .update({
+    const res = await fetch('/api/health-logs', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: selectedLog.id,
         general_mood: editForm.general_mood,
         pain_level: editForm.pain_level,
         meal_description: editForm.meal_description,
         memo: editForm.memo,
         weight: editForm.weight,
         steps: editForm.steps,
-      })
-      .eq('id', selectedLog.id);
+      }),
+      credentials: 'include',
+    });
 
-    if (!error) {
+    if (res.ok) {
       alert('修正しました✨');
       setIsEditing(false);
       setSelectedLog(editForm); // 表示を更新
       fetchLogs(); // カレンダー再読み込み
     } else {
-      alert('更新エラー: ' + error.message);
+      if (res.status === 401) {
+        alert('セッションが切れました。再度ログインしてください。');
+        router.replace('/login');
+        return;
+      }
+      console.error('Update error:', res.status);
+      alert('更新エラー: ' + res.statusText);
     }
   };
 

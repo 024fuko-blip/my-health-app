@@ -1,0 +1,67 @@
+// DBへの接続設定（Google Cloud SQL 想定）
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// クライアント生成の設定
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ユーザー設定（Supabase Auth の user_id を外部キーとして保持）
+model UserSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique @map("user_id")
+  modeIbd            Boolean  @default(true) @map("mode_ibd")
+  modeAlcohol        Boolean  @default(false) @map("mode_alcohol")
+  modeMental         Boolean  @default(false) @map("mode_mental")
+  modeDiet           Boolean  @default(false) @map("mode_diet")
+  medicalHistory     String?  @map("medical_history")
+  currentMedications String?  @map("current_medications")
+  gender             String?  @default("unspecified")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("user_settings")
+}
+
+// 日々のヘルス記録（user_id + date で一意、upsert用）
+model HealthLog {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id") // Supabase Auth の user id
+  date             String   // YYYY-MM-DD
+  memo             String?
+  medicationTaken  Boolean  @default(false) @map("medication_taken")
+  generalMood      Int?     @map("general_mood") // 1-5
+  mealDescription  String?  @map("meal_description")
+  periodStatus     String?  @map("period_status") // なし/生理前/生理中
+  aiComment        String?  @map("ai_comment")
+
+  // IBD
+  painLevel Int?    @map("pain_level")   // 1-5
+  stoolType String? @map("stool_type")   // 普通/軟便/下痢/血便等
+
+  // アルコール
+  alcoholAmount  Int    @default(0) @map("alcohol_amount")
+  alcoholPercent Int?   @map("alcohol_percent")
+  alcoholType    String? @map("alcohol_type")
+
+  // メンタル
+  stressLevel   Int?    @map("stress_level")   // 1-10
+  sleepQuality  String? @map("sleep_quality")
+  spending      Int?    @map("spending")
+
+  // ボディメイク
+  weight          Float? @map("weight")
+  bodyFat         Float? @map("body_fat")
+  calories        Int?   @map("calories")
+  protein         Float? @map("protein")
+  steps           Int?   @map("steps")
+  exerciseMinutes Int?   @map("exercise_minutes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@map("health_logs")
+}
