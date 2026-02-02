@@ -17,6 +17,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
+ENV NEXTAUTH_SECRET="dummy_secret_for_build_only"
+ENV NEXTAUTH_URL="http://localhost:3000"
+
 RUN npm run build
 
 # -----------------------------------------------------------------------------
