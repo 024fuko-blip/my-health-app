@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -119,7 +120,7 @@ export default function SettingsPage() {
       </div>
 
       <button onClick={handleSave} className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold">保存する</button>
-      <button onClick={async () => { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); router.push('/login'); }} className="w-full bg-gray-200 p-3 rounded-lg text-sm">ログアウト</button>
+      <button onClick={async () => { await signOut({ callbackUrl: '/login' }); }} className="w-full bg-gray-200 p-3 rounded-lg text-sm">ログアウト</button>
     </div>
   );
 }

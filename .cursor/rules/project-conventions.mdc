@@ -11,7 +11,7 @@ alwaysApply: true
   - `app/api/advice/route.ts` … AI脳・APIエンドポイント
   - `app/(main)/...` … 画面UI
   - `lib/prisma.ts` … DB クライアント（Google Cloud SQL）
-  - `lib/auth.ts` … 認証（JWT + bcrypt、セッション）
+  - `lib/auth.ts` … 認証（NextAuth + Google OAuth）
   - `lib/env.ts` … サーバー用環境変数スキーマ（バリデーション済み）
 
 ファイルの作成・編集時は上記の役割に従い、適切なディレクトリを選択する。
@@ -20,15 +20,15 @@ alwaysApply: true
 
 - Frontend: Next.js (App Router), TypeScript, Tailwind CSS
 - Backend: Google Cloud SQL (PostgreSQL) + Prisma
-- 認証: JWT（jose）+ bcrypt、Cookie セッション（`lib/auth.ts`）
+- 認証: NextAuth + Google OAuth（`lib/auth.ts`）
 - AI: OpenAI API (gpt-4o-mini)
 
 ## 3. 厳守ルール
 
 ### 認証・セッション
 
-- 認証は **必ず** `lib/auth.ts` を経由する（`getSession`, `createSession`, `deleteSession` 等）。
-- API ルートでは `getSession()` でユーザー特定し、未認証時は 401 を返す。
+- 認証は NextAuth（Google OAuth）。API では `lib/auth.ts` の `getSession()` でユーザー取得。
+- クライアントでは `signIn` / `signOut`（next-auth/react）を使用。
 
 ### 環境変数
 

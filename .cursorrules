@@ -9,7 +9,7 @@
 # Critical Technical Rules (Strictly Follow)
 
 ## 1. 認証 & DB
-- **認証**: 必ず `lib/auth.ts` の `getSession`, `createSession`, `deleteSession` 等を使用する。Supabase は使用しない。
+- **認証**: NextAuth（Google OAuth）。API では `lib/auth.ts` の `getSession()` でユーザー取得。認証 UI は `signIn` / `signOut`（next-auth/react）。
 - **DB**: 必ず `lib/prisma` の Prisma クライアントを使用する。接続先は環境変数 `DATABASE_URL`（Google Cloud SQL 想定）。
 
 ## 2. API ルート
@@ -29,18 +29,11 @@
 
 
 ## 目的：ビルドエラーの根本解決と開発ルールの徹底
-ダミーの環境変数（"placeholder"など）による場当たり的な修正を禁止します。NextAuthとPrismaの構成を、Next.jsのビルドプロセスに適合する正しい設計に修正してください。
+ダミーの環境変数（"placeholder"など）による場当たり的な修正を禁止します。認証は JWT + bcrypt（`lib/auth.ts`）で実装済み。NextAuth は使用しない。
 
-## 修正指示
-1. 【NextAuthの根本修正】
-`lib/auth.ts`（またはauthOptions定義ファイル）において、`secret`が未定義の場合にプロセスを落とすのではなく、実行時にのみ評価されるよう、NextAuth v5(Auth.js)なら `auth.ts` への移行、v4なら Singletonパターンを徹底してください。ビルド時にDATABASE_URLがなくても、型定義や静的解析が通る構成にします。
-
-2. 【Dockerfileの修正】
-Dockerfile内でENVに固定値（ダミー）を書くのをやめてください。
-代わりに、ビルド時に環境変数が必要な場合は `ARG` を使用し、Cloud Buildのステップから安全に注入できる構造に書き換えてください。
-
-3. 【コードベースのクリーンアップ】
-プロジェクト全体から `NEXT_PUBLIC_SUPABASE_*` への依存を完全に削除してください。もし残っている箇所があれば、NextAuth/Cloud SQL（Prisma）を参照するようにリファクタリングしてください。
+## 技術的な注意
+- Dockerfile / Cloud Build では `ARG` で AUTH_SECRET, DATABASE_URL を注入。実行時は Cloud Run の環境変数で本物の値を渡す。
+- プロジェクト全体から `NEXT_PUBLIC_SUPABASE_*` および `NEXTAUTH_*` への依存を削除済み。認証は `lib/auth.ts`、DB は Prisma を使用する。
 
 ## 今後の開発ルール（Cursor Rules）
 今後、以下のルールを遵守してコードを生成してください。

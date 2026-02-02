@@ -20,13 +20,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 1. ビルド引数の定義（Cloud Build の --build-arg で注入。値はダミーで可）
 ARG DATABASE_URL
 ARG AUTH_SECRET
-ARG NEXTAUTH_SECRET
 
 # 2. 環境変数としてビルドプロセスに公開
 #    （Next.js の build がこれらを参照して型チェック・最適化を行う）
 ENV DATABASE_URL=$DATABASE_URL
 ENV AUTH_SECRET=$AUTH_SECRET
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
 
 # 3. ビルド実行
 RUN npm run build

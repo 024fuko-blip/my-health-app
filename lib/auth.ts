@@ -1,89 +1,57 @@
-import { cookies } from 'next/headers';
-import { SignJWT, jwtVerify } from 'jose';
+import { getServerSession } from 'next-auth';
+import { NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import prisma from './prisma';
-import bcrypt from 'bcryptjs';
 import { getServerEnv } from './env';
 
 /**
- * NextAuth は未使用。認証は JWT + bcrypt（このファイル）で実装。
- * AUTH_SECRET 等は getServerEnv() で実行時（Runtime）にのみ解決。ビルド時は参照しない。
- * Prisma は lib/prisma のシングルトンを使用（ビルドプロセスを妨げない）。
+ * NextAuth 設定（Google OAuth）。
+ * AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL を lib/env 経由で使用。
  */
-/** 実行時のみ評価。ビルド時は呼ばれない。シークレットのデフォルト値は設定しない。 */
-function getEncryptionKey(): Uint8Array {
-  const env = getServerEnv();
-  return new TextEncoder().encode(env.AUTH_SECRET);
-}
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    GoogleProvider({
+      clientId: getServerEnv().GOOGLE_CLIENT_ID,
+      clientSecret: getServerEnv().GOOGLE_CLIENT_SECRET,
+    }),
+  ],
+  session: {
+    strategy: 'jwt',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as { id: string }).id = token.id as string;
+      }
+      return session;
+    },
+  },
+  secret: getServerEnv().AUTH_SECRET,
+  pages: {
+    signIn: '/login',
+  },
+};
 
+/** 既存 API との互換用。NextAuth セッションを { userId, email } 形式で返す */
 export interface Session {
   userId: string;
   email: string;
 }
 
-export async function encrypt(payload: Session) {
-  const key = getEncryptionKey();
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('7d')
-    .sign(key);
-}
-
-export async function decrypt(session: string): Promise<Session | null> {
-  try {
-    const key = getEncryptionKey();
-    const { payload } = await jwtVerify(session, key);
-    return payload as Session;
-  } catch {
-    return null;
-  }
-}
-
 export async function getSession(): Promise<Session | null> {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('session')?.value;
-  if (!sessionCookie) return null;
-  return await decrypt(sessionCookie);
-}
-
-export async function createSession(userId: string, email: string) {
-  const session = await encrypt({ userId, email });
-  const cookieStore = await cookies();
-  const env = getServerEnv();
-  cookieStore.set('session', session, {
-    httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: '/',
-  });
-}
-
-export async function deleteSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete('session');
-}
-
-export async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, 10);
-}
-
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return await bcrypt.compare(password, hashedPassword);
-}
-
-export async function getUserByEmail(email: string) {
-  return await prisma.user.findUnique({
-    where: { email },
-  });
-}
-
-export async function createUser(email: string, password: string) {
-  const hashedPassword = await hashPassword(password);
-  return await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-    },
-  });
+  const s = await getServerSession(authOptions);
+  if (!s?.user?.email) return null;
+  const id = (s.user as { id?: string }).id;
+  if (!id) return null;
+  return { userId: id, email: s.user.email };
 }

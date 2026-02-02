@@ -5,12 +5,18 @@
  */
 
 /** 必須環境変数名（ランタイム起動時チェック用） */
-export const REQUIRED_RUNTIME_ENV_KEYS = ['AUTH_SECRET', 'DATABASE_URL'] as const;
+export const REQUIRED_RUNTIME_ENV_KEYS = [
+  'AUTH_SECRET',
+  'DATABASE_URL',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'NEXTAUTH_URL',
+] as const;
 
 /**
  * ランタイム起動時（コンテナ立ち上げ時）に呼び出すバリデーション。
  * ビルド時（CI や next build）はスキップする。instrumentation.ts から呼ぶ想定。
- * AUTH_SECRET / DATABASE_URL が未設定なら即座にわかりやすいエラーで throw する。
+ * AUTH_SECRET, DATABASE_URL, GOOGLE_*, NEXTAUTH_URL が未設定なら即座に throw する。
  */
 export function validateRuntimeEnv(): void {
   // ビルド時（CI環境や next build 中）はチェックをスキップ
@@ -52,6 +58,9 @@ const optional = (value: string | undefined): string | undefined =>
 export interface ServerEnv {
   AUTH_SECRET: string;
   DATABASE_URL: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  NEXTAUTH_URL: string;
   OPENAI_API_KEY: string | undefined;
   NODE_ENV: 'development' | 'production' | 'test';
 }
@@ -68,6 +77,12 @@ export function getServerEnv(): ServerEnv {
   cached = {
     AUTH_SECRET: required('AUTH_SECRET', process.env.AUTH_SECRET),
     DATABASE_URL: required('DATABASE_URL', process.env.DATABASE_URL),
+    GOOGLE_CLIENT_ID: required('GOOGLE_CLIENT_ID', process.env.GOOGLE_CLIENT_ID),
+    GOOGLE_CLIENT_SECRET: required(
+      'GOOGLE_CLIENT_SECRET',
+      process.env.GOOGLE_CLIENT_SECRET
+    ),
+    NEXTAUTH_URL: required('NEXTAUTH_URL', process.env.NEXTAUTH_URL),
     OPENAI_API_KEY: optional(process.env.OPENAI_API_KEY),
     NODE_ENV:
       (process.env.NODE_ENV as ServerEnv['NODE_ENV']) || 'development',
