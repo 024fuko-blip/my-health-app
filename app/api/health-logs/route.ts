@@ -1,37 +1,7 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
 import type { HealthLog } from '@prisma/client';
-
-async function getSupabaseSession() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch {}
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch {}
-        },
-      },
-    }
-  );
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session;
-}
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
 function toApiShape(log: HealthLog) {
@@ -64,7 +34,7 @@ function toApiShape(log: HealthLog) {
 
 export async function GET(req: Request) {
   try {
-    const session = await getSupabaseSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const { searchParams } = new URL(req.url);
@@ -75,7 +45,7 @@ export async function GET(req: Request) {
     if (date) {
       const log = await prisma.healthLog.findUnique({
         where: {
-          userId_date: { userId: session.user.id, date },
+          userId_date: { userId: session.userId, date },
         },
       });
       return NextResponse.json(log ? toApiShape(log) : null);
@@ -84,7 +54,7 @@ export async function GET(req: Request) {
     if (startDate && endDate) {
       const logs = await prisma.healthLog.findMany({
         where: {
-          userId: session.user.id,
+          userId: session.userId,
           date: { gte: startDate, lte: endDate },
         },
         orderBy: { date: 'asc' },
@@ -103,7 +73,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getSupabaseSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const body = await req.json();
@@ -136,7 +106,7 @@ export async function POST(req: Request) {
     }
 
     const data = {
-      userId: session.user.id,
+      userId: session.userId,
       date: String(date),
       memo: memo ?? null,
       medicationTaken: Boolean(medication_taken ?? false),
@@ -162,7 +132,7 @@ export async function POST(req: Request) {
 
     const log = await prisma.healthLog.upsert({
       where: {
-        userId_date: { userId: session.user.id, date: String(date) },
+        userId_date: { userId: session.userId, date: String(date) },
       },
       create: data,
       update: data,
@@ -177,7 +147,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const session = await getSupabaseSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const body = await req.json();
@@ -188,7 +158,7 @@ export async function PATCH(req: Request) {
     }
 
     const existing = await prisma.healthLog.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id, userId: session.userId },
     });
     if (!existing) {
       return new NextResponse('Not Found', { status: 404 });
@@ -225,7 +195,7 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const session = await getSupabaseSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const { searchParams } = new URL(req.url);
@@ -234,7 +204,7 @@ export async function DELETE(req: Request) {
 
     if (id) {
       const existing = await prisma.healthLog.findFirst({
-        where: { id, userId: session.user.id },
+        where: { id, userId: session.userId },
       });
       if (!existing) return new NextResponse('Not Found', { status: 404 });
       await prisma.healthLog.delete({ where: { id } });
@@ -243,11 +213,11 @@ export async function DELETE(req: Request) {
 
     if (date) {
       const existing = await prisma.healthLog.findUnique({
-        where: { userId_date: { userId: session.user.id, date } },
+        where: { userId_date: { userId: session.userId, date } },
       });
       if (!existing) return new NextResponse('Not Found', { status: 404 });
       await prisma.healthLog.delete({
-        where: { userId_date: { userId: session.user.id, date } },
+        where: { userId_date: { userId: session.userId, date } },
       });
       return NextResponse.json({ ok: true });
     }

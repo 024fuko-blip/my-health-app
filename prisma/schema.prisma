@@ -9,7 +9,18 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// ユーザー設定（Supabase Auth の user_id を外部キーとして保持）
+// ユーザー（認証用）
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // bcryptハッシュ
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// ユーザー設定（User の id を外部キーとして保持）
 model UserSettings {
   id                 String   @id @default(cuid())
   userId             String   @unique @map("user_id")
@@ -28,7 +39,7 @@ model UserSettings {
 // 日々のヘルス記録（user_id + date で一意、upsert用）
 model HealthLog {
   id               String   @id @default(cuid())
-  userId           String   @map("user_id") // Supabase Auth の user id
+  userId           String   @map("user_id") // User の id
   date             String   // YYYY-MM-DD
   memo             String?
   medicationTaken  Boolean  @default(false) @map("medication_taken")

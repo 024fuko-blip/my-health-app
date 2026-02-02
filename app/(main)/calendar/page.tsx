@@ -1,10 +1,8 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function CalendarPage() {
-  const supabase = createClient();
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [logs, setLogs] = useState<any[]>([]);
@@ -23,8 +21,9 @@ export default function CalendarPage() {
   // データ取得
   const fetchLogs = async () => {
     setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+    const sessionData = await sessionRes.json();
+    if (!sessionData.user) {
       setLoading(false);
       return;
     }

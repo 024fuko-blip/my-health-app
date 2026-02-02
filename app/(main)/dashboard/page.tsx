@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import {
   LineChart,
@@ -25,7 +24,6 @@ interface HealthLogRow {
 }
 
 export default function DashboardPage() {
-  const supabase = createClient();
   const router = useRouter();
   const [logs, setLogs] = useState<HealthLogRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +33,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+      const sessionData = await sessionRes.json();
+      if (!sessionData.user) return;
 
       const endDate = new Date();
       const startDate = new Date();

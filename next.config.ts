@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   experimental: {
+    instrumentationHook: true,
     serverActions: {
       bodySizeLimit: '4mb',
     },

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 interface DrinkPreset {
@@ -100,7 +99,6 @@ function parseAlcoholTypeToAddedDrinks(
 }
 
 export default function RecordPage() {
-  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [modes, setModes] = useState<UserSettingsMode>({});
@@ -196,8 +194,9 @@ export default function RecordPage() {
   useEffect(() => {
     const init = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+        const sessionData = await sessionRes.json();
+        if (!sessionData.user) {
           router.replace('/login');
           return;
         }
@@ -237,8 +236,9 @@ export default function RecordPage() {
   useEffect(() => {
     if (loading) return;
     const loadLogForDate = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+      const sessionData = await sessionRes.json();
+      if (!sessionData.user) return;
       const logRes = await fetch(`/api/health-logs?date=${date}`, { credentials: 'include' });
       if (logRes.status === 401) return;
       const log = logRes.ok ? await logRes.json() : null;
@@ -278,8 +278,9 @@ export default function RecordPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+    const sessionData = await sessionRes.json();
+    if (!sessionData.user) return;
 
     // アルコール集計
     let totalMl = 0; let types: string[] = [];

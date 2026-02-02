@@ -1,10 +1,8 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
-  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   
@@ -20,8 +18,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push('/login'); return; }
+      const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+      const sessionData = await sessionRes.json();
+      if (!sessionData.user) { router.push('/login'); return; }
 
       const res = await fetch('/api/user-settings', { credentials: 'include' });
       if (res.status === 401) {
@@ -49,8 +48,9 @@ export default function SettingsPage() {
   }, []);
 
   const handleSave = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+    const sessionData = await sessionRes.json();
+    if (!sessionData.user) return;
 
     const res = await fetch('/api/user-settings', {
       method: 'PUT',
@@ -119,7 +119,7 @@ export default function SettingsPage() {
       </div>
 
       <button onClick={handleSave} className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold">保存する</button>
-      <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="w-full bg-gray-200 p-3 rounded-lg text-sm">ログアウト</button>
+      <button onClick={async () => { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); router.push('/login'); }} className="w-full bg-gray-200 p-3 rounded-lg text-sm">ログアウト</button>
     </div>
   );
 }

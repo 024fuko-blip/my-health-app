@@ -1,36 +1,15 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
+import { getServerEnv } from '@/lib/env';
 
 export async function POST(req: Request) {
   try {
     // ---------------------------------------------------------
-    // 1. セキュリティ & ユーザー特定 (Supabase Auth / SSR)
+    // 1. セキュリティ & ユーザー特定
     // ---------------------------------------------------------
-    const cookieStore = await cookies();
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            try { cookieStore.set({ name, value, ...options }); } catch (error) {}
-          },
-          remove(name: string, options: CookieOptions) {
-            try { cookieStore.set({ name, value: '', ...options }); } catch (error) {}
-          },
-        },
-      }
-    );
-    
-    // セッションチェック
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     // ---------------------------------------------------------
@@ -49,7 +28,7 @@ export async function POST(req: Request) {
 
     // DBから設定取得（Prisma）
     const userSettings = await prisma.userSettings.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: session.userId },
     });
 
     const settings = userSettings
@@ -186,13 +165,14 @@ ${priorityRules}
     // ---------------------------------------------------------
     // 4. OpenAI API コール（画像ありなら Vision = gpt-4o）
     // ---------------------------------------------------------
-    if (!process.env.OPENAI_API_KEY?.trim()) {
+    const env = getServerEnv();
+    if (!env.OPENAI_API_KEY) {
       return NextResponse.json(
         { advice: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
         { status: 503 }
       );
     }
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
     const isDailyWithImage = mode === 'daily'
       && typeof mealImageBase64 === 'string' && mealImageBase64.startsWith('data:image');
     const model = isDailyWithImage ? 'gpt-4o' : 'gpt-4o-mini';

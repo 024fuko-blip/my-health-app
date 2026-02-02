@@ -7,46 +7,62 @@ alwaysApply: true
 
 ## 1. ルートディレクトリの役割
 
-- **このリポジトリ (my-health-app)**: Frontend & BFF。Next.js 本体・UI・OpenAI 通信 API はここ。
+- **このリポジトリ (my-health-app)**: Frontend & BFF。Next.js 本体・UI・OpenAI 通信 API・DB（Prisma + Google Cloud SQL）はすべてここ。
   - `app/api/advice/route.ts` … AI脳・APIエンドポイント
   - `app/(main)/...` … 画面UI
-  - `utils/supabase/` … Supabase クライアント
-- **myhealthappcd/** (別リポジトリ): Backend Config / Infra。Supabase 定義・マイグレーション・CD 等。
+  - `lib/prisma.ts` … DB クライアント（Google Cloud SQL）
+  - `lib/auth.ts` … 認証（JWT + bcrypt、セッション）
+  - `lib/env.ts` … サーバー用環境変数スキーマ（バリデーション済み）
 
 ファイルの作成・編集時は上記の役割に従い、適切なディレクトリを選択する。
 
 ## 2. 技術スタック
 
 - Frontend: Next.js (App Router), TypeScript, Tailwind CSS
-- Backend: Supabase (Auth, DB)
+- Backend: Google Cloud SQL (PostgreSQL) + Prisma
+- 認証: JWT（jose）+ bcrypt、Cookie セッション（`lib/auth.ts`）
 - AI: OpenAI API (gpt-4o-mini)
 
 ## 3. 厳守ルール
 
-### Supabase Auth (SSR)
+### 認証・セッション
 
-- **必ず** `@supabase/ssr` を使用する。
-- クライアント作成は **必ず** `utils/supabase/client.ts` を経由する。
+- 認証は **必ず** `lib/auth.ts` を経由する（`getSession`, `createSession`, `deleteSession` 等）。
+- API ルートでは `getSession()` でユーザー特定し、未認証時は 401 を返す。
+
+### 環境変数
+
+- **禁止**: `process.env` を直接参照しない。サーバー用は **必ず** `lib/env.ts` の `getServerEnv()` を経由する。
+- シークレット（AUTH_SECRET 等）にデフォルト値（"temporary-secret" 等）を設定するコードを提案しない。未設定時は実行時にエラーで落とす。
+
+### 動的レンダリング・ビルド
+
+- DB 接続や認証が必要なページでは、**必ず** `export const dynamic = 'force-dynamic'` を明示するか、`Suspense` で境界を切り分け、ビルド時の静的解析エラーを防ぐ。
+- UI 修正や機能追加時も、DB・認証が必要なページには `force-dynamic` を適切に配置し、ビルドエラーを未然に防ぐ構成を維持する。
+- Supabase 関連のコードが残っている場合は、全て削除するか Prisma / 自前認証（`lib/auth.ts`）への置き換えを提案する。
 
 ### API ルート (route.ts)
 
 - AI アドバイス API の実装場所は **`app/api/advice/route.ts`** のみ。
-- DB 操作はサーバーサイドで行う。
+- DB 操作はサーバーサイドで **Prisma** を使用する（`lib/prisma`）。
 - `cookies()` には **必ず `await`** を使用する（Next.js 15+）。
 
 ### 今後の拡張
 
 - 食事画像アップロード機能は **このリポジトリ (my-health-app)** 側に追加する。
 
-## 4. DB テーブル (Supabase)
+## 4. DB テーブル (Google Cloud SQL / Prisma)
 
 - `health_logs`: 日々の記録 (pain_level, stool_type, meal_description, ai_comment 等)
 - `user_settings`: 設定 (medical_history, current_medications, 各モードフラグ)
+- `users`: 認証用ユーザー（email, password ハッシュ）
+
+スキーマ定義は `prisma/schema.prisma`。マイグレーションは `npx prisma migrate` で実行。
 
 ## 5. API & Data Fetching
 
 - **ユーザーの機密情報（既往歴・薬・モード設定など）はフロントから POST させない。**
-- 必ず API ルート内で `supabase.from('user_settings')` を実行し、DB から直接取得する。
+- 必ず API ルート内で `prisma.userSettings` を実行し、DB から直接取得する。
 - `app/api/advice/route.ts` は、すべてのモード（IBD, Alcohol, Diet）を**統合的に判断するロジック**を維持する。
 
 ## 6. Coding Style

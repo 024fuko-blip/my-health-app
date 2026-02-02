@@ -1,18 +1,49 @@
 # Role & Behavioral Guidelines
-あなたはNext.js 15+, TypeScript, Tailwind CSS, Supabaseのエキスパートであり、シニアエンジニアです。
+あなたはNext.js 15+, TypeScript, Tailwind CSS, Prisma（Google Cloud SQL）のエキスパートであり、シニアエンジニアです。
 以下のルールを厳守し、コードの品質と一貫性を保ってください。
 
 # Directory Structure & Context
-- Frontend: `myhealthapp/` (Next.js App Router)
-- Backend Config: `myhealthappcd/` (Supabase config etc.)
-- 基本的に `myhealthapp/` 内のファイルを編集します。
+- このリポジトリ (my-health-app): Next.js App Router + BFF API + Prisma（Google Cloud SQL）。フロント・API・DB・認証はすべてここで完結する。
+- 基本的に `app/` と `lib/` 内のファイルを編集します。
 
 # Critical Technical Rules (Strictly Follow)
 
-## 1. Supabase Auth & Client
-- **禁止**: `@supabase/auth-helpers-nextjs` や `@supabase/supabase-js` の直接的な `createClient` を使用してはいけません。
-- **正解 (Client Component)**: 必ず `@/utils/supabase/client` から `createClient` をインポートして使用してください。
-  ```typescript
-  import { createClient } from '@/utils/supabase/client';
-  // component内で
-  const supabase = createClient();
+## 1. 認証 & DB
+- **認証**: 必ず `lib/auth.ts` の `getSession`, `createSession`, `deleteSession` 等を使用する。Supabase は使用しない。
+- **DB**: 必ず `lib/prisma` の Prisma クライアントを使用する。接続先は環境変数 `DATABASE_URL`（Google Cloud SQL 想定）。
+
+## 2. API ルート
+- 認証が必要な API では `const session = await getSession(); if (!session) return ... 401` を最初に実行する。
+- `cookies()` には必ず `await` を付ける（Next.js 15+）。
+
+## 3. 環境変数・シークレット
+- 環境変数は `process.env` を直接叩かず、`lib/env.ts` の `getServerEnv()` を介して参照する。
+- シークレットにデフォルト値（"temporary-secret" 等）を設定するコードを提案しない。
+
+## 4. 動的レンダリング
+- DB 接続や認証が必要なページでは `force-dynamic` を明示するか、`Suspense` で境界を切り分ける。UI 修正・機能追加時も同様に維持する。
+- Supabase が残っていれば削除または Prisma / lib/auth への置き換えを提案する。
+
+## 5. AI アドバイス
+- AI アドバイス・レポートの実装は `app/api/advice/route.ts` および `app/api/report/route.ts` のみ。オネエの口調（charaSetting）を勝手に変えない。
+
+
+## 目的：ビルドエラーの根本解決と開発ルールの徹底
+ダミーの環境変数（"placeholder"など）による場当たり的な修正を禁止します。NextAuthとPrismaの構成を、Next.jsのビルドプロセスに適合する正しい設計に修正してください。
+
+## 修正指示
+1. 【NextAuthの根本修正】
+`lib/auth.ts`（またはauthOptions定義ファイル）において、`secret`が未定義の場合にプロセスを落とすのではなく、実行時にのみ評価されるよう、NextAuth v5(Auth.js)なら `auth.ts` への移行、v4なら Singletonパターンを徹底してください。ビルド時にDATABASE_URLがなくても、型定義や静的解析が通る構成にします。
+
+2. 【Dockerfileの修正】
+Dockerfile内でENVに固定値（ダミー）を書くのをやめてください。
+代わりに、ビルド時に環境変数が必要な場合は `ARG` を使用し、Cloud Buildのステップから安全に注入できる構造に書き換えてください。
+
+3. 【コードベースのクリーンアップ】
+プロジェクト全体から `NEXT_PUBLIC_SUPABASE_*` への依存を完全に削除してください。もし残っている箇所があれば、NextAuth/Cloud SQL（Prisma）を参照するようにリファクタリングしてください。
+
+## 今後の開発ルール（Cursor Rules）
+今後、以下のルールを遵守してコードを生成してください。
+- 環境変数は `process.env` を直接叩かず、バリデーション済みの `env.ts` 等のスキーマを介して管理する。
+- ページコンポーネントでDB接続や認証が必要な場合は、必ず `force-dynamic` を明示するか、`Suspense` で境界を切り分け、ビルド時のエラーを構造的に防ぐ。
+- シークレット情報にデフォルト値（"temporary-secret"等）を設定するコードを提案しない。

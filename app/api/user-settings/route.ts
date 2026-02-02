@@ -1,36 +1,6 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-
-async function getSupabaseSession() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch {}
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch {}
-        },
-      },
-    }
-  );
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session;
-}
+import { getSession } from '@/lib/auth';
 
 /** Prisma UserSettings をフロント期待の snake_case 形式に変換 */
 function toApiShape(row: {
@@ -55,11 +25,11 @@ function toApiShape(row: {
 
 export async function GET() {
   try {
-    const session = await getSupabaseSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const row = await prisma.userSettings.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: session.userId },
     });
 
     if (!row) {
@@ -83,7 +53,7 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const session = await getSupabaseSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const body = await req.json();
@@ -98,9 +68,9 @@ export async function PUT(req: Request) {
     } = body;
 
     await prisma.userSettings.upsert({
-      where: { userId: session.user.id },
+      where: { userId: session.userId },
       create: {
-        userId: session.user.id,
+        userId: session.userId,
         modeIbd: Boolean(mode_ibd ?? true),
         modeAlcohol: Boolean(mode_alcohol ?? false),
         modeMental: Boolean(mode_mental ?? false),

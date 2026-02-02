@@ -1,8 +1,8 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
+import { getServerEnv } from '@/lib/env';
 
 interface ReportRequestBody {
   period: 7 | 30;
@@ -10,26 +10,7 @@ interface ReportRequestBody {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            try { cookieStore.set({ name, value, ...options }); } catch {}
-          },
-          remove(name: string, options: CookieOptions) {
-            try { cookieStore.set({ name, value: '', ...options }); } catch {}
-          },
-        },
-      }
-    );
-
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const body = (await req.json()) as ReportRequestBody;
@@ -43,14 +24,14 @@ export async function POST(req: Request) {
 
     const logs = await prisma.healthLog.findMany({
       where: {
-        userId: session.user.id,
+        userId: session.userId,
         date: { gte: startStr, lte: endStr },
       },
       orderBy: { date: 'asc' },
     });
 
     const userSettings = await prisma.userSettings.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: session.userId },
     });
 
     const settings = userSettings
@@ -113,13 +94,14 @@ ${charaSetting}
     }));
     const userPrompt = `これが過去${period}日分の記録よ！ 因果関係を暴いてちょうだい！\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ダイエット=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
 
-    if (!process.env.OPENAI_API_KEY?.trim()) {
+    const env = getServerEnv();
+    if (!env.OPENAI_API_KEY) {
       return NextResponse.json(
         { report: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
         { status: 503 }
       );
     }
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
