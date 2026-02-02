@@ -1,8 +1,17 @@
 /**
  * サーバー用環境変数スキーマ。
  * process.env を直接参照せず、このモジュールを経由して使用する。
- * ビルド時には getServerEnv() / validateRuntimeEnv() を呼ばないこと（実行時のみ評価）。
+ * ビルド時（next build / CI）では getServerEnv() はダミー値を返し、validateRuntimeEnv はスキップする。
  */
+
+/** ビルド中かどうか（next build や CI では true） */
+function isBuildTime(): boolean {
+  return (
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    process.env.CI === 'true' ||
+    process.env.CI === '1'
+  );
+}
 
 /** 必須環境変数名（ランタイム起動時チェック用） */
 export const REQUIRED_RUNTIME_ENV_KEYS = [
@@ -19,10 +28,7 @@ export const REQUIRED_RUNTIME_ENV_KEYS = [
  * AUTH_SECRET, DATABASE_URL, GOOGLE_*, NEXTAUTH_URL が未設定なら即座に throw する。
  */
 export function validateRuntimeEnv(): void {
-  // ビルド時（CI環境や next build 中）はチェックをスキップ
-  if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.CI) {
-    return;
-  }
+  if (isBuildTime()) return;
 
   const env = process.env as Record<string, string | undefined>;
   const missingKeys = REQUIRED_RUNTIME_ENV_KEYS.filter(
@@ -67,13 +73,29 @@ export interface ServerEnv {
 
 let cached: ServerEnv | null = null;
 
+/** ビルド時のみ使用するダミー値（next build 中に getServerEnv が参照されても throw しない） */
+function getBuildTimeDummyEnv(): ServerEnv {
+  return {
+    AUTH_SECRET: 'build-time-dummy',
+    DATABASE_URL: process.env.DATABASE_URL?.trim() || 'postgresql://build:build@localhost:5432/build',
+    GOOGLE_CLIENT_ID: 'build-time-dummy',
+    GOOGLE_CLIENT_SECRET: 'build-time-dummy',
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL?.trim() || 'http://localhost:3000',
+    OPENAI_API_KEY: undefined,
+    NODE_ENV: (process.env.NODE_ENV as ServerEnv['NODE_ENV']) || 'development',
+  };
+}
+
 /**
- * 実行時にのみ呼び出すこと。ビルド時の静的解析では呼ばれない。
- * 必須: AUTH_SECRET, DATABASE_URL。OPENAI_API_KEY は任意（未設定時は AI API が 503 を返す）。
- * シークレットにデフォルト値は設定しない。
+ * 実行時は必須の環境変数を検証して返す。ビルド時はダミーを返す（ビルド失敗を防ぐ）。
+ * 本番実行時は validateRuntimeEnv() で未設定なら throw する。
  */
 export function getServerEnv(): ServerEnv {
   if (cached) return cached;
+  if (isBuildTime()) {
+    cached = getBuildTimeDummyEnv();
+    return cached;
+  }
   cached = {
     AUTH_SECRET: required('AUTH_SECRET', process.env.AUTH_SECRET),
     DATABASE_URL: required('DATABASE_URL', process.env.DATABASE_URL),

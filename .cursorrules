@@ -29,11 +29,11 @@
 
 
 ## 目的：ビルドエラーの根本解決と開発ルールの徹底
-ダミーの環境変数（"placeholder"など）による場当たり的な修正を禁止します。認証は JWT + bcrypt（`lib/auth.ts`）で実装済み。NextAuth は使用しない。
+ダミーの環境変数（"placeholder"など）による場当たり的な修正を禁止します。認証は **NextAuth + Google OAuth**（`lib/auth.ts`）で実装済み。DB は **Prisma + Google Cloud SQL** のみを使用する。
 
 ## 技術的な注意
-- Dockerfile / Cloud Build では `ARG` で AUTH_SECRET, DATABASE_URL を注入。実行時は Cloud Run の環境変数で本物の値を渡す。
-- プロジェクト全体から `NEXT_PUBLIC_SUPABASE_*` および `NEXTAUTH_*` への依存を削除済み。認証は `lib/auth.ts`、DB は Prisma を使用する。
+- Dockerfile / Cloud Build では `ARG` で AUTH_SECRET, DATABASE_URL を注入。実行時は Cloud Run の環境変数で本物の値（AUTH_SECRET, DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL）を渡す。
+- 認証は `lib/auth.ts`（NextAuth + Google OAuth）、DB は Prisma（Google Cloud SQL）を使用する。Supabase は使用しない。
 
 ## 今後の開発ルール（Cursor Rules）
 今後、以下のルールを遵守してコードを生成してください。

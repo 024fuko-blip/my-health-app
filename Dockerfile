@@ -20,13 +20,18 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 1. ビルド引数の定義（Cloud Build の --build-arg で注入。値はダミーで可）
 ARG DATABASE_URL
 ARG AUTH_SECRET
+ARG GOOGLE_CLIENT_ID
+ARG GOOGLE_CLIENT_SECRET
+ARG NEXTAUTH_URL
 
-# 2. 環境変数としてビルドプロセスに公開
-#    （Next.js の build がこれらを参照して型チェック・最適化を行う）
-ENV DATABASE_URL=$DATABASE_URL
-ENV AUTH_SECRET=$AUTH_SECRET
+# 2. 環境変数としてビルドプロセスに公開（next build 時にモジュールが参照しても落ちないようダミー可）
+ENV DATABASE_URL=${DATABASE_URL}
+ENV AUTH_SECRET=${AUTH_SECRET}
+ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+ENV GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 
-# 3. ビルド実行
+# 3. ビルド実行（本番の接続先・認証は Cloud Run の環境変数で上書き）
 RUN npm run build
 
 # -----------------------------------------------------------------------------

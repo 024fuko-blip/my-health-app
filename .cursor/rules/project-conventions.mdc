@@ -55,7 +55,7 @@ alwaysApply: true
 
 - `health_logs`: 日々の記録 (pain_level, stool_type, meal_description, ai_comment 等)
 - `user_settings`: 設定 (medical_history, current_medications, 各モードフラグ)
-- `users`: 認証用ユーザー（email, password ハッシュ）
+- `users`: 認証用ユーザー（NextAuth + Google OAuth）
 
 スキーマ定義は `prisma/schema.prisma`。マイグレーションは `npx prisma migrate` で実行。
 

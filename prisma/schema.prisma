@@ -16,7 +16,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
-  password      String?   // bcryptハッシュ（メール認証時のみ。Google OAuth の場合は null）
+  password      String?   // 未使用（Google OAuth のみのため null）
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
