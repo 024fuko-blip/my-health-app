@@ -1,6 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import FooterLink from '../components/FooterLink';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -12,6 +13,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main className="flex-1 w-full max-w-md mx-auto p-4 bg-white shadow-sm min-h-screen">
         {children}
       </main>
+      <div className="w-full max-w-md mx-auto px-4 pb-24">
+        <FooterLink />
+      </div>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around py-2 pb-6 z-50 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         

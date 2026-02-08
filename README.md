@@ -1,5 +1,12 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## リンク
+
+| 環境 | URL |
+|------|-----|
+| **ローカル開発** | [http://localhost:3000](http://localhost:3000) |
+| **本番 (Cloud Run)** | [https://my-health-apps-81772171421.asia-northeast2.run.app](https://my-health-apps-81772171421.asia-northeast2.run.app) |
+
 ## 技術スタック
 
 - **Frontend**: Next.js (App Router), TypeScript, Tailwind CSS

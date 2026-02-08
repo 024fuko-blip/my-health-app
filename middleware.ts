@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -14,18 +13,14 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/advice');
 
   if (isAuthRequired) {
-    try {
-      const token = await getToken({
-        req: request,
-        secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-      });
-      if (!token) {
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('callbackUrl', pathname);
-        return NextResponse.redirect(loginUrl);
-      }
-    } catch {
+    const sessionCookie =
+      request.cookies.get('__Secure-next-auth.session-token') ??
+      request.cookies.get('__Host-next-auth.session-token') ??
+      request.cookies.get('next-auth.session-token');
+
+    if (!sessionCookie) {
       const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
   }

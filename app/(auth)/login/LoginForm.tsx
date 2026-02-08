@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -16,10 +16,17 @@ export default function LoginForm() {
     }
   }, [session, status, router, searchParams]);
 
-  const handleGoogleSignIn = () => {
-    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-    signIn("google", { callbackUrl });
-  };
+  const handleGoogleSignIn = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+      await signIn("google", { callbackUrl, redirect: true });
+    } catch (error) {
+      console.error("Sign in error:", error);
+    }
+  }, [searchParams]);
 
   if (status === "loading") {
     return (
@@ -39,8 +46,9 @@ export default function LoginForm() {
           Google アカウントでログイン
         </p>
         <button
+          type="button"
           onClick={handleGoogleSignIn}
-          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 p-3 rounded-lg font-medium hover:bg-gray-50 shadow-sm"
+          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 p-3 rounded-lg font-medium hover:bg-gray-50 shadow-sm active:bg-gray-100"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -62,6 +70,13 @@ export default function LoginForm() {
           </svg>
           Google でログイン
         </button>
+        <p className="mt-4 text-center text-xs text-gray-500">
+          続行すると{' '}
+          <a href="/privacy" className="text-blue-600 hover:underline">
+            プライバシーポリシー
+          </a>
+          に同意したものとみなされます。
+        </p>
       </div>
     </div>
   );

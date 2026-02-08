@@ -1,0 +1,23 @@
+---
+description: Auth & middleware runtime policy
+alwaysApply: true
+---
+
+# Auth & Middleware Policy
+
+- Do not verify JWT in `middleware.ts` (build-time secrets can break auth).
+- In middleware, only check presence of NextAuth session cookie:
+  - `__Secure-next-auth.session-token` / `__Host-next-auth.session-token` / `next-auth.session-token`
+- Auth-required API routes must use `getSession()` from `lib/auth.ts` and return 401 on missing session.
+- Do not access `process.env` directly; use `getServerEnv()` from `lib/env.ts`.
+
+## Example
+
+```ts
+// ✅ OK in middleware: cookie presence check only
+const sessionCookie =
+  request.cookies.get('__Secure-next-auth.session-token') ??
+  request.cookies.get('__Host-next-auth.session-token') ??
+  request.cookies.get('next-auth.session-token');
+if (!sessionCookie) return NextResponse.redirect(new URL('/login', request.url));
+```

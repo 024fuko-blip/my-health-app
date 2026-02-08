@@ -5,5 +5,19 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1">{children}</div>
+      <div className="pb-4">
+        <div className="w-full max-w-md mx-auto px-4">
+          {/* FooterLink is client component; keep link simple here */}
+          <div className="mt-4 text-center text-[10px] text-gray-400">
+            <a href="/privacy" className="hover:underline">
+              プライバシーポリシー
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
