@@ -19,6 +19,10 @@ export default function AuthLayout({
             <a href="/terms" className="hover:underline">
               利用規約
             </a>
+            <span className="mx-2">|</span>
+            <a href="/guide" className="hover:underline">
+              使い方
+            </a>
           </div>
         </div>
       </div>

@@ -1,9 +1,11 @@
+import FooterLink from '../components/FooterLink';
+
 export const dynamic = 'force-dynamic';
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
+    <div className="min-h-screen bg-gray-50 py-10 px-4 flex flex-col">
+      <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6 flex-1">
         <h1 className="text-2xl font-bold text-gray-900">利用規約</h1>
 
         <section className="space-y-2">
@@ -62,6 +64,9 @@ export default function TermsOfServicePage() {
           </p>
         </section>
       </div>
+      <footer className="w-full max-w-2xl mx-auto mt-8 pb-8">
+        <FooterLink />
+      </footer>
     </div>
   );
 }

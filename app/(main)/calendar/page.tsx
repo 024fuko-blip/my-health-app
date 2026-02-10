@@ -2,6 +2,71 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+/** 生理周期に基づいて日付の状態を判定 */
+interface PeriodStatus {
+  type: 'period' | 'pms' | 'ovulation' | 'fertile' | null;
+  isOvulationDay?: boolean;
+}
+
+function getPeriodStatus(
+  dateStr: string,
+  lastPeriodDate: string,
+  periodCycle: number,
+  periodDuration: number
+): PeriodStatus {
+  if (!lastPeriodDate) return { type: null };
+  
+  const targetDate = new Date(dateStr);
+  const lastPeriod = new Date(lastPeriodDate);
+  
+  // 過去と未来の生理日を計算（前後数周期分）
+  for (let i = -3; i <= 6; i++) {
+    const periodStart = new Date(lastPeriod);
+    periodStart.setDate(periodStart.getDate() + (periodCycle * i));
+    
+    const periodEnd = new Date(periodStart);
+    periodEnd.setDate(periodEnd.getDate() + periodDuration - 1);
+    
+    // 排卵日は次の生理開始の14日前
+    const ovulationDay = new Date(periodStart);
+    ovulationDay.setDate(ovulationDay.getDate() + periodCycle - 14);
+    
+    // 妊娠しやすい期間（排卵日の5日前〜排卵日）
+    const fertileStart = new Date(ovulationDay);
+    fertileStart.setDate(fertileStart.getDate() - 5);
+    
+    const pmsStart = new Date(periodStart);
+    pmsStart.setDate(pmsStart.getDate() + periodCycle - 10); // PMS期間: 次の生理10日前〜
+    
+    // 生理中
+    if (targetDate >= periodStart && targetDate <= periodEnd) {
+      return { type: 'period' };
+    }
+    
+    // 排卵日
+    if (targetDate.toDateString() === ovulationDay.toDateString()) {
+      return { type: 'ovulation', isOvulationDay: true };
+    }
+    
+    // 妊娠しやすい期間（排卵日前の数日）
+    if (targetDate >= fertileStart && targetDate < ovulationDay) {
+      return { type: 'fertile' };
+    }
+    
+    // PMS期間（生理前10日間、ただし妊娠しやすい期間と重複しない）
+    if (targetDate >= pmsStart && targetDate < new Date(periodStart.getTime() + periodCycle * 24 * 60 * 60 * 1000)) {
+      // 次の周期の開始前まで
+      const nextPeriodStart = new Date(periodStart);
+      nextPeriodStart.setDate(nextPeriodStart.getDate() + periodCycle);
+      if (targetDate < nextPeriodStart) {
+        return { type: 'pms' };
+      }
+    }
+  }
+  
+  return { type: null };
+}
+
 export default function CalendarPage() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -12,6 +77,14 @@ export default function CalendarPage() {
   // ✏️ 編集モード用のState
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
+  
+  // 生理周期情報
+  const [periodSettings, setPeriodSettings] = useState({
+    lastPeriodDate: '',
+    periodCycle: 28,
+    periodDuration: 5,
+    gender: 'unspecified',
+  });
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
@@ -26,6 +99,23 @@ export default function CalendarPage() {
     if (!sessionData.user) {
       setLoading(false);
       return;
+    }
+
+    // 設定を取得（生理周期情報含む）
+    const settingsRes = await fetch('/api/user-settings', { credentials: 'include' });
+    if (settingsRes.ok) {
+      const settingsData = await settingsRes.json();
+      try {
+        const medHistory = JSON.parse(settingsData.medical_history || '{}');
+        setPeriodSettings({
+          lastPeriodDate: medHistory.lastPeriodDate || '',
+          periodCycle: medHistory.periodCycle || 28,
+          periodDuration: medHistory.periodDuration || 5,
+          gender: settingsData.gender || 'unspecified',
+        });
+      } catch {
+        // パースエラー時はデフォルト値を維持
+      }
     }
 
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
@@ -137,21 +227,63 @@ export default function CalendarPage() {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const log = logs.find(l => l.date === dateStr);
       
+      // 生理周期の状態を取得（女性のみ）
+      const periodStatus = periodSettings.gender === 'female'
+        ? getPeriodStatus(dateStr, periodSettings.lastPeriodDate, periodSettings.periodCycle, periodSettings.periodDuration)
+        : { type: null };
+      
+      // 背景色を決定（優先度: 記録の体調 > 生理周期）
       let bgColor = "bg-white";
-      if (log) {
-        if (log.general_mood <= 2) bgColor = "bg-red-50 hover:bg-red-100";
-        else if (log.general_mood === 3) bgColor = "bg-blue-50 hover:bg-blue-100";
-        else if (log.general_mood >= 4) bgColor = "bg-green-50 hover:bg-green-100";
+      let borderColor = "border-gray-100";
+      
+      // 生理周期による色分け（ベース）
+      if (periodStatus.type === 'period') {
+        bgColor = "bg-pink-100";
+        borderColor = "border-pink-200";
+      } else if (periodStatus.type === 'ovulation') {
+        bgColor = "bg-purple-100";
+        borderColor = "border-purple-300";
+      } else if (periodStatus.type === 'fertile') {
+        bgColor = "bg-purple-50";
+        borderColor = "border-purple-200";
+      } else if (periodStatus.type === 'pms') {
+        bgColor = "bg-yellow-50";
+        borderColor = "border-yellow-200";
+      }
+      
+      // 記録がある場合は体調で上書き（生理周期情報がない場合のみ）
+      if (log && !periodStatus.type) {
+        if (log.general_mood <= 2) {
+          bgColor = "bg-red-50";
+        } else if (log.general_mood === 3) {
+          bgColor = "bg-blue-50";
+        } else if (log.general_mood >= 4) {
+          bgColor = "bg-green-50";
+        }
       }
 
       cells.push(
-        <div key={day} onClick={() => handleDateClick(day)} className={`h-24 border border-gray-100 p-1 cursor-pointer transition-colors relative ${bgColor}`}>
-          <span className={`text-xs font-bold ${log ? 'text-gray-800' : 'text-gray-300'}`}>{day}</span>
+        <div 
+          key={day} 
+          onClick={() => handleDateClick(day)} 
+          className={`h-24 border p-1 cursor-pointer transition-colors relative ${bgColor} ${borderColor} hover:opacity-80`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-xs font-bold ${log ? 'text-gray-800' : 'text-gray-400'}`}>{day}</span>
+            {/* 生理周期アイコン */}
+            <div className="flex gap-0.5">
+              {periodStatus.type === 'period' && <span className="text-xs" title="生理予測">🩸</span>}
+              {periodStatus.type === 'ovulation' && <span className="text-xs" title="排卵日">🥚</span>}
+              {periodStatus.type === 'fertile' && <span className="text-xs" title="妊娠しやすい">💜</span>}
+              {periodStatus.type === 'pms' && <span className="text-xs" title="PMS期間">⚠️</span>}
+            </div>
+          </div>
           {log && (
             <div className="mt-1 flex flex-wrap gap-1 content-start">
               {log.pain_level >= 3 && <span title="腹痛">⚡</span>}
               {log.alcohol_amount > 0 && <span title="飲酒">🍺</span>}
               {log.ai_comment && <span title="AI">🤖</span>}
+              {log.period_status === '生理中' && <span title="生理中（記録）">💧</span>}
             </div>
           )}
         </div>
@@ -174,6 +306,32 @@ export default function CalendarPage() {
         </div>
         <div className="grid grid-cols-7">{renderCalendarCells()}</div>
       </div>
+      
+      {/* 凡例 */}
+      {periodSettings.gender === 'female' && periodSettings.lastPeriodDate && (
+        <div className="mt-4 bg-white p-3 rounded-xl shadow-sm">
+          <h3 className="text-xs font-bold text-gray-600 mb-2">📅 カレンダーの見方</h3>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <span className="w-4 h-4 bg-pink-100 border border-pink-200 rounded"></span>
+              <span>🩸 生理予測</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-4 h-4 bg-purple-100 border border-purple-300 rounded"></span>
+              <span>🥚 排卵日</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-4 h-4 bg-purple-50 border border-purple-200 rounded"></span>
+              <span>💜 妊娠しやすい</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-4 h-4 bg-yellow-50 border border-yellow-200 rounded"></span>
+              <span>⚠️ PMS/肌荒れ期</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">💧 = 実際に記録した生理中の日</p>
+        </div>
+      )}
 
       {/* 詳細・編集モーダル */}
       {selectedLog && (

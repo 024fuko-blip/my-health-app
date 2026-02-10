@@ -40,3 +40,11 @@
 - 環境変数は `process.env` を直接叩かず、バリデーション済みの `env.ts` 等のスキーマを介して管理する。
 - ページコンポーネントでDB接続や認証が必要な場合は、必ず `force-dynamic` を明示するか、`Suspense` で境界を切り分け、ビルド時のエラーを構造的に防ぐ。
 - シークレット情報にデフォルト値（"temporary-secret"等）を設定するコードを提案しない。
+
+## 本番デプロイ (/up)
+ユーザーが `/up` または「デプロイ」「本番反映」と言ったら、`.cursor/rules/deploy-production.mdc` を読み込み、記載されたコマンドでGoogle Cloud Runにデプロイを実行する。
+
+デプロイ先:
+- サービス名: my-health-apps
+- リージョン: asia-northeast2
+- URL: https://my-health-apps-81772171421.asia-northeast2.run.app

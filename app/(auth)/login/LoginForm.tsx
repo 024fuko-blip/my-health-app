@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -8,6 +8,16 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+  const [hasConsent, setHasConsent] = useState(false);
+  const [checkingConsent, setCheckingConsent] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const accepted = localStorage.getItem("consentAccepted") === "true";
+      setHasConsent(accepted);
+      setCheckingConsent(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
@@ -22,16 +32,43 @@ export default function LoginForm() {
     
     try {
       const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-      await signIn("google", { callbackUrl, redirect: true });
+      await signIn("google", { callbackUrl, redirect: true, prompt: "select_account" });
     } catch (error) {
       console.error("Sign in error:", error);
     }
   }, [searchParams]);
 
-  if (status === "loading") {
+  if (status === "loading" || checkingConsent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
         <div className="text-gray-500">読み込み中...</div>
+      </div>
+    );
+  }
+
+  if (!hasConsent) {
+    return (
+      <div className="min-h-screen bg-gray-50 px-4 flex items-center justify-center">
+        <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
+          <h1 className="text-2xl font-bold text-gray-900">同意画面</h1>
+          <p className="text-sm text-gray-700">
+            先にプライバシーポリシーと利用規約への同意が必要です。
+          </p>
+          <div className="text-xs text-gray-500">
+            以下のページで同意するとログインできます。
+          </div>
+          <div className="space-x-3 text-sm">
+            <a href="/privacy" className="text-blue-600 hover:underline">プライバシーポリシー</a>
+            <a href="/terms" className="text-blue-600 hover:underline">利用規約</a>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/consent")}
+            className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold"
+          >
+            同意画面へ
+          </button>
+        </div>
       </div>
     );
   }

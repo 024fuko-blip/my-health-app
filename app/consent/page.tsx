@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import FooterLink from "../components/FooterLink";
 
 export default function ConsentPage() {
   const router = useRouter();
@@ -23,8 +24,9 @@ export default function ConsentPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 flex items-center justify-center">
-      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
+    <div className="min-h-screen bg-gray-50 px-4 flex flex-col">
+      <div className="flex-1 flex items-center justify-center py-8">
+        <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">同意画面</h1>
         <p className="text-sm text-gray-700">
           本サービスを利用するには、以下の内容に同意してください。
@@ -99,12 +101,21 @@ export default function ConsentPage() {
         <button
           type="button"
           disabled={!canContinue}
-          onClick={() => router.push("/login")}
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("consentAccepted", "true");
+            }
+            router.push("/guide?from=consent");
+          }}
           className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold disabled:bg-gray-300 disabled:text-gray-600"
         >
-          同意してログインへ
+          同意して使い方へ
         </button>
+        </div>
       </div>
+      <footer className="w-full max-w-2xl mx-auto py-4 pb-8">
+        <FooterLink />
+      </footer>
     </div>
   );
 }

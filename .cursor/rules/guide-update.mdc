@@ -1,0 +1,9 @@
+---
+description: Update guide page when features added
+alwaysApply: true
+---
+
+# Guide更新ルール
+- 新しい機能や画面を追加したら、`app/guide/page.tsx` に説明文を追記する
+- 影響範囲が「分析」「記録」「設定」など既存の章に当てはまる場合は該当セクションを更新する
+- 追加した機能が初回導線に関わる場合は、同意→使い方の流れの説明も見直す

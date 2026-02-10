@@ -1,0 +1,54 @@
+---
+description: 本番デプロイ手順 (/up) - Google Cloud Runへのデプロイ
+globs: 
+alwaysApply: false
+---
+
+# 本番デプロイ手順 (/up)
+
+## デプロイ先情報
+
+- **プロジェクトID:** my-health-app-485805
+- **サービス名:** my-health-apps
+- **リージョン:** asia-northeast2（大阪）
+- **URL:** https://my-health-apps-16867512037.asia-northeast2.run.app
+
+## デプロイコマンド
+
+```bash
+cd C:\Users\024fu\my-health-app
+
+# 以下の環境変数は実際の値に置き換えてから実行（シークレットはリポジトリに含めない）
+# DATABASE_URL, AUTH_SECRET, NEXTAUTH_SECRET, OPENAI_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+gcloud run deploy my-health-apps --project my-health-app-485805 --source . --region asia-northeast2 --allow-unauthenticated --add-cloudsql-instances my-health-app-485805:asia-northeast2:my-health-db --set-env-vars "DATABASE_URL=postgresql://postgres:YOUR_DB_PASSWORD@localhost/postgres?host=/cloudsql/my-health-app-485805:asia-northeast2:my-health-db,NEXTAUTH_URL=https://my-health-apps-16867512037.asia-northeast2.run.app,AUTH_SECRET=YOUR_AUTH_SECRET,NEXTAUTH_SECRET=YOUR_NEXTAUTH_SECRET,OPENAI_API_KEY=YOUR_OPENAI_API_KEY,GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET"
+```
+
+## デプロイ前チェックリスト
+
+1. **Prismaスキーマ変更時:** `npx prisma db push` を実行
+2. **新しい環境変数追加時:** `--set-env-vars` に追加
+3. **ビルドエラー時:** `lib/env.ts` の `isBuildTime()` でダミー値が返されるか確認
+
+## 構成
+
+| 項目 | 技術 |
+|------|------|
+| 認証 | Google OAuth (NextAuth) |
+| DB | Google Cloud SQL (PostgreSQL) |
+| ホスティング | Google Cloud Run |
+| AI | OpenAI API (gpt-4o-mini / gpt-4o) |
+
+## トラブルシューティング
+
+### Prismaバイナリエラー
+`prisma/schema.prisma` に以下が必要：
+```prisma
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+```
+
+### Google認証エラー
+Google Cloud ConsoleでリダイレクトURIを確認：
+`https://my-health-apps-81772171421.asia-northeast2.run.app/api/auth/callback/google`

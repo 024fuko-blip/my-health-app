@@ -1,5 +1,5 @@
 # Cloud Build: ビルド → イメージ push → Cloud Run デプロイ
-# ビルド通過のため --build-arg でダミー値を注入（本番の値は Cloud Run の環境変数で設定）
+# ビルド通過のため --build-arg でダミー値を注入（実際のDB接続はしない）
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -11,11 +11,7 @@ steps:
       - '--build-arg'
       - 'AUTH_SECRET=dummy_secret_for_build_only'
       - '--build-arg'
-      - 'GOOGLE_CLIENT_ID=dummy'
-      - '--build-arg'
-      - 'GOOGLE_CLIENT_SECRET=dummy'
-      - '--build-arg'
-      - 'NEXTAUTH_URL=https://placeholder.run.app'
+      - 'NEXTAUTH_SECRET=dummy_secret_for_build_only'
       - '.'
   - name: 'gcr.io/cloud-builders/docker'
     args:

@@ -20,7 +20,27 @@ interface HealthLogRow {
   general_mood?: number | null;
   pain_level?: number | null;
   stress_level?: number | null;
+  weight?: number | null;
+  alcohol_amount?: number | null;
+  stool_type?: string | null;
   [key: string]: unknown;
+}
+
+// グラフ表示可能な項目（モードとの対応付き）
+const CHART_ITEMS = [
+  { key: '体調', color: '#3b82f6', label: '体調', mode: null }, // 常に表示
+  { key: '腹痛', color: '#ef4444', label: '腹痛', mode: 'mode_ibd' },
+  { key: 'トイレ', color: '#f59e0b', label: 'トイレ', mode: 'mode_ibd' },
+  { key: '気分', color: '#10b981', label: '気分', mode: 'mode_mental' },
+  { key: '体重', color: '#8b5cf6', label: '体重', mode: 'mode_diet' },
+  { key: 'アルコール', color: '#ec4899', label: 'アルコール', mode: 'mode_alcohol' },
+] as const;
+
+interface UserModes {
+  mode_ibd?: boolean;
+  mode_alcohol?: boolean;
+  mode_mental?: boolean;
+  mode_diet?: boolean;
 }
 
 export default function DashboardPage() {
@@ -30,12 +50,30 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<PeriodDays>(7);
   const [report, setReport] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  
+  // ユーザーの設定モード
+  const [modes, setModes] = useState<UserModes>({});
+  
+  // 表示する項目の選択状態
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set(['体調']));
 
   useEffect(() => {
     const fetchData = async () => {
       const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
       const sessionData = await sessionRes.json();
       if (!sessionData.user) return;
+
+      // 設定を取得
+      const settingsRes = await fetch('/api/user-settings', { credentials: 'include' });
+      if (settingsRes.ok) {
+        const settings = await settingsRes.json();
+        setModes({
+          mode_ibd: Boolean(settings.mode_ibd),
+          mode_alcohol: Boolean(settings.mode_alcohol),
+          mode_mental: Boolean(settings.mode_mental),
+          mode_diet: Boolean(settings.mode_diet),
+        });
+      }
 
       const endDate = new Date();
       const startDate = new Date();
@@ -97,13 +135,41 @@ export default function DashboardPage() {
 
   if (loading) return <div className="p-4">読み込み中...</div>;
 
-  const chartData = logs.map((row) => ({
-    date: row.date.slice(5),
-    fullDate: row.date,
-    体調: row.general_mood ?? null,
-    腹痛: row.pain_level ?? null,
-    ストレス: row.stress_level ?? null,
-  }));
+  // 設定モードに応じてフィルタリングされた項目
+  const availableItems = CHART_ITEMS.filter(item => {
+    if (item.mode === null) return true; // 常に表示
+    return modes[item.mode as keyof UserModes];
+  });
+
+  // 項目選択のトグル
+  const toggleItem = (key: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
+  const chartData = logs.map((row) => {
+    // stool_typeからトイレ回数を抽出
+    const toiletMatch = (row.stool_type || '').match(/トイレ(\d+)回/);
+    const toiletCount = toiletMatch ? parseInt(toiletMatch[1]) : null;
+    
+    return {
+      date: row.date.slice(5),
+      fullDate: row.date,
+      体調: row.general_mood ?? null,
+      腹痛: row.pain_level ?? null,
+      気分: row.stress_level ?? null,
+      体重: row.weight ?? null,
+      トイレ: toiletCount,
+      アルコール: row.alcohol_amount ? Math.round(row.alcohol_amount / 100) : null, // 100ml単位
+    };
+  });
 
   return (
     <div className="space-y-6 pb-20">
@@ -129,69 +195,90 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* グラフエリア */}
+      {/* グラフエリア（週間 / 月間で表示切り替え） */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-700 mb-4 flex items-center">
+        <h3 className="font-bold text-gray-700 mb-1 flex items-center">
           <span className="mr-2">📈</span>
-          {period === 7 ? '1週間' : '1ヶ月'}の推移
+          {period === 7 ? '週間グラフ' : '月間グラフ'}
         </h3>
+        <p className="text-xs text-gray-500 mb-3">
+          {period === 7 ? '直近7日間' : '直近30日間'}の推移
+        </p>
+        
+        {/* 項目選択ボタン（設定モードに応じて表示） */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {availableItems.map(item => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => toggleItem(item.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition border-2 ${
+                selectedItems.has(item.key)
+                  ? 'text-white'
+                  : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+              }`}
+              style={selectedItems.has(item.key) ? { 
+                backgroundColor: item.color, 
+                borderColor: item.color 
+              } : {}}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        
         <div className="h-72 w-full">
-          {chartData.length > 0 ? (
+          {chartData.length > 0 && selectedItems.size > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                 <YAxis
                   hide
-                  domain={[1, 10]}
-                  yAxisId="mood"
+                  domain={['auto', 'auto']}
+                  yAxisId="left"
                 />
                 <YAxis
                   hide
-                  domain={[1, 10]}
-                  yAxisId="stress"
+                  domain={['auto', 'auto']}
+                  yAxisId="right"
                   orientation="right"
                 />
                 <Tooltip
-                  formatter={(value: any) => (value != null ? value : '—')}
+                  formatter={(value: number | null, name: string) => {
+                    if (value == null) return '—';
+                    if (name === 'アルコール') return `${value * 100}ml`;
+                    if (name === '体重') return `${value}kg`;
+                    if (name === 'トイレ') return `${value}回`;
+                    return value;
+                  }}
                   labelFormatter={(_, payload) => (payload[0]?.payload?.fullDate ?? '')}
                 />
                 <Legend />
-                <Line
-                  yAxisId="mood"
-                  type="monotone"
-                  dataKey="体調"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                  name="体調"
-                />
-                <Line
-                  yAxisId="mood"
-                  type="monotone"
-                  dataKey="腹痛"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                  name="腹痛"
-                />
-                <Line
-                  yAxisId="stress"
-                  type="monotone"
-                  dataKey="ストレス"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                  name="ストレス"
-                />
+                {availableItems.map(item => 
+                  selectedItems.has(item.key) && (
+                    <Line
+                      key={item.key}
+                      yAxisId={item.key === '体重' ? 'right' : 'left'}
+                      type="monotone"
+                      dataKey={item.key}
+                      stroke={item.color}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      connectNulls
+                      name={item.label}
+                    />
+                  )
+                )}
               </LineChart>
             </ResponsiveContainer>
-          ) : (
+          ) : chartData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-gray-400 text-sm">
               この期間の記録がまだないわ。記録画面で入力してから出直しなさい！
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+              表示する項目を選択してちょうだい！
             </div>
           )}
         </div>
