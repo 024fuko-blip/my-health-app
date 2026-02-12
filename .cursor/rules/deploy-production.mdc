@@ -13,7 +13,25 @@ alwaysApply: false
 - **リージョン:** asia-northeast2（大阪）
 - **URL:** https://my-health-apps-16867512037.asia-northeast2.run.app
 
-## デプロイコマンド
+## デプロイ方法
+
+### A. プッシュで自動デプロイ（推奨）
+
+main ブランチへプッシュすると Cloud Build が自動実行され、ビルド→デプロイまで完了する。
+
+**初回のみ：Cloud Build トリガーを設定**
+
+1. [Cloud Console](https://console.cloud.google.com) → プロジェクト `my-health-app-485805` を選択
+2. **Cloud Build** → **トリガー** → **トリガーを作成**
+3. **リポジトリを接続**（GitHub が未接続なら接続）
+4. **ソース**: 接続した GitHub リポジトリ、ブランチ `^main$`
+5. **構成**: Cloud Build 構成ファイル、`cloudbuild.yaml`（リポジトリのルート）
+6. **リージョン**: asia-northeast2（大阪）
+7. 保存
+
+**以後の運用**: `git push` するだけでデプロイされる。
+
+### B. 手動デプロイ
 
 ```bash
 cd C:\Users\024fu\my-health-app

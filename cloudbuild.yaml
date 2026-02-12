@@ -1,11 +1,12 @@
 # Cloud Build: ビルド → イメージ push → Cloud Run デプロイ
+# main ブランチへのプッシュで自動実行（トリガー設定時）
 # ビルド通過のため --build-arg でダミー値を注入（実際のDB接続はしない）
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/my-health-app:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/my-health-apps:$COMMIT_SHA'
       - '--build-arg'
       - 'DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy'
       - '--build-arg'
@@ -16,20 +17,19 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/my-health-app:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/my-health-apps:$COMMIT_SHA'
 
-  # Cloud Run へのデプロイ
+  # Cloud Run へのデプロイ（環境変数・Cloud SQL は既存設定を継続）
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
-      - 'my-health-app'
+      - 'my-health-apps'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/my-health-app:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/my-health-apps:$COMMIT_SHA'
       - '--region'
-      - 'asia-northeast1'
-      # 実行時の本物の変数は、コンソールで設定済みならここでの指定は不要（自動継続）
-      # コマンドで更新する場合は以下を追記
-      # - '--set-env-vars'
-      # - 'AUTH_SECRET=本物の値,DATABASE_URL=本物のURL'
+      - 'asia-northeast2'
+      - '--allow-unauthenticated'
+      - '--add-cloudsql-instances'
+      - 'my-health-app-485805:asia-northeast2:my-health-db'
