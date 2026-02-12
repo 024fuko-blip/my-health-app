@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 export default function PushNotifyButton() {
   const [status, setStatus] = useState<"idle" | "checking" | "prompt" | "subscribed" | "unsupported" | "error">("checking");
   const [loading, setLoading] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -24,13 +25,15 @@ export default function PushNotifyButton() {
   const handleEnable = async () => {
     if (status !== "prompt" || loading) return;
     setLoading(true);
+    setErrorDetail(null);
     try {
       if (!navigator.serviceWorker.controller) {
         await navigator.serviceWorker.register("/sw.js");
       }
       const reg = await navigator.serviceWorker.ready;
       const subRes = await fetch("/api/push-subscribe", { credentials: "include" });
-      const { vapid_public_key } = await subRes.json();
+      const subData = await subRes.json();
+      const vapid_public_key = subData.vapid_public_key;
       if (!vapid_public_key) {
         setStatus("unsupported");
         return;
@@ -54,9 +57,19 @@ export default function PushNotifyButton() {
       if (res.ok) {
         setStatus("subscribed");
       } else {
+        const errBody = await res.json().catch(() => ({}));
+        setErrorDetail(errBody.error || `サーバーエラー (${res.status})`);
         setStatus("error");
       }
     } catch (err) {
+      const e = err as Error & { name?: string };
+      if (e.name === "NotAllowedError") {
+        setErrorDetail("通知を許可してください。ブラウザの設定で「ブロック」になっていないか確認してください。");
+      } else if (String(e.message || "").includes("registration") || String(e.message || "").includes("service worker")) {
+        setErrorDetail("Service Worker の登録に失敗しました。ページをリロードしてからもう一度お試しください。");
+      } else {
+        setErrorDetail(e.message || "不明なエラーが発生しました。");
+      }
       console.error("Push subscribe error:", err);
       setStatus("error");
     } finally {
@@ -81,9 +94,21 @@ export default function PushNotifyButton() {
   }
   if (status === "error") {
     return (
-      <p className="text-xs text-red-600 mt-2">
-        通知の設定に失敗しました。ブラウザの設定で通知を許可してください。
-      </p>
+      <div className="mt-2 space-y-1">
+        <p className="text-xs text-red-600">
+          通知の設定に失敗しました。
+        </p>
+        {errorDetail && (
+          <p className="text-xs text-gray-600">{errorDetail}</p>
+        )}
+        <button
+          type="button"
+          onClick={() => { setStatus("prompt"); setErrorDetail(null); }}
+          className="text-xs text-blue-600 hover:underline font-medium"
+        >
+          もう一度試す
+        </button>
+      </div>
     );
   }
   return (

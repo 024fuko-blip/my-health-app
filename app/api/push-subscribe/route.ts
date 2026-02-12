@@ -78,7 +78,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('push-subscribe POST error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal error';
+    return NextResponse.json(
+      { error: message.includes('does not exist') ? 'データベースの準備ができていません。しばらく待ってからもう一度お試しください。' : 'サーバーエラーが発生しました。' },
+      { status: 500 }
+    );
   }
 }
 
