@@ -1,0 +1,17 @@
+{
+  "name": "IBD & ボディメイク管理パートナー",
+  "short_name": "健康管理",
+  "description": "ツンデレオネエの鬼コーチ",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

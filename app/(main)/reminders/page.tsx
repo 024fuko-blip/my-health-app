@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PushNotifyButton from "./components/PushNotifyButton";
 
 interface MedicationItem {
   time: string;
@@ -110,6 +111,7 @@ export default function RemindersPage() {
 
       <section className="bg-green-50 border border-green-200 rounded-xl p-4">
         <h2 className="font-bold text-green-800 mb-3">💊 今日の服薬</h2>
+        <PushNotifyButton />
         {medicationSchedule.length > 0 ? (
           <ul className="space-y-2">
             {medicationSchedule.map((item, i) => (

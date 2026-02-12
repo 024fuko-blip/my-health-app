@@ -15,7 +15,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/advice') ||
     pathname.startsWith('/api/game-stats') ||
     pathname.startsWith('/api/reminders') ||
-    pathname.startsWith('/api/pet');
+    pathname.startsWith('/api/pet') ||
+    pathname.startsWith('/api/push-subscribe');
 
   if (isAuthRequired) {
     const sessionCookie =

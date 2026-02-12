@@ -47,6 +47,23 @@ gcloud run deploy my-health-apps --project my-health-app-485805 --source . --reg
 2. **新しい環境変数追加時:** `--set-env-vars` に追加
 3. **ビルドエラー時:** `lib/env.ts` の `isBuildTime()` でダミー値が返されるか確認
 
+## プッシュ通知（リマインダー）の環境変数
+
+| 変数 | 説明 |
+|------|------|
+| VAPID_PUBLIC_KEY | Web Push 用公開鍵（`npx web-push generate-vapid-keys` で生成） |
+| VAPID_PRIVATE_KEY | Web Push 用秘密鍵 |
+| CRON_SECRET | `/api/cron/send-reminders` 呼び出し時の認証用（任意の文字列） |
+
+**Cloud Scheduler の設定（15分ごとに服薬・検診リマインダー送信）**
+
+1. Cloud Console → Cloud Scheduler → ジョブを作成
+2. 頻度: `*/15 * * * *`（15分ごと）
+3. ターゲット: HTTP
+4. URL: `https://my-health-apps-16867512037.asia-northeast2.run.app/api/cron/send-reminders`
+5. HTTP メソッド: POST
+6. ヘッダー: `X-Cron-Secret` = あなたの CRON_SECRET の値
+
 ## 構成
 
 | 項目 | 技術 |

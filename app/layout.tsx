@@ -5,6 +5,8 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "IBD & ボディメイク管理パートナー",
   description: "ツンデレオネエの鬼コーチ",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: "健康管理" },
 };
 
 export default function RootLayout({
@@ -14,6 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <link rel="apple-touch-icon" href="/next.svg" />
+      </head>
       <body className="antialiased">
         <Providers>{children}</Providers>
       </body>
