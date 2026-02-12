@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const MEDICATION_TIMINGS = ["朝", "昼", "晩", "眠前"];
+const DEFAULT_REMINDER_TIMES: Record<string, string> = {
+  朝: "08:00",
+  昼: "12:00",
+  晩: "18:00",
+  眠前: "22:00",
+};
 
 interface Medication {
   id: number;
@@ -22,6 +28,7 @@ export default function SettingsHealthPage() {
   const [lastPeriodDate, setLastPeriodDate] = useState("");
   const [medications, setMedications] = useState<Medication[]>([]);
   const [newMedName, setNewMedName] = useState("");
+  const [reminderTimes, setReminderTimes] = useState<Record<string, string>>(DEFAULT_REMINDER_TIMES);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -71,6 +78,17 @@ export default function SettingsHealthPage() {
           }
         }
         setMedications(meds);
+
+        let times = { ...DEFAULT_REMINDER_TIMES };
+        try {
+          if (data.medication_reminder_times) {
+            const parsed = JSON.parse(data.medication_reminder_times as string) as Record<string, string>;
+            times = { ...DEFAULT_REMINDER_TIMES, ...parsed };
+          }
+        } catch {
+          // ignore
+        }
+        setReminderTimes(times);
       }
       setLoading(false);
     };
@@ -102,6 +120,7 @@ export default function SettingsHealthPage() {
       gender,
       medical_history: medicalData,
       current_medications: medicationData,
+      medication_reminder_times: JSON.stringify(reminderTimes),
     };
     const res = await fetch("/api/user-settings", {
       method: "PUT",
@@ -258,7 +277,25 @@ export default function SettingsHealthPage() {
         ) : (
           <p className="text-sm text-gray-500 text-center py-4">薬が登録されていません</p>
         )}
-        <p className="text-xs text-gray-500">記録画面に服用タイミングが表示されます</p>
+        <p className="text-xs text-gray-500 mb-3">記録画面に服用タイミングが表示されます</p>
+        <div className="border-t border-green-200 pt-3 mt-3">
+          <p className="text-xs font-bold text-green-800 mb-2">リマインダー表示時刻（リマインダー画面で使用）</p>
+          <div className="grid grid-cols-2 gap-2">
+            {MEDICATION_TIMINGS.map((t) => (
+              <div key={t} className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 w-8">{t}</span>
+                <input
+                  type="time"
+                  value={reminderTimes[t] ?? "08:00"}
+                  onChange={(e) =>
+                    setReminderTimes((prev) => ({ ...prev, [t]: e.target.value }))
+                  }
+                  className="flex-1 p-2 border rounded text-sm"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <button

@@ -9,18 +9,22 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  email         String?       @unique
+  id            String         @id @default(cuid())
+  email         String?        @unique
   password      String?
   name          String?
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  emailVerified DateTime?     @map("email_verified")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  emailVerified DateTime?      @map("email_verified")
   image         String?
   accounts      Account[]
   healthLogs    HealthLog[]
   sessions      Session[]
   userSettings  UserSettings?
+  userGameStats UserGameStats?
+  checkupReminders CheckupReminder[]
+  userPet       UserPet?
+  userPetInventory UserPetInventory[]
 
   @@map("users")
 }
@@ -66,25 +70,86 @@ model VerificationToken {
 }
 
 model UserSettings {
-  id                 String   @id @default(cuid())
-  userId             String   @unique @map("user_id")
-  modeIbd            Boolean  @default(true) @map("mode_ibd")
-  modeAlcohol        Boolean  @default(false) @map("mode_alcohol")
-  modeMental         Boolean  @default(false) @map("mode_mental")
-  modeDiet           Boolean  @default(false) @map("mode_diet")
-  medicalHistory     String?  @map("medical_history")
-  currentMedications String?  @map("current_medications")
-  gender             String?  @default("unspecified")
-  aiPersonality      String?  @default("tsundere") @map("ai_personality")
-  profileName        String?  @map("profile_name")
-  birthDate          String?  @map("birth_date")
-  height             Float?   @map("height")
-  weight             Float?   @map("weight")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                      String   @id @default(cuid())
+  userId                  String   @unique @map("user_id")
+  modeIbd                 Boolean  @default(true) @map("mode_ibd")
+  modeAlcohol             Boolean  @default(false) @map("mode_alcohol")
+  modeMental              Boolean  @default(false) @map("mode_mental")
+  modeDiet                Boolean  @default(false) @map("mode_diet")
+  medicalHistory          String?  @map("medical_history")
+  currentMedications      String?  @map("current_medications")
+  medicationReminderTimes String?  @map("medication_reminder_times")
+  gender                  String?  @default("unspecified")
+  aiPersonality           String?  @default("tsundere") @map("ai_personality")
+  profileName             String?  @map("profile_name")
+  birthDate               String?  @map("birth_date")
+  height                  Float?   @map("height")
+  weight                  Float?   @map("weight")
+  updatedAt               DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
+}
+
+model UserGameStats {
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id")
+  totalPoints    Int      @default(0) @map("total_points")
+  currentStreak  Int      @default(0) @map("current_streak")
+  longestStreak  Int      @default(0) @map("longest_streak")
+  lastRecordDate String?  @map("last_record_date")
+  earnedBadges   Json?    @map("earned_badges")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_game_stats")
+}
+
+model CheckupReminder {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  name      String
+  dueDate   String   @map("due_date")
+  memo      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("checkup_reminders")
+}
+
+model UserPet {
+  id               String    @id @default(cuid())
+  userId           String    @unique @map("user_id")
+  petName          String    @default("ぽっち") @map("pet_name")
+  petSpecies       String    @default("cat") @map("pet_species")
+  happiness        Int       @default(50) @map("happiness")
+  lastFedAt        DateTime? @map("last_fed_at")
+  currentOutfitId  String?   @map("current_outfit_id")
+  level            Int       @default(1) @map("level")
+  expPoints        Int       @default(0) @map("exp_points")
+  adoptedAt        DateTime? @map("adopted_at")
+  feedCount        Int       @default(0) @map("feed_count")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_pets")
+}
+
+model UserPetInventory {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  itemId    String   @map("item_id")
+  quantity  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@map("user_pet_inventory")
 }
 
 model HealthLog {

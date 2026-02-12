@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { updateStatsAfterLog } from '@/lib/game-stats';
 import type { HealthLog } from '@prisma/client';
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
@@ -137,6 +138,8 @@ export async function POST(req: Request) {
       create: data,
       update: data,
     });
+
+    await updateStatsAfterLog(session.userId, String(date));
 
     return NextResponse.json(toApiShape(log));
   } catch (error) {

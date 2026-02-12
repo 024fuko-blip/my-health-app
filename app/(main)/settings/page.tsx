@@ -79,6 +79,21 @@ export default function SettingsIndexPage() {
         </div>
       </Link>
 
+      <Link
+        href="/reminders"
+        className="block bg-white p-4 rounded-xl border hover:bg-gray-50 transition"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-gray-800">⏰ リマインダー</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              今日の服薬スケジュール・検診予定
+            </p>
+          </div>
+          <span className="text-gray-400">→</span>
+        </div>
+      </Link>
+
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
         className="w-full bg-gray-200 text-gray-700 p-3 rounded-lg text-sm font-medium hover:bg-gray-300"

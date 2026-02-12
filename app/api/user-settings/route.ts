@@ -10,6 +10,7 @@ function toApiShape(row: {
   modeDiet: boolean;
   medicalHistory: string | null;
   currentMedications: string | null;
+  medicationReminderTimes: string | null;
   gender: string | null;
   aiPersonality: string | null;
   profileName: string | null;
@@ -24,6 +25,7 @@ function toApiShape(row: {
     mode_diet: row.modeDiet,
     medical_history: row.medicalHistory ?? '',
     current_medications: row.currentMedications ?? '',
+    medication_reminder_times: row.medicationReminderTimes ?? '',
     gender: row.gender ?? 'unspecified',
     ai_personality: row.aiPersonality ?? 'tsundere',
     profile_name: row.profileName ?? '',
@@ -50,6 +52,7 @@ export async function GET() {
         modeDiet: false,
         medicalHistory: null,
         currentMedications: null,
+        medicationReminderTimes: null,
         gender: 'unspecified',
         aiPersonality: 'tsundere',
         profileName: null,
@@ -79,6 +82,7 @@ export async function PUT(req: Request) {
       mode_diet,
       medical_history,
       current_medications,
+      medication_reminder_times,
       gender,
       ai_personality,
       profile_name,
@@ -98,6 +102,7 @@ export async function PUT(req: Request) {
       modeDiet: Boolean(mode_diet ?? false),
       medicalHistory: medical_history ?? null,
       currentMedications: current_medications ?? null,
+      medicationReminderTimes: medication_reminder_times != null && medication_reminder_times !== '' ? String(medication_reminder_times) : null,
       gender: gender ?? 'unspecified',
       aiPersonality: personality,
       profileName: profile_name != null && profile_name !== '' ? profile_name : null,

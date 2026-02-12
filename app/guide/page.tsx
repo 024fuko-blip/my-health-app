@@ -99,6 +99,35 @@ export default async function GuidePage({ searchParams }: Props) {
           </p>
         </section>
 
+        {/* ゲーム（モチベーション） */}
+        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-amber-100/80">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg">🎮</span>
+            <h2 className="text-lg font-bold text-gray-800">ゲーム（モチベーション）</h2>
+          </div>
+          <div className="space-y-2 pl-12 text-sm text-gray-600">
+            <p>
+              「ゲーム」画面では、記録を続けるほど<strong>ポイント</strong>がたまり、連続で記録した日数が<strong>ストリーク</strong>として表示されます。3日・7日・2週間・30日連続などの達成で<strong>バッジ</strong>を獲得でき、モチベーション維持に役立ちます。
+            </p>
+            <p>
+              <strong>ぽっち（ペット育成）</strong> … ゲーム画面の「ぽっち」カード、または「ぽっちを育てる」からペットを迎えられます。たまったポイントで<strong>餌</strong>（幸福度アップ）や<strong>着せ替え</strong>（リボン・帽子・マフラーなど）を購入して、ぽっちを育てましょう。餌は所持分から「あげる」、衣装は購入後に「着せ替え」で装着できます。
+            </p>
+          </div>
+        </section>
+
+        {/* リマインダー（服薬・検診） */}
+        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-green-100/80">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg">⏰</span>
+            <h2 className="text-lg font-bold text-gray-800">リマインダー（服薬・検診）</h2>
+          </div>
+          <div className="space-y-2 pl-12 text-sm text-gray-600">
+            <p>
+              設定メニューから「リマインダー」を開くと、<strong>今日の服薬スケジュール</strong>（健康管理で登録した薬と朝・昼・晩・眠前の時刻）と、<strong>検診リマインダー</strong>（健康診断など予定日の登録・一覧・削除）をまとめて確認できます。服薬の表示時刻は健康管理ページの「リマインダー表示時刻」で変更できます。
+            </p>
+          </div>
+        </section>
+
         {/* 5. 設定 */}
         <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-pink-100/80">
           <div className="flex items-center gap-3 mb-2">
@@ -110,7 +139,8 @@ export default async function GuidePage({ searchParams }: Props) {
             <ul className="list-disc pl-4 space-y-1">
               <li><strong>基本設定</strong> … AIの口調（ツンデレ・あまあま・イケメン）と、使用する健康管理モード（IBD・アルコール・メンタル・ボディメイク）のON/OFF。</li>
               <li><strong>プロフィール</strong> … 名前・生年月日・性別・身長・体重・既往歴。AIのアドバイスや生理予測に使われます。</li>
-              <li><strong>健康管理</strong> … 生理周期（最後の生理開始日・周期・期間）と、服薬中の薬と服用タイミング（朝・昼・晩・眠前）。</li>
+              <li><strong>健康管理</strong> … 生理周期（最後の生理開始日・周期・期間）と、服薬中の薬と服用タイミング（朝・昼・晩・眠前）。服薬リマインダーで使う表示時刻もここで設定できます。</li>
+              <li><strong>リマインダー</strong> … 今日の服薬スケジュールの確認と、検診予定の追加・一覧・削除。</li>
             </ul>
             <p className="font-medium text-gray-700 mt-2">生理周期表示の根拠（ソース）</p>
             <p>

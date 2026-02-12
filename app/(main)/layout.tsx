@@ -25,9 +25,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <span>分析</span>
         </Link>
 
-        {/* カレンダー (Calendar) ★追加 */}
-        <Link href="/calendar" className={`flex flex-col items-center text-[10px] w-16 py-1 ${isActive('/calendar')}`}>
-          <span className="text-2xl mb-0.5">📅</span>
+        {/* カレンダー (Calendar) */}
+        <Link href="/calendar" className={`flex flex-col items-center text-[10px] w-14 py-1 ${isActive('/calendar')}`}>
+          <span className="text-xl mb-0.5">📅</span>
           <span>履歴</span>
         </Link>
 
@@ -39,9 +39,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <span className={`mt-1 font-bold ${pathname === '/record' ? 'text-blue-600' : 'text-gray-400'}`}>記録</span>
         </Link>
 
+        {/* ゲーム */}
+        <Link href="/game" className={`flex flex-col items-center text-[10px] w-14 py-1 ${isActive('/game')}`}>
+          <span className="text-xl mb-0.5">🎮</span>
+          <span>ゲーム</span>
+        </Link>
+
         {/* 設定 (Settings) */}
-        <Link href="/settings" className={`flex flex-col items-center text-[10px] w-16 py-1 ${pathname.startsWith('/settings') ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>
-          <span className="text-2xl mb-0.5">⚙️</span>
+        <Link href="/settings" className={`flex flex-col items-center text-[10px] w-14 py-1 ${pathname.startsWith('/settings') ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>
+          <span className="text-xl mb-0.5">⚙️</span>
           <span>設定</span>
         </Link>
 

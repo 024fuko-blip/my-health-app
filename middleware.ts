@@ -6,11 +6,16 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/record') ||
     pathname.startsWith('/calendar') ||
+    pathname.startsWith('/game') ||
+    pathname.startsWith('/reminders') ||
     pathname.startsWith('/settings') ||
     pathname.startsWith('/api/health-logs') ||
     pathname.startsWith('/api/user-settings') ||
     pathname.startsWith('/api/report') ||
-    pathname.startsWith('/api/advice');
+    pathname.startsWith('/api/advice') ||
+    pathname.startsWith('/api/game-stats') ||
+    pathname.startsWith('/api/reminders') ||
+    pathname.startsWith('/api/pet');
 
   if (isAuthRequired) {
     const sessionCookie =
