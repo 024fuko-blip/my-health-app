@@ -40,7 +40,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </Link>
 
         {/* 設定 (Settings) */}
-        <Link href="/settings" className={`flex flex-col items-center text-[10px] w-16 py-1 ${isActive('/settings')}`}>
+        <Link href="/settings" className={`flex flex-col items-center text-[10px] w-16 py-1 ${pathname.startsWith('/settings') ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>
           <span className="text-2xl mb-0.5">⚙️</span>
           <span>設定</span>
         </Link>

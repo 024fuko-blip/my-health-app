@@ -11,6 +11,11 @@ function toApiShape(row: {
   medicalHistory: string | null;
   currentMedications: string | null;
   gender: string | null;
+  aiPersonality: string | null;
+  profileName: string | null;
+  birthDate: string | null;
+  height: number | null;
+  weight: number | null;
 }) {
   return {
     mode_ibd: row.modeIbd,
@@ -20,6 +25,11 @@ function toApiShape(row: {
     medical_history: row.medicalHistory ?? '',
     current_medications: row.currentMedications ?? '',
     gender: row.gender ?? 'unspecified',
+    ai_personality: row.aiPersonality ?? 'tsundere',
+    profile_name: row.profileName ?? '',
+    birth_date: row.birthDate ?? '',
+    height: row.height ?? null,
+    weight: row.weight ?? null,
   };
 }
 
@@ -41,6 +51,11 @@ export async function GET() {
         medicalHistory: null,
         currentMedications: null,
         gender: 'unspecified',
+        aiPersonality: 'tsundere',
+        profileName: null,
+        birthDate: null,
+        height: null,
+        weight: null,
       }));
     }
 
@@ -65,29 +80,36 @@ export async function PUT(req: Request) {
       medical_history,
       current_medications,
       gender,
+      ai_personality,
+      profile_name,
+      birth_date,
+      height,
+      weight,
     } = body;
+
+    const personality = ['tsundere', 'amayama', 'ikemen'].includes(ai_personality)
+      ? ai_personality
+      : 'tsundere';
+
+    const data = {
+      modeIbd: Boolean(mode_ibd ?? true),
+      modeAlcohol: Boolean(mode_alcohol ?? false),
+      modeMental: Boolean(mode_mental ?? false),
+      modeDiet: Boolean(mode_diet ?? false),
+      medicalHistory: medical_history ?? null,
+      currentMedications: current_medications ?? null,
+      gender: gender ?? 'unspecified',
+      aiPersonality: personality,
+      profileName: profile_name != null && profile_name !== '' ? profile_name : null,
+      birthDate: birth_date != null && birth_date !== '' ? birth_date : null,
+      height: height != null && height !== '' ? Number(height) : null,
+      weight: weight != null && weight !== '' ? Number(weight) : null,
+    };
 
     await prisma.userSettings.upsert({
       where: { userId: session.userId },
-      create: {
-        userId: session.userId,
-        modeIbd: Boolean(mode_ibd ?? true),
-        modeAlcohol: Boolean(mode_alcohol ?? false),
-        modeMental: Boolean(mode_mental ?? false),
-        modeDiet: Boolean(mode_diet ?? false),
-        medicalHistory: medical_history ?? null,
-        currentMedications: current_medications ?? null,
-        gender: gender ?? 'unspecified',
-      },
-      update: {
-        modeIbd: Boolean(mode_ibd ?? true),
-        modeAlcohol: Boolean(mode_alcohol ?? false),
-        modeMental: Boolean(mode_mental ?? false),
-        modeDiet: Boolean(mode_diet ?? false),
-        medicalHistory: medical_history ?? null,
-        currentMedications: current_medications ?? null,
-        gender: gender ?? 'unspecified',
-      },
+      create: { userId: session.userId, ...data },
+      update: data,
     });
 
     return NextResponse.json({ ok: true });

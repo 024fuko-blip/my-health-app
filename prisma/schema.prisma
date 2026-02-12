@@ -66,16 +66,21 @@ model VerificationToken {
 }
 
 model UserSettings {
-  id                String   @id @default(cuid())
-  userId            String   @unique @map("user_id")
-  modeIbd           Boolean  @default(true) @map("mode_ibd")
-  modeAlcohol       Boolean  @default(false) @map("mode_alcohol")
-  modeMental        Boolean  @default(false) @map("mode_mental")
-  modeDiet          Boolean  @default(false) @map("mode_diet")
-  medicalHistory    String?  @map("medical_history")
-  currentMedications String? @map("current_medications")
-  gender            String?  @default("unspecified")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                 String   @id @default(cuid())
+  userId             String   @unique @map("user_id")
+  modeIbd            Boolean  @default(true) @map("mode_ibd")
+  modeAlcohol        Boolean  @default(false) @map("mode_alcohol")
+  modeMental         Boolean  @default(false) @map("mode_mental")
+  modeDiet           Boolean  @default(false) @map("mode_diet")
+  medicalHistory     String?  @map("medical_history")
+  currentMedications String?  @map("current_medications")
+  gender             String?  @default("unspecified")
+  aiPersonality      String?  @default("tsundere") @map("ai_personality")
+  profileName        String?  @map("profile_name")
+  birthDate          String?  @map("birth_date")
+  height             Float?   @map("height")
+  weight             Float?   @map("weight")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

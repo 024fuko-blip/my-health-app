@@ -649,6 +649,44 @@ export default function RecordPage() {
     setNutritionData(null);
   };
 
+  /** 食事メモの文字から栄養を推定（画像なしでも数値が出る） */
+  const handleEstimateFromText = async () => {
+    const text = mealDescription.trim();
+    if (!text) {
+      alert('食事メモに内容を書いてから押してください');
+      return;
+    }
+    setIsAnalyzing(true);
+    setNutritionData(null);
+    try {
+      const res = await fetch('/api/analyze-meal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meal_description: text }),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.error) {
+          console.error('API error:', data.error);
+          setNutritionData({ foods: [text] });
+        } else {
+          setNutritionData(data);
+          if (data.calories != null) setCalories(String(data.calories));
+          if (data.protein != null) setProtein(String(data.protein));
+        }
+      } else {
+        console.error('API response error:', res.status);
+        setNutritionData({ foods: [text] });
+      }
+    } catch (err) {
+      console.error('Meal analysis from text error:', err);
+      setNutritionData({ foods: [text] });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -979,6 +1017,17 @@ export default function RecordPage() {
             className="w-full h-24 p-2 border rounded text-sm" 
             placeholder="例: ラーメン大盛り、餃子。お腹いっぱい..." 
           />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleEstimateFromText}
+              disabled={!mealDescription.trim() || isAnalyzing}
+              className="bg-orange-500 text-white text-sm px-3 py-2 rounded-lg font-bold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {isAnalyzing ? '🔄 推定中...' : '📝 文字から栄養を推定'}
+            </button>
+            <span className="text-xs text-gray-500">メモを書いて押すとカロリー・PFC等を推定</span>
+          </div>
           
           <div className="space-y-2">
             {/* ドラッグ&ドロップエリア */}
@@ -1054,10 +1103,12 @@ export default function RecordPage() {
                     )}
                   </div>
                 </div>
-                
-                {/* 認識した料理リスト（編集可能） */}
-                {nutritionData && (
-                  <div className="bg-white p-3 rounded-lg border border-orange-200 space-y-3">
+              </div>
+            )}
+
+            {/* 認識した料理・推定栄養素（画像でも文字でも表示） */}
+            {nutritionData && (
+              <div className="bg-white p-3 rounded-lg border border-orange-200 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-orange-700">🍽️ 認識した料理</span>
                       <span className="text-xs text-gray-400">タップで編集</span>
@@ -1144,12 +1195,10 @@ export default function RecordPage() {
                       </div>
                     </div>
                     
-                    {nutritionData.notes && (
-                      <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
-                        💡 {nutritionData.notes}
-                      </p>
-                    )}
-                  </div>
+                {nutritionData.notes && (
+                  <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                    💡 {nutritionData.notes}
+                  </p>
                 )}
               </div>
             )}
