@@ -10,13 +10,20 @@ export async function GET() {
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const config = getLineConfig();
-    const link = await prisma.lineLink.findUnique({
-      where: { userId: session.userId },
-    });
+    let linked = false;
+    try {
+      const link = await prisma.lineLink.findUnique({
+        where: { userId: session.userId },
+      });
+      linked = !!link;
+    } catch (dbError) {
+      console.error('line status DB error:', dbError);
+      // テーブル未作成等でDBエラーでも、config だけで enabled を返す
+    }
 
     return NextResponse.json({
       enabled: config.isConfigured,
-      linked: !!link,
+      linked,
     });
   } catch (error) {
     console.error('line status error:', error);
