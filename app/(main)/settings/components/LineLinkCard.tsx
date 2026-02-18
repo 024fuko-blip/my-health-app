@@ -50,8 +50,24 @@ export default function LineLinkCard() {
 
   const addFriendUrl = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim() || null;
 
-  if (status === "checking") return null;
-  if (status === "unsupported") return null;
+  if (status === "checking") {
+    return (
+      <div className="bg-white p-4 rounded-xl border opacity-60">
+        <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
+        <p className="text-xs text-gray-500 mt-0.5">読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (status === "unsupported") {
+    return (
+      <div className="bg-white p-4 rounded-xl border border-gray-200 bg-gray-50/50">
+        <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
+        <p className="text-xs text-gray-500 mt-0.5">服薬リマインド・チャットから記録（希望者のみ）</p>
+        <p className="text-xs text-amber-600 mt-2">※ 現在利用できません（管理者が環境変数を設定すると使えます）</p>
+      </div>
+    );
+  }
 
   if (status === "linked") {
     return (
