@@ -1,0 +1,40 @@
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
+import { getLineConfig } from '@/lib/line';
+
+/** POST: 連携用の6桁コードを発行 */
+export async function POST() {
+  try {
+    const session = await getSession();
+    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+
+    const config = getLineConfig();
+    if (!config.isConfigured) {
+      return NextResponse.json(
+        { error: 'LINE連携は現在利用できません' },
+        { status: 503 }
+      );
+    }
+
+    const existing = await prisma.lineLink.findUnique({
+      where: { userId: session.userId },
+    });
+    if (existing) {
+      return NextResponse.json({ linked: true, code: null });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10分
+
+    await prisma.lineLinkRequest.deleteMany({ where: { userId: session.userId } });
+    await prisma.lineLinkRequest.create({
+      data: { userId: session.userId, code, expiresAt },
+    });
+
+    return NextResponse.json({ code, expiresIn: 600 });
+  } catch (error) {
+    console.error('line link-request error:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}

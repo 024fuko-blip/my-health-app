@@ -126,8 +126,26 @@ export default async function GuidePage({ searchParams }: Props) {
               設定メニューから「リマインダー」を開くと、<strong>今日の服薬スケジュール</strong>（健康管理で登録した薬と朝・昼・晩・眠前の時刻）と、<strong>検診リマインダー</strong>（健康診断など予定日の登録・一覧・削除）をまとめて確認できます。服薬の表示時刻は健康管理ページの「リマインダー表示時刻」で変更できます。
             </p>
             <p>
-              <strong>📱 スマホに通知</strong> … リマインダー画面の「スマホに通知を届ける」ボタンで、服薬時刻・検診予定日にプッシュ通知を受け取れます。PWAとしてホーム画面に追加すると便利です。
+              <strong>📱 スマホに通知</strong> … リマインダー画面の「スマホに通知を届ける」ボタンで、服薬時刻・検診予定日にプッシュ通知を受け取れます。服薬通知には、記録に基づいたオネエのアドバイス（AIコメント）も一緒にお届けします。PWAとしてホーム画面に追加すると便利です。
             </p>
+            <p>
+              <strong>💬 LINE連携</strong> … 設定画面の「LINE連携」から、公式アカウントを友だち追加して連携できます。連携すると、服薬リマインド・検診リマインドがLINEに届き、チャットで「体調4」「食事: サラダ」「記録 メモ」のように送るとその日の記録が保存されます。希望者のみの機能です。
+            </p>
+            <div id="notification" className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <p className="font-bold text-blue-800 mb-2">📲 通知が有効にならない場合</p>
+              <p className="text-sm text-gray-700 mb-2"><strong>Android（Chrome）:</strong></p>
+              <ol className="list-decimal pl-5 text-sm text-gray-600 space-y-1 mb-3">
+                <li>画面右上の ︙ メニュー → 設定</li>
+                <li>サイトの設定 → 通知</li>
+                <li>このサイトを「許可」にする（または「通知設定を開く」ボタンをタップ）</li>
+              </ol>
+              <p className="text-sm text-gray-700 mb-2"><strong>iPhone（Safari）:</strong></p>
+              <ol className="list-decimal pl-5 text-sm text-gray-600 space-y-1">
+                <li>まず「ホームに追加」で PWA としてインストール</li>
+                <li>設定アプリ → [アプリ名] または Safari → ウェブサイト → 通知</li>
+                <li>このサイトを「許可」にする</li>
+              </ol>
+            </div>
           </div>
         </section>
 

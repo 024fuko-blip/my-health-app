@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendPushNotification } from '@/lib/web-push';
+import { sendLinePush } from '@/lib/line';
 
 const DEFAULT_MEDICATION_TIMES: Record<string, string> = {
   朝: '08:00',
@@ -121,8 +122,21 @@ export async function POST(req: Request) {
 
       const medsAtSlot = medicationSchedule.find((m) => m.time === timeSlot);
       if (medsAtSlot && medsAtSlot.medications.length > 0) {
+        let body = `${medsAtSlot.medications.join('、')} の時間です`;
+        const latestLog = await prisma.healthLog.findFirst({
+          where: {
+            userId,
+            aiComment: { not: null },
+          },
+          orderBy: { date: 'desc' },
+          select: { aiComment: true },
+        });
+        if (latestLog?.aiComment && latestLog.aiComment.trim()) {
+          const comment = latestLog.aiComment.trim().replace(/\s+/g, ' ');
+          const truncated = comment.length > 60 ? comment.slice(0, 57) + '…' : comment;
+          body += `\n\nオネエより: ${truncated}`;
+        }
         const title = '💊 服薬リマインダー';
-        const body = `${medsAtSlot.medications.join('、')} の時間です`;
         for (const sub of subs) {
           const ok = await sendPushNotification(
             {
@@ -133,6 +147,8 @@ export async function POST(req: Request) {
           );
           if (ok) sent++;
         }
+        const lineLink = await prisma.lineLink.findUnique({ where: { userId } });
+        if (lineLink && (await sendLinePush(lineLink.lineUserId, `${title}\n${body}`))) sent++;
       }
 
       // 検診リマインダー（8時台の最初の実行時のみ）
@@ -153,6 +169,8 @@ export async function POST(req: Request) {
             );
             if (ok) sent++;
           }
+          const lineLink = await prisma.lineLink.findUnique({ where: { userId } });
+          if (lineLink && (await sendLinePush(lineLink.lineUserId, `${title}\n${body}`))) sent++;
         }
       }
     }

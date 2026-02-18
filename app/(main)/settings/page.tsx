@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import LineLinkCard from "./components/LineLinkCard";
 
 export default function SettingsIndexPage() {
   const router = useRouter();
@@ -93,6 +94,8 @@ export default function SettingsIndexPage() {
           <span className="text-gray-400">→</span>
         </div>
       </Link>
+
+      <LineLinkCard />
 
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}

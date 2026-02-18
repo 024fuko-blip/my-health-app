@@ -7,6 +7,25 @@ export default function PushNotifyButton() {
   const [loading, setLoading] = useState(false);
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
+  const openNotificationSettings = () => {
+    const fallback = typeof window !== "undefined" ? window.location.origin + "/reminders" : "";
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+    if (isAndroid) {
+      // Chrome の通知設定を開く（サイト別は「サイトの設定」一覧から）
+      const intent = `intent://#Intent;action=android.settings.APP_NOTIFICATION_SETTINGS;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
+      window.location.href = intent;
+    } else if (isIOS) {
+      // iOS は Web から設定を開けないため、ガイド画面へ
+      window.open("/guide?from=reminders#notification", "_blank");
+    } else {
+      // PC: サイト設定やガイドへ
+      window.open("/guide?from=reminders#notification", "_blank");
+    }
+  };
+
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       setStatus("unsupported");
@@ -94,20 +113,29 @@ export default function PushNotifyButton() {
   }
   if (status === "error") {
     return (
-      <div className="mt-2 space-y-1">
+      <div className="mt-2 space-y-2">
         <p className="text-xs text-red-600">
           通知の設定に失敗しました。
         </p>
         {errorDetail && (
           <p className="text-xs text-gray-600">{errorDetail}</p>
         )}
-        <button
-          type="button"
-          onClick={() => { setStatus("prompt"); setErrorDetail(null); }}
-          className="text-xs text-blue-600 hover:underline font-medium"
-        >
-          もう一度試す
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={openNotificationSettings}
+            className="text-sm px-3 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700"
+          >
+            ⚙️ 通知設定を開く
+          </button>
+          <button
+            type="button"
+            onClick={() => { setStatus("prompt"); setErrorDetail(null); }}
+            className="text-sm px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300"
+          >
+            もう一度試す
+          </button>
+        </div>
       </div>
     );
   }

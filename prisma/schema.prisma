@@ -26,8 +26,30 @@ model User {
   userPet       UserPet?
   userPetInventory UserPetInventory[]
   pushSubscriptions PushSubscription[]
+  lineLink         LineLink?
 
   @@map("users")
+}
+
+model LineLink {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  lineUserId String  @map("line_user_id")
+  linkedAt  DateTime @default(now()) @map("linked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("line_links")
+}
+
+model LineLinkRequest {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  code      String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("line_link_requests")
 }
 
 model PushSubscription {

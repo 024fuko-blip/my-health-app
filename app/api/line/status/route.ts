@@ -1,0 +1,25 @@
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
+import { getLineConfig } from '@/lib/line';
+
+/** GET: LINE連携状態を返す */
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+
+    const config = getLineConfig();
+    const link = await prisma.lineLink.findUnique({
+      where: { userId: session.userId },
+    });
+
+    return NextResponse.json({
+      enabled: config.isConfigured,
+      linked: !!link,
+    });
+  } catch (error) {
+    console.error('line status error:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
