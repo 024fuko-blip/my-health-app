@@ -44,10 +44,26 @@ gcloud run deploy my-health-apps --project my-health-app-485805 --source . --reg
 ## デプロイ前チェックリスト
 
 1. **Prismaスキーマ変更時:** `npx prisma db push` を実行
-2. **新しい環境変数追加時:** `--set-env-vars` に追加
+2. **Secret Manager 設定:** 環境変数は Secret Manager から取得（下記参照）
 3. **ビルドエラー時:** `lib/env.ts` の `isBuildTime()` でダミー値が返されるか確認
 
-## プッシュ通知（リマインダー）の環境変数
+## 環境変数：Google Secret Manager
+
+**本番は Secret Manager から自動取得**。Cloud Run 等 GCP 上ではメタデータサーバーからプロジェクトIDを取得し、起動時に Secret Manager から読み込む。ローカルは `process.env`（.env.local）にフォールバック。
+
+**Secret Manager の設定手順**
+
+1. Cloud Console → Secret Manager → シークレットを作成
+2. シークレット名は環境変数名と同一（例: `AUTH_SECRET`, `DATABASE_URL`）
+3. Cloud Run のサービスアカウントに「Secret Manager シークレットアクセス権」を付与
+
+**必須シークレット:** AUTH_SECRET, DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL
+
+**オプション:** OPENAI_API_KEY, LINE_*, VAPID_*, CRON_SECRET
+
+**ローカルで Secret Manager を無効化:** `USE_SECRET_MANAGER=false` を設定すると process.env のみ使用。
+
+## プッシュ通知（リマインダー）
 
 | 変数 | 説明 |
 |------|------|

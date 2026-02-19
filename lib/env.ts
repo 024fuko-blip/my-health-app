@@ -1,8 +1,10 @@
 /**
  * サーバー用環境変数スキーマ。
- * process.env を直接参照せず、このモジュールを経由して使用する。
+ * Google Secret Manager または process.env から取得。getServerEnv() 経由で使用する。
  * ビルド時（next build / CI）では getServerEnv() はダミー値を返し、validateRuntimeEnv はスキップする。
+ * Cloud Run では instrumentation 起動時に loadSecretsFromSecretManager() で事前読み込み。
  */
+import { getSecret } from './secrets';
 
 /** ビルド中かどうか（next build や CI では true） */
 function isBuildTime(): boolean {
@@ -38,9 +40,8 @@ export const REQUIRED_RUNTIME_ENV_KEYS = [
 export function validateRuntimeEnv(): void {
   if (isBuildTime()) return;
 
-  const env = process.env as Record<string, string | undefined>;
   const missingKeys = REQUIRED_RUNTIME_ENV_KEYS.filter(
-    (key) => !env[key] || env[key]?.trim() === ''
+    (key) => !getSecret(key) || getSecret(key)?.trim() === ''
   );
 
   if (missingKeys.length > 0) {
@@ -125,25 +126,27 @@ export function getServerEnv(): ServerEnv {
     return cached;
   }
   cached = {
-    AUTH_SECRET: required('AUTH_SECRET', process.env.AUTH_SECRET),
-    DATABASE_URL: required('DATABASE_URL', process.env.DATABASE_URL),
-    GOOGLE_CLIENT_ID: required('GOOGLE_CLIENT_ID', process.env.GOOGLE_CLIENT_ID),
+    AUTH_SECRET: required('AUTH_SECRET', getSecret('AUTH_SECRET')),
+    DATABASE_URL: required('DATABASE_URL', getSecret('DATABASE_URL')),
+    GOOGLE_CLIENT_ID: required('GOOGLE_CLIENT_ID', getSecret('GOOGLE_CLIENT_ID')),
     GOOGLE_CLIENT_SECRET: required(
       'GOOGLE_CLIENT_SECRET',
-      process.env.GOOGLE_CLIENT_SECRET
+      getSecret('GOOGLE_CLIENT_SECRET')
     ),
-    NEXTAUTH_URL: required('NEXTAUTH_URL', process.env.NEXTAUTH_URL),
-    OPENAI_API_KEY: optional(process.env.OPENAI_API_KEY),
+    NEXTAUTH_URL: required('NEXTAUTH_URL', getSecret('NEXTAUTH_URL')),
+    OPENAI_API_KEY: optional(getSecret('OPENAI_API_KEY')),
     NODE_ENV:
-      (process.env.NODE_ENV as ServerEnv['NODE_ENV']) || 'development',
-    LINE_CHANNEL_ID: optional(process.env.LINE_CHANNEL_ID),
-    LINE_CHANNEL_SECRET: optional(process.env.LINE_CHANNEL_SECRET),
-    LINE_CHANNEL_ACCESS_TOKEN: optional(process.env.LINE_CHANNEL_ACCESS_TOKEN),
-    LINE_ADD_FRIEND_URL: optional(process.env.LINE_ADD_FRIEND_URL),
-    LINE_BOT_BASIC_ID: optional(process.env.LINE_BOT_BASIC_ID),
-    VAPID_PUBLIC_KEY: optional(process.env.VAPID_PUBLIC_KEY),
-    VAPID_PRIVATE_KEY: optional(process.env.VAPID_PRIVATE_KEY),
-    CRON_SECRET: optional(process.env.CRON_SECRET),
+      (getSecret('NODE_ENV') as ServerEnv['NODE_ENV']) ||
+      (process.env.NODE_ENV as ServerEnv['NODE_ENV']) ||
+      'development',
+    LINE_CHANNEL_ID: optional(getSecret('LINE_CHANNEL_ID')),
+    LINE_CHANNEL_SECRET: optional(getSecret('LINE_CHANNEL_SECRET')),
+    LINE_CHANNEL_ACCESS_TOKEN: optional(getSecret('LINE_CHANNEL_ACCESS_TOKEN')),
+    LINE_ADD_FRIEND_URL: optional(getSecret('LINE_ADD_FRIEND_URL')),
+    LINE_BOT_BASIC_ID: optional(getSecret('LINE_BOT_BASIC_ID')),
+    VAPID_PUBLIC_KEY: optional(getSecret('VAPID_PUBLIC_KEY')),
+    VAPID_PRIVATE_KEY: optional(getSecret('VAPID_PRIVATE_KEY')),
+    CRON_SECRET: optional(getSecret('CRON_SECRET')),
   };
   return cached;
 }
