@@ -5,6 +5,12 @@ alwaysApply: true
 
 # プロジェクト構成と厳守ルール
 
+## 0. 開発方針
+
+- **本番環境でのみ開発**。ローカルサーバー（`npm run dev`）は使用しない。
+- 変更後は `git push` でデプロイし、本番 URL で確認する。
+- 環境変数は Secret Manager または Cloud Run の環境変数で管理。
+
 ## 1. ルートディレクトリの役割
 
 - **このリポジトリ (my-health-app)**: Frontend & BFF。Next.js 本体・UI・OpenAI 通信 API・DB（Prisma + Google Cloud SQL）はすべてここ。

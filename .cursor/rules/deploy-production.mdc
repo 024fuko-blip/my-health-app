@@ -6,6 +6,8 @@ alwaysApply: false
 
 # 本番デプロイ手順 (/up)
 
+**本番環境でのみ開発**。ローカルサーバーは使わず、push でデプロイ → 本番 URL で確認。
+
 ## デプロイ先情報
 
 - **プロジェクトID:** my-health-app-485805
@@ -49,19 +51,27 @@ gcloud run deploy my-health-apps --project my-health-app-485805 --source . --reg
 
 ## 環境変数：Google Secret Manager
 
-**本番は Secret Manager から自動取得**。Cloud Run 等 GCP 上ではメタデータサーバーからプロジェクトIDを取得し、起動時に Secret Manager から読み込む。ローカルは `process.env`（.env.local）にフォールバック。
+**本番は Secret Manager から自動取得**。Cloud Run 上でメタデータサーバーからプロジェクトIDを取得し、起動時に Secret Manager から読み込む。**本番環境でのみ開発**するため、環境変数は Secret Manager または Cloud Run の環境変数で管理。
 
-**Secret Manager の設定手順**
+**Secret Manager の設定（スクリプトで一括）**
 
-1. Cloud Console → Secret Manager → シークレットを作成
-2. シークレット名は環境変数名と同一（例: `AUTH_SECRET`, `DATABASE_URL`）
-3. Cloud Run のサービスアカウントに「Secret Manager シークレットアクセス権」を付与
+1. **gcloud 認証**: `gcloud auth application-default login`
+2. **シークレット作成**: 値を記載したファイル（.env.local 等）を用意し、Secret Manager に登録
+   ```bash
+   npm run setup-secrets
+   ```
+   （.env.local または .env から値を読み込む）
+3. **Cloud Run に権限付与**:
+   ```bash
+   npm run grant-secret-access
+   ```
+4. Cloud Run の環境変数から `USE_SECRET_MANAGER=false` を削除（または未設定のまま）
 
 **必須シークレット:** AUTH_SECRET, DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL
 
-**オプション:** OPENAI_API_KEY, LINE_*, VAPID_*, CRON_SECRET
+**オプション:** OPENAI_API_KEY, LINE_*, VAPID_*, CRON_SECRET（入力ファイルに無いものはスキップ）
 
-**ローカルで Secret Manager を無効化:** `USE_SECRET_MANAGER=false` を設定すると process.env のみ使用。
+**Secret Manager を無効化する場合:** Cloud Run に `USE_SECRET_MANAGER=false` を設定すると、Cloud Run の環境変数のみ使用。
 
 ## プッシュ通知（リマインダー）
 

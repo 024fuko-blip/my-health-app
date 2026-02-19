@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "node -e \"console.log('本番環境でのみ開発。変更後は git push でデプロイし、本番URLで確認。'); process.exit(1)\"",
+    "setup-secrets": "node scripts/setup-secrets.mjs",
+    "grant-secret-access": "node scripts/grant-secret-access.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

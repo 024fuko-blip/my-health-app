@@ -26,7 +26,7 @@
    - `LINE_BOT_BASIC_ID` を設定すれば `https://line.me/R/ti/p/@BASIC_ID` が自動生成される
    - または lin.ee の短縮URLを `LINE_ADD_FRIEND_URL` に設定
 
-## .env.local / Secret Manager への設定例
+## Secret Manager への設定例（setup-secrets 用の入力元）
 
 ```env
 # LINE 連携（Messaging API 必須3つ）

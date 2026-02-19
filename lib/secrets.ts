@@ -1,10 +1,8 @@
 /**
  * Google Secret Manager から環境変数を取得。
- * GOOGLE_CLOUD_PROJECT が設定されている場合（Cloud Run 等）は Secret Manager を使用。
- * ローカル開発時は process.env にフォールバック。
+ * 本番（Cloud Run 等 GCP 上）では Secret Manager を使用。
+ * ※ Secret Manager クライアントは動的 import（bundler 互換のため）。
  */
-
-import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 
 /** Secret Manager から取得した値をキャッシュ */
 let secretsCache: Record<string, string> | null = null;
@@ -20,7 +18,7 @@ async function getProjectId(): Promise<string | null> {
     );
     if (res.ok) return (await res.text()).trim();
   } catch {
-    /* ローカル等ではメタデータサーバーに到達しない */
+    /* GCP 外ではメタデータサーバーに到達しない */
   }
   return null;
 }
@@ -61,13 +59,8 @@ export async function loadSecretsFromSecretManager(): Promise<void> {
     return;
   }
 
-  let client: SecretManagerServiceClient;
-  try {
-    client = new SecretManagerServiceClient();
-  } catch (e) {
-    console.error('[Secrets] Secret Manager クライアント初期化失敗:', e);
-    return;
-  }
+  const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
+  const client = new SecretManagerServiceClient();
 
   const cache: Record<string, string> = {};
 
