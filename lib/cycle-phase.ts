@@ -49,6 +49,52 @@ export function getCyclePhase(
   };
 }
 
+export function getAsukaComment(phase: CyclePhase): string {
+  const { phase: p, dayInCycle, daysUntilPeriod, daysUntilOvulation, isOvulationWindow } = phase;
+
+  switch (p) {
+    case 'period':
+      return `💙 生理${dayInCycle}日目だね。体がつらいのは分かってるよ。
+今日は無理しないで。温かいものでも飲んで、ゆっくりしてね。
+データを見ると体が休みたがってるタイミングだから、素直に休もう。`;
+
+    case 'follicular':
+      return `✨ 周期${dayInCycle}日目、卵胞期だよ。
+肌も体も軽いはず！今日は調子良さそうだね。
+${daysUntilOvulation > 0 ? `排卵日まであと${daysUntilOvulation}日だよ。` : ''}`;
+
+    case 'ovulation': {
+      const ovuMsg = isOvulationWindow
+        ? `\n妊娠の可能性を考えるなら、気をつけてね。`
+        : '';
+      return `🥚 排卵期（周期${dayInCycle}日目）だね。
+おりものが増えたり、お腹が張ったりすることがあるよ。
+体温も上がり始めるから、だるさを感じても大丈夫。${ovuMsg}`;
+    }
+
+    case 'luteal_early':
+      return `🌙 黄体期前半（周期${dayInCycle}日目）だよ。
+次の生理まであと${daysUntilPeriod}日。今のうちにやりたいこと済ませておこう。
+まだ比較的安定してるから、計画的に過ごすといいね。`;
+
+    case 'pms': {
+      const intensity = daysUntilPeriod <= 3 ? '特に' : '';
+      return `⚠️ PMS期間だね（周期${dayInCycle}日目）。
+生理まであと${daysUntilPeriod}日。${intensity}イライラしやすい時期だから気をつけて。
+
+💡 イライラ・情緒不安定
+🍫 甘いもの欲
+😴 眠気・だるさ
+💢 肌荒れに注意
+
+データ的にも体が変化してるタイミング。周りに当たらず、チョコとかで気分を落ち着けてね。`;
+    }
+
+    default:
+      return '';
+  }
+}
+
 export function getTsundereComment(phase: CyclePhase): string {
   const { phase: p, dayInCycle, daysUntilPeriod, daysUntilOvulation, isOvulationWindow } = phase;
 

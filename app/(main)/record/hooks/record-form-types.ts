@@ -6,7 +6,7 @@ export interface Medication {
 }
 
 /** AI 人格（ResultModal 等で使用） */
-export type AiPersonality = 'tsundere' | 'amayama' | 'ikemen';
+export type AiPersonality = 'tsundere' | 'amayama' | 'ikemen' | 'asuka';
 
 /** /api/health-logs GET レスポンスの型（snake_case） */
 export interface HealthLogApiResponse {

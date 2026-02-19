@@ -286,7 +286,11 @@ export default function CalendarPage() {
               {(log.pain_level ?? 0) >= 3 && <span title="腹痛">⚡</span>}
               {(log.alcohol_amount ?? 0) > 0 && <span title="飲酒">🍺</span>}
               {log.ai_comment && <span title="AI">🤖</span>}
-              {log.period_status === '生理中' && <span title="生理中（記録）">💧</span>}
+              {(log.period_status === '生理中' || log.period_status === '生理終了') && (
+                <span title={log.period_status === '生理終了' ? '生理終了（記録）' : '生理中（記録）'}>
+                  {log.period_status === '生理終了' ? '✓' : '💧'}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -332,7 +336,7 @@ export default function CalendarPage() {
               <span>⚠️ PMS/肌荒れ期</span>
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">💧 = 実際に記録した生理中の日</p>
+          <p className="text-xs text-gray-500 mt-2">💧 = 生理中、✓ = 生理終了（記録）</p>
         </div>
       )}
 

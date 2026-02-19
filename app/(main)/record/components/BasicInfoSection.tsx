@@ -12,6 +12,11 @@ interface BasicInfoSectionProps {
   setPeriodStatus: (v: string) => void;
   skinCondition: number;
   setSkinCondition: (v: number) => void;
+  /** 生理が来た時に lastPeriodDate を更新するコールバック */
+  onPeriodStart?: (date: string) => Promise<void>;
+  /** 生理終了時に periodDuration を更新するコールバック */
+  onPeriodEnd?: (startDate: string, duration: number) => Promise<void>;
+  lastPeriodDate?: string;
 }
 
 export function BasicInfoSection({
@@ -25,6 +30,9 @@ export function BasicInfoSection({
   setPeriodStatus,
   skinCondition,
   setSkinCondition,
+  onPeriodStart,
+  onPeriodEnd,
+  lastPeriodDate,
 }: BasicInfoSectionProps) {
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
@@ -104,19 +112,64 @@ export function BasicInfoSection({
       )}
 
       {gender === 'female' && (
-        <button
-          type="button"
-          onClick={() => setPeriodStatus(periodStatus === '生理中' ? 'なし' : '生理中')}
-          className={`w-full p-3 rounded-lg border-2 flex items-center justify-center gap-2 font-bold transition ${
-            periodStatus === '生理中'
-              ? 'border-pink-500 bg-pink-100 text-pink-800'
-              : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-pink-300'
-          }`}
-        >
-          <span className="text-xl">🩸</span>
-          <span>生理きた</span>
-          {periodStatus === '生理中' && <span>✓</span>}
-        </button>
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-pink-700 block">🩸 生理</label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                setPeriodStatus('生理中');
+                if (onPeriodStart) {
+                  const d = new Date();
+                  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                  await onPeriodStart(dateStr);
+                }
+              }}
+              className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
+                periodStatus === '生理中'
+                  ? 'border-pink-500 bg-pink-100 text-pink-800'
+                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-pink-300'
+              }`}
+            >
+              <span className="text-lg">🩸</span>
+              <span>生理が来た</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriodStatus(periodStatus === '生理中' ? 'なし' : '生理中')}
+              className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
+                periodStatus === '生理中'
+                  ? 'border-pink-500 bg-pink-100 text-pink-800'
+                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-pink-300'
+              }`}
+            >
+              <span className="text-lg">💧</span>
+              <span>生理中</span>
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setPeriodStatus('生理終了');
+                if (onPeriodEnd && lastPeriodDate) {
+                  const start = new Date(lastPeriodDate);
+                  const today = new Date();
+                  const diff = Math.ceil((today.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+                  const duration = Math.max(1, Math.min(14, diff));
+                  await onPeriodEnd(lastPeriodDate, duration);
+                }
+              }}
+              className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
+                periodStatus === '生理終了'
+                  ? 'border-pink-500 bg-pink-100 text-pink-800'
+                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-pink-300'
+              }`}
+            >
+              <span className="text-lg">✓</span>
+              <span>生理終了</span>
+            </button>
+          </div>
+          <p className="text-xs text-gray-500">健康管理で手動入力も可能</p>
+        </div>
       )}
 
       {gender === 'female' && (

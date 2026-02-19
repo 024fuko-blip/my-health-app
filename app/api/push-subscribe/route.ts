@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { getVapidPublicKey } from '@/lib/web-push';
+import { parseJsonBody } from '@/lib/api-utils';
 
 /** GET: VAPID 公開鍵と購読状況を返す（通知機能が有効かどうか） */
 export async function GET() {
@@ -47,8 +48,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json();
-    const { endpoint, keys } = body;
+    const parsed = await parseJsonBody<{ endpoint?: string; keys?: { p256dh?: string; auth?: string } }>(req);
+    if (!parsed.ok) return parsed.error;
+    const { endpoint, keys } = parsed.data;
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
       return NextResponse.json(
         { error: 'Bad Request: endpoint and keys required' },
@@ -92,8 +94,8 @@ export async function DELETE(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = await req.json().catch(() => ({}));
-    const endpoint = body?.endpoint;
+    const parsed = await parseJsonBody<{ endpoint?: string }>(req);
+    const endpoint = parsed.ok ? parsed.data.endpoint : undefined;
     if (!endpoint) {
       return NextResponse.json(
         { error: 'Bad Request: endpoint required' },

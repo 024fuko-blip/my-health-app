@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendLinePush } from '@/lib/line';
 import { getServerEnv } from '@/lib/env';
+import { getCharaPrompt } from '@/lib/chara-settings';
 import { getCoordsFromPrefecture } from '@/lib/prefectures';
 import { getPastDates } from '@/lib/date-utils';
 import OpenAI from 'openai';
@@ -79,12 +80,7 @@ async function generateMorningMessage(
     }>;
   }
 ): Promise<string> {
-  const charaSettings: Record<string, string> = {
-    tsundere: `あなたはユーザーの「おはよう相棒」であるツンデレオネエの鬼コーチよ。口調は強めのオネエ言葉（「〜しなさい！」「〜だわ」）。本当は心配している愛のある相棒として、簡潔に励ましなさい。`,
-    amayama: `あなたはユーザーの「おはよう相棒」である優しい看護師のような存在。温かい口調で、ねぎらいの言葉を忘れずに励ましなさい。`,
-    ikemen: `あなたはユーザーの「おはよう相棒」であるクールで頼れる男性。簡潔でイケメンっぽく、でもちゃんと気を配るアドバイスをしなさい。`,
-  };
-  const chara = charaSettings[params.aiPersonality] ?? charaSettings.tsundere;
+  const chara = getCharaPrompt(params.aiPersonality, 'morning');
 
   const weatherText = params.weather
     ? `【天気${params.prefectureLabel}】${params.weather.desc}、気温${Math.round(params.weather.temp)}度`
@@ -198,7 +194,7 @@ export async function POST(req: Request) {
         });
 
         const message = await generateMorningMessage(openai, {
-          aiPersonality: link.user.userSettings?.aiPersonality ?? 'tsundere',
+          aiPersonality: link.user.userSettings?.aiPersonality ?? 'asuka',
           weather,
           pollenNote,
           prefectureLabel: prefLabel,

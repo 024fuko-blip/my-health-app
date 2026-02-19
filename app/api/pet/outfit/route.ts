@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/api-utils";
 import { PET_OUTFITS } from "@/lib/pet-shop";
 
 /** POST: 着せ替え（所持している衣装を装着 / なしにする） */
@@ -9,10 +10,11 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse("Unauthorized", { status: 401 });
 
-    const body = await req.json();
-    const outfitId = body.outfitId as string | undefined;
+    const parsed = await parseJsonBody<{ outfitId?: string | null }>(req);
+    if (!parsed.ok) return parsed.error;
+    const outfitId = typeof parsed.data.outfitId === 'string' ? parsed.data.outfitId : parsed.data.outfitId === null ? null : undefined;
 
-    if (outfitId === "outfit_none" || outfitId === null || outfitId === "") {
+    if (!outfitId || outfitId === "outfit_none" || outfitId === "") {
       await prisma.userPet.upsert({
         where: { userId: session.userId },
         create: {
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
 
     const inv = await prisma.userPetInventory.findUnique({
       where: {
-        userId_itemId: { userId: session.userId, itemId: outfitId },
+        userId_itemId: { userId: session.userId, itemId: outfitId as string },
       },
     });
     if (!inv || inv.quantity < 1) {

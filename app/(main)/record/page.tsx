@@ -1,6 +1,6 @@
 "use client";
 
-import { getCyclePhase, getTsundereComment } from '@/lib/cycle-phase';
+import { getCyclePhase, getTsundereComment, getAsukaComment } from '@/lib/cycle-phase';
 import { ResultModal } from './components/ResultModal';
 import { MentalSection } from './components/MentalSection';
 import { IbdSection } from './components/IbdSection';
@@ -24,7 +24,12 @@ export default function RecordPage() {
           form.periodSettings.periodDuration
         )
       : null;
-  const tsundereComment = cyclePhase ? getTsundereComment(cyclePhase) : '';
+  const cycleComment =
+    cyclePhase && form.gender === 'female'
+      ? form.aiPersonality === 'asuka'
+        ? getAsukaComment(cyclePhase)
+        : getTsundereComment(cyclePhase)
+      : '';
 
   const dateObj = new Date(form.date);
   const isToday = form.date === new Date().toISOString().split('T')[0];
@@ -53,8 +58,13 @@ export default function RecordPage() {
 
       {form.gender === 'female' && form.periodSettings.lastPeriodDate && cyclePhase && (
         <div className="relative">
-          <div className="bg-gradient-to-r from-pink-100 to-purple-100 p-4 rounded-2xl border-2 border-pink-300 shadow-lg relative">
-            <div className="absolute -bottom-3 left-8 w-6 h-6 bg-gradient-to-br from-pink-100 to-purple-100 border-r-2 border-b-2 border-pink-300 transform rotate-45" />
+          <div
+            className={`p-4 rounded-2xl border shadow-sm relative ${
+              form.aiPersonality === 'asuka'
+                ? 'bg-gradient-to-br from-slate-50 to-blue-50/50 border-slate-200'
+                : 'bg-gradient-to-r from-pink-100 to-purple-100 border-2 border-pink-300'
+            }`}
+          >
             <div className="flex items-start gap-3">
               <div className="text-4xl flex-shrink-0">
                 {cyclePhase.phase === 'period' && '😣'}
@@ -65,22 +75,46 @@ export default function RecordPage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-pink-800 text-sm">💋 今日のあんたへ</span>
-                  <span className="text-xs text-pink-600 bg-pink-200 px-2 py-0.5 rounded-full">
+                  <span
+                    className={`font-bold text-sm ${
+                      form.aiPersonality === 'asuka' ? 'text-slate-700' : 'text-pink-800'
+                    }`}
+                  >
+                    {form.aiPersonality === 'asuka' ? '💙 今日のあなたへ' : '💋 今日のあんたへ'}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      form.aiPersonality === 'asuka'
+                        ? 'text-slate-600 bg-slate-200/80'
+                        : 'text-pink-600 bg-pink-200'
+                    }`}
+                  >
                     周期 {cyclePhase.dayInCycle}日目
                   </span>
                 </div>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {tsundereComment}
+                  {cycleComment}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {cyclePhase.daysUntilPeriod > 0 && (
-                    <span className="text-xs bg-white px-2 py-1 rounded-full border border-pink-200">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full border ${
+                        form.aiPersonality === 'asuka'
+                          ? 'bg-white/80 border-slate-200'
+                          : 'bg-white border-pink-200'
+                      }`}
+                    >
                       🩸 生理まで {cyclePhase.daysUntilPeriod}日
                     </span>
                   )}
                   {cyclePhase.daysUntilOvulation > 0 && cyclePhase.phase !== 'pms' && (
-                    <span className="text-xs bg-white px-2 py-1 rounded-full border border-purple-200">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full border ${
+                        form.aiPersonality === 'asuka'
+                          ? 'bg-white/80 border-slate-200'
+                          : 'bg-white border-purple-200'
+                      }`}
+                    >
                       🥚 排卵まで {cyclePhase.daysUntilOvulation}日
                     </span>
                   )}
@@ -93,7 +127,9 @@ export default function RecordPage() {
               </div>
             </div>
           </div>
-          <div className="absolute -bottom-1 left-2 text-3xl">👹</div>
+          <div className="absolute -bottom-1 left-2 text-3xl">
+            {form.aiPersonality === 'asuka' ? '💙' : '👹'}
+          </div>
         </div>
       )}
 
@@ -109,6 +145,9 @@ export default function RecordPage() {
           setPeriodStatus={form.setPeriodStatus}
           skinCondition={form.skinCondition}
           setSkinCondition={form.setSkinCondition}
+          onPeriodStart={form.handlePeriodStart}
+          onPeriodEnd={form.handlePeriodEnd}
+          lastPeriodDate={form.periodSettings.lastPeriodDate}
         />
 
         <MealSection
@@ -201,9 +240,17 @@ export default function RecordPage() {
         <button
           type="submit"
           disabled={form.isSubmitting}
-          className="w-full bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-xl font-bold shadow-lg disabled:bg-gray-400"
+          className={`w-full text-white p-4 rounded-xl font-medium shadow-sm disabled:bg-gray-400 transition ${
+            form.aiPersonality === 'asuka'
+              ? 'bg-slate-600 hover:bg-slate-700'
+              : 'bg-pink-600 hover:bg-pink-700'
+          }`}
         >
-          {form.isSubmitting ? '分析中...👹' : '記録して相棒に報告 📝'}
+          {form.isSubmitting
+            ? form.aiPersonality === 'asuka'
+              ? '分析中...'
+              : '分析中...👹'
+            : '記録して相棒に報告'}
         </button>
       </form>
 

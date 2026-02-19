@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/api-utils";
 import { PET_FOODS, PET_OUTFITS } from "@/lib/pet-shop";
 
 /** POST: ポイントで餌 or 着せ替えを購入 */
@@ -9,9 +10,11 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse("Unauthorized", { status: 401 });
 
-    const body = await req.json();
-    const itemId = body.itemId as string | undefined;
-    const quantity = Math.max(1, Math.min(10, Number(body.quantity) || 1));
+    const parsed = await parseJsonBody<{ itemId?: string; quantity?: number }>(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
+    const itemId = typeof body.itemId === 'string' ? body.itemId : undefined;
+    const quantity = Math.max(1, Math.min(10, Number(body?.quantity) || 1));
 
     if (!itemId) {
       return new NextResponse("Bad Request: itemId required", { status: 400 });

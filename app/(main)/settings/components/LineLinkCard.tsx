@@ -22,6 +22,8 @@ export default function LineLinkCard() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [addFriendUrl, setAddFriendUrl] = useState<string | null>(null);
+  const [richMenuLoading, setRichMenuLoading] = useState(false);
+  const [richMenuMsg, setRichMenuMsg] = useState<string | null>(null);
   const isValidUrl = !!addFriendUrl;
 
   useEffect(() => {
@@ -60,6 +62,24 @@ export default function LineLinkCard() {
     }
   };
 
+  const handleSetupRichMenu = async () => {
+    setRichMenuLoading(true);
+    setRichMenuMsg(null);
+    try {
+      const res = await fetch("/api/line/setup-richmenu", { method: "POST", credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        setRichMenuMsg("✓ Rich Menu を設定しました");
+      } else {
+        setRichMenuMsg(data.error || `エラー (${res.status})`);
+      }
+    } catch {
+      setRichMenuMsg("通信エラー");
+    } finally {
+      setRichMenuLoading(false);
+    }
+  };
+
   const handleUnlink = async () => {
     if (!confirm("LINE連携を解除しますか？")) return;
     setLoading(true);
@@ -95,7 +115,7 @@ export default function LineLinkCard() {
 
   if (status === "linked") {
     return (
-      <div className="bg-white p-4 rounded-xl border border-green-200 bg-green-50/50">
+      <div className="bg-white p-4 rounded-xl border border-green-200 bg-green-50/50 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
@@ -108,6 +128,21 @@ export default function LineLinkCard() {
           >
             解除
           </button>
+        </div>
+        <div className="pt-2 border-t border-green-200">
+          <p className="text-xs text-gray-600 mb-2">チャット下のメニュー（Rich Menu）</p>
+          <button
+            onClick={handleSetupRichMenu}
+            disabled={richMenuLoading}
+            className="text-sm font-medium text-blue-600 hover:underline disabled:opacity-50"
+          >
+            {richMenuLoading ? "設定中..." : "Rich Menu を設定"}
+          </button>
+          {richMenuMsg && (
+            <p className={`text-xs mt-1 ${richMenuMsg.startsWith("✓") ? "text-green-600" : "text-red-600"}`}>
+              {richMenuMsg}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -137,7 +172,7 @@ export default function LineLinkCard() {
   }
 
   return (
-    <div className="bg-white p-4 rounded-xl border hover:bg-gray-50 transition">
+    <div className="bg-white p-4 rounded-xl border hover:bg-gray-50 transition space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
@@ -150,6 +185,21 @@ export default function LineLinkCard() {
         >
           {loading ? "処理中..." : "連携する"}
         </button>
+      </div>
+      <div className="pt-2 border-t border-gray-100">
+        <p className="text-xs text-gray-500 mb-2">チャット下のメニュー（Rich Menu）</p>
+        <button
+          onClick={handleSetupRichMenu}
+          disabled={richMenuLoading}
+          className="text-sm font-medium text-blue-600 hover:underline disabled:opacity-50"
+        >
+          {richMenuLoading ? "設定中..." : "Rich Menu を設定"}
+        </button>
+        {richMenuMsg && (
+          <p className={`text-xs mt-1 ${richMenuMsg.startsWith("✓") ? "text-green-600" : "text-red-600"}`}>
+            {richMenuMsg}
+          </p>
+        )}
       </div>
       {isValidUrl && (
         <a

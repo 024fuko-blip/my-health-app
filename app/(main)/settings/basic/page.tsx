@@ -12,7 +12,7 @@ export default function SettingsBasicPage() {
     mode_alcohol: false,
     mode_mental: false,
     mode_diet: false,
-    ai_personality: "tsundere" as "tsundere" | "amayama" | "ikemen",
+    ai_personality: "asuka" as "tsundere" | "amayama" | "ikemen" | "asuka",
   });
   const [fullSettings, setFullSettings] = useState<Record<string, unknown>>({});
 
@@ -39,9 +39,11 @@ export default function SettingsBasicPage() {
           mode_mental: data.mode_mental ?? false,
           mode_diet: data.mode_diet ?? false,
           ai_personality:
-            data.ai_personality === "amayama" || data.ai_personality === "ikemen"
+            ["amayama", "ikemen", "asuka"].includes(data.ai_personality)
               ? data.ai_personality
-              : "tsundere",
+              : data.ai_personality === "tsundere"
+                ? "tsundere"
+                : "asuka",
         });
       }
       setLoading(false);
@@ -107,11 +109,12 @@ export default function SettingsBasicPage() {
         </div>
       </div>
 
-      <div className="bg-violet-50 p-4 rounded-xl border border-violet-200 space-y-3">
-        <h3 className="font-bold text-violet-800">🎭 AIの口調</h3>
-        <p className="text-xs text-violet-700">アドバイスするAIの話し方を選べます</p>
+      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+        <h3 className="font-bold text-slate-800">🎭 相棒の性格</h3>
+        <p className="text-xs text-slate-600">アドバイスする相棒の話し方を選べます</p>
         <div className="space-y-2">
           {[
+            { value: "asuka" as const, label: "💙 あすか（おすすめ）" },
             { value: "tsundere" as const, label: "😤 ツンデレ（オネエ）" },
             { value: "amayama" as const, label: "🥰 あまあま" },
             { value: "ikemen" as const, label: "😎 イケメン口調" },
@@ -122,12 +125,12 @@ export default function SettingsBasicPage() {
               onClick={() => setSettings((prev) => ({ ...prev, ai_personality: value }))}
               className={`w-full flex items-center justify-between py-2.5 px-3 rounded-lg border-2 text-left transition ${
                 settings.ai_personality === value
-                  ? "border-violet-500 bg-violet-100 text-violet-900"
-                  : "border-violet-100 bg-white/60 text-gray-700 hover:border-violet-200"
+                  ? "border-slate-400 bg-slate-100 text-slate-900"
+                  : "border-slate-200 bg-white text-gray-700 hover:border-slate-300"
               }`}
             >
               <span className="font-medium">{label}</span>
-              {settings.ai_personality === value && <span className="text-xs text-violet-600">✓ 使用中</span>}
+              {settings.ai_personality === value && <span className="text-xs text-slate-600">✓ 使用中</span>}
             </button>
           ))}
         </div>

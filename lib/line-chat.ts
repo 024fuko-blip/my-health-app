@@ -5,6 +5,8 @@
 
 import OpenAI from 'openai';
 import { getServerEnv } from './env';
+import { getCharaPrompt } from './chara-settings';
+import { safeParseJson } from './json-utils';
 
 export interface LineChatContext {
   medicalHistory: string;
@@ -36,37 +38,25 @@ export function buildChatContextFromSettings(settings: {
   modeIbd: boolean;
   aiPersonality: string | null;
 }): LineChatContext {
-  let medText = 'なし';
-  try {
-    const parsed = JSON.parse(settings.medicalHistory || '{}');
-    medText = parsed.text || 'なし';
-  } catch {
-    if (settings.medicalHistory) medText = String(settings.medicalHistory);
-  }
+  const medParsed = safeParseJson<{ text?: string }>(settings.medicalHistory, {});
+  let medText = medParsed.text || (settings.medicalHistory ? String(settings.medicalHistory) : 'なし');
 
+  const medsParsed = safeParseJson<{ medications?: { name: string }[]; name?: string }>(settings.currentMedications, {});
   let medsText = 'なし';
-  try {
-    const parsed = JSON.parse(settings.currentMedications || '{}');
-    if (parsed.medications?.length) {
-      medsText = parsed.medications.map((m: { name: string }) => m.name).join('、');
-    } else if (parsed.name) medsText = parsed.name;
-  } catch {
-    if (settings.currentMedications) medsText = String(settings.currentMedications);
-  }
+  if (medsParsed.medications?.length) {
+    medsText = medsParsed.medications.map((m) => m.name).join('、');
+  } else if (medsParsed.name) medsText = medsParsed.name;
+  else if (settings.currentMedications) medsText = String(settings.currentMedications);
 
   let periodInfo = '';
   if (settings.gender === 'female') {
-    try {
-      const h = JSON.parse(settings.medicalHistory || '{}');
-      const cycle = h.periodCycle ?? 28;
-      const last = h.lastPeriodDate;
-      if (last) {
-        periodInfo = `- 生理: 最終${last}、周期${cycle}日。PMS・生理前の体調変化に配慮すること。`;
-      } else {
-        periodInfo = '- 性別は女性。生理周期データが登録されていればPMS等に配慮すること。';
-      }
-    } catch {
-      periodInfo = '- 性別は女性。';
+    const h = safeParseJson<{ lastPeriodDate?: string; periodCycle?: number }>(settings.medicalHistory, {});
+    const cycle = h.periodCycle ?? 28;
+    const last = h.lastPeriodDate;
+    if (last) {
+      periodInfo = `- 生理: 最終${last}、周期${cycle}日。PMS・生理前の体調変化に配慮すること。`;
+    } else {
+      periodInfo = '- 性別は女性。生理周期データが登録されていればPMS等に配慮すること。';
     }
   }
 
@@ -78,15 +68,9 @@ export function buildChatContextFromSettings(settings: {
     ageYears: age,
     periodInfo,
     modeIbd: settings.modeIbd,
-    aiPersonality: settings.aiPersonality ?? 'tsundere',
+    aiPersonality: settings.aiPersonality ?? 'asuka',
   };
 }
-
-const CHARA_SETTINGS: Record<string, string> = {
-  tsundere: `あなたはユーザーの「健康相棒」であるツンデレオネエの鬼コーチよ。口調は強めのオネエ言葉。本当は心配している愛のある相棒として、簡潔に答えること。`,
-  amayama: `あなたはユーザーの「健康相棒」である優しい看護師のような存在。温かい口調で、ねぎらいの言葉を忘れずに答えること。`,
-  ikemen: `あなたはユーザーの「健康相棒」であるクールで頼れる男性。簡潔に、でもちゃんと気を配るアドバイスをすること。`,
-};
 
 const MAX_MESSAGE_LENGTH = 500;
 
@@ -101,7 +85,7 @@ export async function replyAsCompanion(
   const env = getServerEnv();
   if (!env.OPENAI_API_KEY) return '申し訳ない、今は相談に乗れないの。あとで試してね。';
 
-  const chara = CHARA_SETTINGS[context.aiPersonality] ?? CHARA_SETTINGS.tsundere;
+  const chara = getCharaPrompt(context.aiPersonality, 'line');
 
   const systemPrompt = `
 ${chara}

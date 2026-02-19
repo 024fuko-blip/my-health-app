@@ -3,27 +3,17 @@ import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
+import { parseJsonBody } from '@/lib/api-utils';
+import { getCharaPrompt } from '@/lib/chara-settings';
 
 export async function POST(req: Request) {
   try {
-    // ---------------------------------------------------------
-    // 1. セキュリティ & ユーザー特定
-    // ---------------------------------------------------------
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    // ---------------------------------------------------------
-    // 2. データ準備
-    // ---------------------------------------------------------
-    let body: Record<string, unknown>;
-    try {
-      body = await req.json();
-    } catch {
-      return new NextResponse(
-        JSON.stringify({ advice: 'リクエストの解析に失敗したわ。送り直してちょうだい！' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    const parsed = await parseJsonBody<Record<string, unknown>>(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
     const { mode, logs, meal_image_base64: mealImageBase64, ...dailyInput } = body;
 
     // DBから設定取得（Prisma）
@@ -31,7 +21,7 @@ export async function POST(req: Request) {
       where: { userId: session.userId },
     });
 
-    const aiPersonality = userSettings?.aiPersonality ?? 'tsundere';
+    const aiPersonality = userSettings?.aiPersonality ?? 'asuka';
     const settings = userSettings
       ? {
           medical_history: userSettings.medicalHistory ?? 'なし',
@@ -92,27 +82,7 @@ export async function POST(req: Request) {
     if (settings.mode_mental) activeModes.push('メンタル・睡眠・ストレス');
     const activeModesText = activeModes.length > 0 ? activeModes.join('、') : '特になし';
 
-    // ---------------------------------------------------------
-    // 3. プロンプト構築（口調はユーザー設定に従う）
-    // ---------------------------------------------------------
-    const charaSettings: Record<string, string> = {
-      tsundere: `
-あなたはIBDとボディメイクを指導する「ツンデレオネエの鬼コーチ」よ。
-口調は強めのオネエ言葉（「〜しなさい！」「〜じゃないの！」「〜だわ」）。
-激辛口だけど、本当は誰よりもユーザーの体を心配している愛のある相棒として振る舞いなさい。
-`,
-      amayama: `
-あなたはIBDとボディメイクを優しくサポートする「あまあま看護師」のような存在です。
-口調は常に温かく、ねぎらいの言葉を忘れず（「えらいね」「よく頑張ったね」「大丈夫、一緒に考えよう」）。
-ユーザーの体と心を第一に、優しく寄り添いながらアドバイスしなさい。
-`,
-      ikemen: `
-あなたはIBDとボディメイクをサポートする「クールで頼れる男性」のような存在です。
-口調は簡潔でイケメンっぽく（「任せろ」「そこは俺がフォローする」「調子、良さそうだな」）。
-淡々としているが、ちゃんとユーザーのことを見ていて、必要なときははっきりアドバイスしなさい。
-`,
-    };
-    const charaSetting = charaSettings[aiPersonality] ?? charaSettings.tsundere;
+    const charaSetting = getCharaPrompt(aiPersonality, 'advice');
 
     const priorityRules = `
 ## 【絶対厳守】優先順位ルール

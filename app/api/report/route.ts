@@ -3,17 +3,16 @@ import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
-
-interface ReportRequestBody {
-  period: 7 | 30;
-}
+import { parseJsonBody } from '@/lib/api-utils';
 
 export async function POST(req: Request) {
   try {
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = (await req.json()) as ReportRequestBody;
+    const parsed = await parseJsonBody<{ period?: number }>(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
     const period = body.period === 30 ? 30 : 7;
 
     const endDate = new Date();

@@ -10,13 +10,7 @@ import { sendPushNotification } from '@/lib/web-push';
 import { sendLinePush } from '@/lib/line';
 import { getServerEnv } from '@/lib/env';
 import { getTodayJST } from '@/lib/date-utils';
-
-const DEFAULT_MEDICATION_TIMES: Record<string, string> = {
-  朝: '08:00',
-  昼: '12:00',
-  晩: '18:00',
-  眠前: '22:00',
-};
+import { buildMedicationSchedule } from '@/lib/medication-schedule';
 
 /** 現在時刻を JST で "HH:00" ～ "HH:45" の15分単位に丸める */
 function getCurrentTimeSlotJST(): string {
@@ -71,41 +65,11 @@ export async function POST(req: Request) {
       });
 
       // 服薬リマインダー
-      let medicationSchedule: Array<{ time: string; medications: string[] }> = [];
-      if (settings?.currentMedications) {
-        let times: Record<string, string> = DEFAULT_MEDICATION_TIMES;
-        try {
-          if (settings.medicationReminderTimes) {
-            const parsed = JSON.parse(settings.medicationReminderTimes) as Record<string, string>;
-            times = { ...DEFAULT_MEDICATION_TIMES, ...parsed };
-          }
-        } catch {
-          /* use defaults */
-        }
-        let medications: Array<{ name: string; timings: string[] }> = [];
-        try {
-          const medData = JSON.parse(settings.currentMedications) as {
-            medications?: Array<{ name: string; timings: string[] }>;
-          };
-          if (medData.medications && Array.isArray(medData.medications)) {
-            medications = medData.medications;
-          }
-        } catch {
-          /* ignore */
-        }
-        const timeToMeds: Record<string, string[]> = {};
-        for (const med of medications) {
-          for (const t of med.timings) {
-            const time = times[t] ?? t;
-            if (!timeToMeds[time]) timeToMeds[time] = [];
-            timeToMeds[time].push(med.name);
-          }
-        }
-        medicationSchedule = Object.entries(timeToMeds).map(([time, meds]) => ({
-          time,
-          medications: meds,
-        }));
-      }
+      const medicationSchedule = buildMedicationSchedule(
+        settings?.medicationReminderTimes ?? null,
+        settings?.currentMedications ?? null,
+        { includeLabel: false }
+      );
 
       const medsAtSlot = medicationSchedule.find((m) => m.time === timeSlot);
       if (medsAtSlot && medsAtSlot.medications.length > 0) {

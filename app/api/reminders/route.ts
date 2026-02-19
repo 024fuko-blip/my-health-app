@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-
-const DEFAULT_MEDICATION_TIMES: Record<string, string> = {
-  朝: '08:00',
-  昼: '12:00',
-  晩: '18:00',
-  眠前: '22:00',
-};
+import { parseJsonBody } from '@/lib/api-utils';
+import { buildMedicationSchedule } from '@/lib/medication-schedule';
 
 /** GET: 今日の服薬スケジュール + 検診リマインダー一覧 */
 export async function GET(req: Request) {
@@ -38,38 +33,11 @@ export async function GET(req: Request) {
       const settings = await prisma.userSettings.findUnique({
         where: { userId: session.userId },
       });
-      let medicationSchedule: Array<{ time: string; label: string; medications: string[] }> = [];
-      if (settings?.currentMedications) {
-        let times: Record<string, string> = DEFAULT_MEDICATION_TIMES;
-        try {
-          if (settings.medicationReminderTimes) {
-            const parsed = JSON.parse(settings.medicationReminderTimes) as Record<string, string>;
-            times = { ...DEFAULT_MEDICATION_TIMES, ...parsed };
-          }
-        } catch {
-          // use defaults
-        }
-        let medications: Array<{ name: string; timings: string[] }> = [];
-        try {
-          const medData = JSON.parse(settings.currentMedications) as { medications?: Array<{ name: string; timings: string[] }> };
-          if (medData.medications && Array.isArray(medData.medications)) {
-            medications = medData.medications;
-          }
-        } catch {
-          // ignore
-        }
-        const timeToMeds: Record<string, string[]> = {};
-        for (const med of medications) {
-          for (const t of med.timings) {
-            const time = times[t] ?? t;
-            if (!timeToMeds[time]) timeToMeds[time] = [];
-            timeToMeds[time].push(med.name);
-          }
-        }
-        medicationSchedule = Object.entries(timeToMeds)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([time, meds]) => ({ time, label: time, medications: meds }));
-      }
+      const medicationSchedule = buildMedicationSchedule(
+        settings?.medicationReminderTimes ?? null,
+        settings?.currentMedications ?? null,
+        { includeLabel: true }
+      );
 
       return NextResponse.json({
         medication_schedule: medicationSchedule,
@@ -87,38 +55,11 @@ export async function GET(req: Request) {
       const settings = await prisma.userSettings.findUnique({
         where: { userId: session.userId },
       });
-      let medicationSchedule: Array<{ time: string; medications: string[] }> = [];
-      if (settings?.currentMedications) {
-        let times: Record<string, string> = DEFAULT_MEDICATION_TIMES;
-        try {
-          if (settings.medicationReminderTimes) {
-            const parsed = JSON.parse(settings.medicationReminderTimes) as Record<string, string>;
-            times = { ...DEFAULT_MEDICATION_TIMES, ...parsed };
-          }
-        } catch {
-          // use defaults
-        }
-        let medications: Array<{ name: string; timings: string[] }> = [];
-        try {
-          const medData = JSON.parse(settings.currentMedications) as { medications?: Array<{ name: string; timings: string[] }> };
-          if (medData.medications && Array.isArray(medData.medications)) {
-            medications = medData.medications;
-          }
-        } catch {
-          // ignore
-        }
-        const timeToMeds: Record<string, string[]> = {};
-        for (const med of medications) {
-          for (const t of med.timings) {
-            const time = times[t] ?? t;
-            if (!timeToMeds[time]) timeToMeds[time] = [];
-            timeToMeds[time].push(med.name);
-          }
-        }
-        medicationSchedule = Object.entries(timeToMeds)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([time, meds]) => ({ time, medications: meds }));
-      }
+      const medicationSchedule = buildMedicationSchedule(
+        settings?.medicationReminderTimes ?? null,
+        settings?.currentMedications ?? null,
+        { includeLabel: false }
+      );
       return NextResponse.json(medicationSchedule);
     }
 
@@ -135,7 +76,9 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = await req.json();
+    const parsed = await parseJsonBody<{ name?: string; due_date?: string; memo?: string }>(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
     const { name, due_date, memo } = body;
     if (!name || !due_date) {
       return new NextResponse('Bad Request: name and due_date required', { status: 400 });

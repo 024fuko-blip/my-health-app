@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { updateStatsAfterLog } from '@/lib/game-stats';
 import { isValidDateStr } from '@/lib/date-utils';
+import { parseJsonBody } from '@/lib/api-utils';
 import type { HealthLog } from '@prisma/client';
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
@@ -84,7 +85,9 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = await req.json();
+    const parsed = await parseJsonBody(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
     const {
       date,
       memo,
@@ -116,29 +119,37 @@ export async function POST(req: Request) {
       return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
     }
 
+    const toStringOrNull = (v: unknown): string | null =>
+      typeof v === 'string' ? v : v == null ? null : String(v);
+    const toNumOrNull = (v: unknown): number | null => {
+      if (v == null || v === '') return null;
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;
+    };
+
     const data = {
       userId: session.userId,
       date: String(date),
-      memo: memo ?? null,
+      memo: toStringOrNull(memo),
       medicationTaken: Boolean(medication_taken ?? false),
-      generalMood: general_mood != null ? Number(general_mood) : null,
-      mealDescription: meal_description ?? null,
-      periodStatus: period_status ?? null,
-      aiComment: ai_comment ?? null,
-      painLevel: pain_level != null ? Number(pain_level) : null,
-      stoolType: stool_type ?? null,
-      alcoholAmount: Number(alcohol_amount ?? 0),
-      alcoholPercent: alcohol_percent != null ? Number(alcohol_percent) : null,
-      alcoholType: alcohol_type ?? null,
-      stressLevel: stress_level != null ? Number(stress_level) : null,
-      sleepQuality: sleep_quality ?? null,
-      spending: spending != null ? Number(spending) : null,
-      weight: weight != null ? Number(weight) : null,
-      bodyFat: body_fat != null ? Number(body_fat) : null,
-      calories: calories != null ? Number(calories) : null,
-      protein: protein != null ? Number(protein) : null,
-      steps: steps != null ? Number(steps) : null,
-      exerciseMinutes: exercise_minutes != null ? Number(exercise_minutes) : null,
+      generalMood: toNumOrNull(general_mood),
+      mealDescription: toStringOrNull(meal_description),
+      periodStatus: toStringOrNull(period_status),
+      aiComment: toStringOrNull(ai_comment),
+      painLevel: toNumOrNull(pain_level),
+      stoolType: toStringOrNull(stool_type),
+      alcoholAmount: Number(alcohol_amount ?? 0) || 0,
+      alcoholPercent: toNumOrNull(alcohol_percent),
+      alcoholType: toStringOrNull(alcohol_type),
+      stressLevel: toNumOrNull(stress_level),
+      sleepQuality: toStringOrNull(sleep_quality),
+      spending: toNumOrNull(spending),
+      weight: toNumOrNull(weight),
+      bodyFat: toNumOrNull(body_fat),
+      calories: toNumOrNull(calories),
+      protein: toNumOrNull(protein),
+      steps: toNumOrNull(steps),
+      exerciseMinutes: toNumOrNull(exercise_minutes),
     };
 
     const log = await prisma.healthLog.upsert({
@@ -163,19 +174,29 @@ export async function PATCH(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = await req.json();
+    const parsed = await parseJsonBody(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
     const { id, ...updates } = body;
 
-    if (!id) {
+    if (!id || typeof id !== 'string') {
       return new NextResponse('Bad Request: id required', { status: 400 });
     }
 
     const existing = await prisma.healthLog.findFirst({
-      where: { id, userId: session.userId },
+      where: { id: String(id), userId: session.userId },
     });
     if (!existing) {
       return new NextResponse('Not Found', { status: 404 });
     }
+
+    const toStringOrNull = (v: unknown): string | null =>
+      typeof v === 'string' ? v : v == null ? null : String(v);
+    const toNumOrNull = (v: unknown): number | null => {
+      if (v == null || v === '') return null;
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;
+    };
 
     const data: Partial<{
       memo: string;
@@ -186,16 +207,16 @@ export async function PATCH(req: Request) {
       weight: number | null;
       steps: number | null;
     }> = {};
-    if (updates.memo !== undefined) data.memo = updates.memo;
-    if (updates.general_mood !== undefined) data.generalMood = Number(updates.general_mood);
-    if (updates.meal_description !== undefined) data.mealDescription = updates.meal_description;
-    if (updates.pain_level !== undefined) data.painLevel = Number(updates.pain_level);
-    if (updates.stool_type !== undefined) data.stoolType = updates.stool_type;
-    if (updates.weight !== undefined) data.weight = updates.weight === '' ? null : Number(updates.weight);
-    if (updates.steps !== undefined) data.steps = updates.steps === '' ? null : Number(updates.steps);
+    if (updates.memo !== undefined) data.memo = toStringOrNull(updates.memo) ?? '';
+    if (updates.general_mood !== undefined) data.generalMood = toNumOrNull(updates.general_mood) ?? 0;
+    if (updates.meal_description !== undefined) data.mealDescription = toStringOrNull(updates.meal_description) ?? '';
+    if (updates.pain_level !== undefined) data.painLevel = toNumOrNull(updates.pain_level) ?? 0;
+    if (updates.stool_type !== undefined) data.stoolType = toStringOrNull(updates.stool_type) ?? '';
+    if (updates.weight !== undefined) data.weight = toNumOrNull(updates.weight);
+    if (updates.steps !== undefined) data.steps = toNumOrNull(updates.steps);
 
     const log = await prisma.healthLog.update({
-      where: { id },
+      where: { id: String(id) },
       data,
     });
 

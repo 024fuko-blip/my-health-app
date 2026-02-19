@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
+import { parseJsonBody } from '@/lib/api-utils';
 
 const NUTRITION_JSON_PROMPT = `
 あなたは食事から栄養成分を推定する専門家です。
@@ -29,7 +30,9 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = await req.json();
+    const parsed = await parseJsonBody<{ image_base64?: string; meal_description?: string }>(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
     const imageBase64 = body.image_base64;
     const mealDescription =
       typeof body.meal_description === 'string' ? body.meal_description.trim() : '';

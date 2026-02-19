@@ -17,7 +17,7 @@ export function useRecordForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [modes, setModes] = useState<UserSettingsMode>({});
-  const [aiPersonality, setAiPersonality] = useState<string>('tsundere');
+  const [aiPersonality, setAiPersonality] = useState<string>('asuka');
   const [gender, setGender] = useState('unspecified');
   const [periodSettings, setPeriodSettings] = useState({
     lastPeriodDate: '',
@@ -114,7 +114,7 @@ export function useRecordForm() {
             mode_alcohol: Boolean(settings.mode_alcohol),
             mode_mental: Boolean(settings.mode_mental),
           });
-          setAiPersonality((settings.ai_personality as string) || 'tsundere');
+          setAiPersonality((settings.ai_personality as string) || 'asuka');
           setGender((settings.gender as string) || 'unspecified');
 
           try {
@@ -411,6 +411,38 @@ export function useRecordForm() {
     router.push('/dashboard');
   };
 
+  const handlePeriodStart = async (dateStr: string) => {
+    try {
+      const res = await fetch('/api/user-settings/period', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ last_period_date: dateStr }),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setPeriodSettings((prev) => ({ ...prev, lastPeriodDate: dateStr }));
+      }
+    } catch (e) {
+      console.error('Period start update error:', e);
+    }
+  };
+
+  const handlePeriodEnd = async (_startDate: string, duration: number) => {
+    try {
+      const res = await fetch('/api/user-settings/period', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ period_duration: duration }),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setPeriodSettings((prev) => ({ ...prev, periodDuration: duration }));
+      }
+    } catch (e) {
+      console.error('Period end update error:', e);
+    }
+  };
+
   return {
     loading,
     modes,
@@ -428,6 +460,8 @@ export function useRecordForm() {
     setGeneralMood,
     periodStatus,
     setPeriodStatus,
+    handlePeriodStart,
+    handlePeriodEnd,
     mealDescription,
     setMealDescription,
     mealImageBase64,

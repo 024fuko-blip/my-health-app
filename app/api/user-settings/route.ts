@@ -1,6 +1,23 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { parseJsonBody } from '@/lib/api-utils';
+
+const MAX_STRING_LENGTH = 10000;
+
+function safeNumber(val: unknown, min: number, max: number): number | null {
+  if (val == null || val === '') return null;
+  const n = Number(val);
+  if (Number.isNaN(n)) return null;
+  if (n < min || n > max) return null;
+  return n;
+}
+
+function safeLongString(val: unknown, maxLen: number): string | null {
+  if (val == null || val === '') return null;
+  const s = String(val);
+  return s.slice(0, maxLen);
+}
 
 /** Prisma UserSettings をフロント期待の snake_case 形式に変換 */
 function toApiShape(row: {
@@ -30,7 +47,7 @@ function toApiShape(row: {
     current_medications: row.currentMedications ?? '',
     medication_reminder_times: row.medicationReminderTimes ?? '',
     gender: row.gender ?? 'unspecified',
-    ai_personality: row.aiPersonality ?? 'tsundere',
+    ai_personality: row.aiPersonality ?? 'asuka',
     profile_name: row.profileName ?? '',
     birth_date: row.birthDate ?? '',
     height: row.height ?? null,
@@ -60,7 +77,7 @@ export async function GET() {
         currentMedications: null,
         medicationReminderTimes: null,
         gender: 'unspecified',
-        aiPersonality: 'tsundere',
+        aiPersonality: 'asuka',
         profileName: null,
         birthDate: null,
         height: null,
@@ -83,7 +100,10 @@ export async function PUT(req: Request) {
     const session = await getSession();
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
-    const body = await req.json();
+    const parsed = await parseJsonBody(req);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
+
     const {
       mode_ibd,
       mode_alcohol,
@@ -103,27 +123,29 @@ export async function PUT(req: Request) {
       longitude,
     } = body;
 
-    const personality = ['tsundere', 'amayama', 'ikemen'].includes(ai_personality)
-      ? ai_personality
-      : 'tsundere';
+    const personality = (['tsundere', 'amayama', 'ikemen', 'asuka'] as const).includes(ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
+      ? (ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
+      : 'asuka';
+
+    const genderStr = typeof gender === 'string' ? gender : 'unspecified';
 
     const data = {
       modeIbd: Boolean(mode_ibd ?? true),
       modeAlcohol: Boolean(mode_alcohol ?? false),
       modeMental: Boolean(mode_mental ?? false),
       modeDiet: Boolean(mode_diet ?? false),
-      medicalHistory: medical_history ?? null,
-      currentMedications: current_medications ?? null,
-      medicationReminderTimes: medication_reminder_times != null && medication_reminder_times !== '' ? String(medication_reminder_times) : null,
-      gender: gender ?? 'unspecified',
+      medicalHistory: safeLongString(medical_history, MAX_STRING_LENGTH),
+      currentMedications: safeLongString(current_medications, MAX_STRING_LENGTH),
+      medicationReminderTimes: medication_reminder_times != null && medication_reminder_times !== '' ? String(medication_reminder_times).slice(0, 2000) : null,
+      gender: genderStr,
       aiPersonality: personality,
-      profileName: profile_name != null && profile_name !== '' ? profile_name : null,
-      birthDate: birth_date != null && birth_date !== '' ? birth_date : null,
-      height: height != null && height !== '' ? Number(height) : null,
-      weight: weight != null && weight !== '' ? Number(weight) : null,
-      prefecture: prefecture != null && prefecture !== '' ? String(prefecture) : null,
-      latitude: latitude != null && latitude !== '' ? Number(latitude) : null,
-      longitude: longitude != null && longitude !== '' ? Number(longitude) : null,
+      profileName: profile_name != null && profile_name !== '' ? String(profile_name).slice(0, 100) : null,
+      birthDate: birth_date != null && birth_date !== '' ? String(birth_date).slice(0, 20) : null,
+      prefecture: prefecture != null && prefecture !== '' ? String(prefecture).slice(0, 50) : null,
+      height: safeNumber(height, 0, 300),
+      weight: safeNumber(weight, 0, 500),
+      latitude: safeNumber(latitude, -90, 90),
+      longitude: safeNumber(longitude, -180, 180),
     };
 
     await prisma.userSettings.upsert({

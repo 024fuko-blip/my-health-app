@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { parseJsonBody } from '@/lib/api-utils';
 
 export async function PATCH(
   req: Request,
@@ -11,8 +12,9 @@ export async function PATCH(
     if (!session) return new NextResponse('Unauthorized', { status: 401 });
 
     const { id } = await params;
-    const body = await req.json();
-    const { name, due_date, memo } = body;
+    const parsed = await parseJsonBody<{ name?: string; due_date?: string; memo?: string }>(req);
+    if (!parsed.ok) return parsed.error;
+    const { name, due_date, memo } = parsed.data;
 
     const existing = await prisma.checkupReminder.findFirst({
       where: { id, userId: session.userId },
