@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
 
-/** GET: LINE友だち追加URLを返す（ランタイム環境変数から。Cloud Run で設定可能） */
+/** Basic ID 未設定時のフォールバック（LINE Developers の Bot basic ID を設定すれば不要） */
+const FALLBACK_BASIC_ID = '156ipswe';
+
+/** GET: LINE友だち追加URLを返す（env → フォールバック） */
 export async function GET() {
   try {
     const session = await getSession();
@@ -10,14 +13,13 @@ export async function GET() {
 
     const env = getServerEnv();
     const fromUrl = env.LINE_ADD_FRIEND_URL?.trim();
-    const basicId = env.LINE_BOT_BASIC_ID?.trim()?.replace(/^@/, '');
+    const basicId =
+      env.LINE_BOT_BASIC_ID?.trim()?.replace(/^@/, '') || FALLBACK_BASIC_ID;
 
     const url =
       fromUrl && (fromUrl.startsWith('http://') || fromUrl.startsWith('https://'))
         ? fromUrl
-        : basicId
-          ? `https://line.me/R/ti/p/@${basicId}`
-          : null;
+        : `https://line.me/R/ti/p/@${basicId}`;
 
     return NextResponse.json({ url });
   } catch (error) {
