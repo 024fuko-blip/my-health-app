@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 
 /** DELETE: LINE連携を解除 */
 export async function DELETE() {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     await prisma.lineLink.deleteMany({ where: { userId: session.userId } });
     return NextResponse.json({ ok: true });

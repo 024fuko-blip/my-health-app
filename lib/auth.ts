@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { NextAuthOptions } from 'next-auth';
+import { NextResponse } from 'next/server';
 import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import prisma from './prisma';
@@ -25,14 +26,14 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
+        token.id = user.id ?? undefined;
+        token.email = user.email ?? undefined;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as { id: string }).id = token.id as string;
+      if (session.user && token.id != null) {
+        session.user.id = token.id;
       }
       return session;
     },
@@ -52,7 +53,14 @@ export interface Session {
 export async function getSession(): Promise<Session | null> {
   const s = await getServerSession(authOptions);
   if (!s?.user?.email) return null;
-  const id = (s.user as { id?: string }).id;
+  const id = s.user.id;
   if (!id) return null;
   return { userId: id, email: s.user.email };
+}
+
+/** セッション取得。未認証の場合は 401 レスポンスを返す。API ルートで利用。 */
+export async function requireSession(): Promise<Session | NextResponse> {
+  const session = await getSession();
+  if (!session) return new NextResponse('Unauthorized', { status: 401 });
+  return session;
 }

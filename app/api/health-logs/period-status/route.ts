@@ -4,7 +4,7 @@
  */
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { parseJsonBody } from '@/lib/api-utils';
 import { isValidDateStr } from '@/lib/date-utils';
 
@@ -12,8 +12,8 @@ const ALLOWED_VALUES = ['なし', '生理中', '生理終了'] as const;
 
 export async function PUT(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody<{ date?: string; period_status?: string }>(req);
     if (!parsed.ok) return parsed.error;

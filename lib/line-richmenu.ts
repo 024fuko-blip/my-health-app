@@ -91,7 +91,7 @@ export async function uploadRichMenuImage(richMenuId: string, imageBuffer: Buffe
       'Content-Type': 'image/png',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: imageBuffer,
+    body: new Uint8Array(imageBuffer),
   });
 
   if (!res.ok) {

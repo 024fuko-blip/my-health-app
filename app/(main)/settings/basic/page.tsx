@@ -52,7 +52,7 @@ export default function SettingsBasicPage() {
   }, [router]);
 
   const toggleMode = (key: string) => {
-    setSettings((prev) => ({ ...prev, [key]: !(prev as Record<string, boolean>)[key] }));
+    setSettings((prev) => ({ ...prev, [key]: !(prev as unknown as Record<string, boolean>)[key] }));
   };
 
   const handleSave = async () => {

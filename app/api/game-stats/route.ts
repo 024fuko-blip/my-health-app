@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { BADGE_DEFS } from '@/lib/game-stats';
 
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const stats = await prisma.userGameStats.findUnique({
       where: { userId: session.userId },

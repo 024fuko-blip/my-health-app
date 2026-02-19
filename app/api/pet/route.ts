@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/api-utils";
 import {
   PET_FOODS,
   PET_OUTFITS,
@@ -14,8 +15,8 @@ import {
 /** GET: ペット状態・所持アイテム・ポイント・ショップ一覧 */
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse("Unauthorized", { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const [pet, inventoryRows, gameStats] = await Promise.all([
       prisma.userPet.findUnique({ where: { userId: session.userId } }),
@@ -115,11 +116,12 @@ export async function GET() {
 /** POST: ペット作成 or 名前・種類の更新 */
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse("Unauthorized", { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
-    const body = await req.json().catch(() => ({}));
-    const { pet_name, pet_species } = body;
+    const parsed = await parseJsonBody<{ pet_name?: string; pet_species?: string }>(req);
+    if (!parsed.ok) return parsed.error;
+    const { pet_name, pet_species } = parsed.data;
 
     const data: { petName?: string; petSpecies?: string } = {};
     if (pet_name != null && String(pet_name).trim())

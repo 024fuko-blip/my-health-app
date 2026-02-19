@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/api-utils";
 import { PET_OUTFITS } from "@/lib/pet-shop";
 
 /** POST: 着せ替え（所持している衣装を装着 / なしにする） */
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse("Unauthorized", { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody<{ outfitId?: string | null }>(req);
     if (!parsed.ok) return parsed.error;

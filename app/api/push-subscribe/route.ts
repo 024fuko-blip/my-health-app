@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { getVapidPublicKey } from '@/lib/web-push';
 import { parseJsonBody } from '@/lib/api-utils';
 
 /** GET: VAPID 公開鍵と購読状況を返す（通知機能が有効かどうか） */
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const publicKey = getVapidPublicKey();
     if (!publicKey) {
@@ -37,8 +37,8 @@ export async function GET() {
 /** POST: プッシュ購読を保存 */
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const publicKey = getVapidPublicKey();
     if (!publicKey) {
@@ -91,8 +91,8 @@ export async function POST(req: Request) {
 /** DELETE: プッシュ購読を削除（endpoint を Body で送る） */
 export async function DELETE(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody<{ endpoint?: string }>(req);
     const endpoint = parsed.ok ? parsed.data.endpoint : undefined;

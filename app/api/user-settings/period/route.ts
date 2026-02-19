@@ -5,14 +5,14 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { parseJsonBody } from '@/lib/api-utils';
 import { safeParseJson } from '@/lib/json-utils';
 
 export async function PATCH(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody<{ last_period_date?: string; period_duration?: number }>(req);
     const body = parsed.ok ? parsed.data : {};

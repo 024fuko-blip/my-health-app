@@ -59,7 +59,7 @@ export default function PushNotifyButton() {
       }
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapid_public_key),
+        applicationServerKey: urlBase64ToUint8Array(vapid_public_key) as BufferSource,
       });
       const res = await fetch("/api/push-subscribe", {
         method: "POST",

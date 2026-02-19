@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextResponse } from 'next/server';
 import { GET, POST } from './route';
 
 vi.mock('@/lib/auth', () => ({
-  getSession: vi.fn(),
+  requireSession: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -19,16 +20,16 @@ vi.mock('@/lib/game-stats', () => ({
   updateStatsAfterLog: vi.fn(),
 }));
 
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 describe('GET /api/health-logs', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockResolvedValue({ userId: 'test-user', email: 'test@example.com' });
+    vi.mocked(requireSession).mockResolvedValue({ userId: 'test-user', email: 'test@example.com' });
   });
 
   it('認証なしは401', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(requireSession).mockResolvedValue(new NextResponse('Unauthorized', { status: 401 }));
     const req = new Request('http://localhost/api/health-logs?date=2025-02-12');
     const res = await GET(req);
     expect(res.status).toBe(401);
@@ -57,7 +58,7 @@ describe('GET /api/health-logs', () => {
 
 describe('POST /api/health-logs', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockResolvedValue({ userId: 'test-user', email: 'test@example.com' });
+    vi.mocked(requireSession).mockResolvedValue({ userId: 'test-user', email: 'test@example.com' });
     vi.mocked(prisma.healthLog.upsert).mockResolvedValue({
       id: 'log-1',
       userId: 'test-user',
@@ -70,7 +71,7 @@ describe('POST /api/health-logs', () => {
       aiComment: null,
       painLevel: null,
       stoolType: null,
-      alcoholAmount: null,
+      alcoholAmount: 0,
       alcoholPercent: null,
       alcoholType: null,
       stressLevel: null,
@@ -81,7 +82,9 @@ describe('POST /api/health-logs', () => {
       calories: null,
       protein: null,
       steps: null,
-      exerciseMinutes: null,
+      exerciseMinutes: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
   });
 
@@ -97,7 +100,7 @@ describe('POST /api/health-logs', () => {
   });
 
   it('認証なしは401', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(requireSession).mockResolvedValue(new NextResponse('Unauthorized', { status: 401 }));
     const req = new Request('http://localhost/api/health-logs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

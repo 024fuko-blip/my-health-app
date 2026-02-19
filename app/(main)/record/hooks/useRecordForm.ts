@@ -477,7 +477,6 @@ export function useRecordForm() {
     setPeriodStatus,
     handlePeriodStart,
     handlePeriodEnd,
-    savePeriodStatusToLog,
     mealDescription,
     setMealDescription,
     mealImageBase64,

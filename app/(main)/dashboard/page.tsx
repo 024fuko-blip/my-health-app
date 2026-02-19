@@ -245,8 +245,8 @@ export default function DashboardPage() {
                   orientation="right"
                 />
                 <Tooltip
-                  formatter={(value: number | null, name: string) => {
-                    if (value == null) return '—';
+                  formatter={(value, name) => {
+                    if (value == null || typeof value !== 'number') return '—';
                     if (name === 'アルコール') return `${value * 100}ml`;
                     if (name === '体重') return `${value}kg`;
                     if (name === 'トイレ') return `${value}回`;

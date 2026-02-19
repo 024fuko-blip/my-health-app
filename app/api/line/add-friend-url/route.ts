@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
 
 /** Basic ID 未設定時のフォールバック（LINE Developers の Bot basic ID を設定すれば不要） */
@@ -8,8 +8,8 @@ const FALLBACK_BASIC_ID = '156ipswe';
 /** GET: LINE友だち追加URLを返す（env → フォールバック） */
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const env = getServerEnv();
     const fromUrl = env.LINE_ADD_FRIEND_URL?.trim();

@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody } from '@/lib/api-utils';
 
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody<{ period?: number }>(req);
     if (!parsed.ok) return parsed.error;

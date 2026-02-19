@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { parseJsonBody } from '@/lib/api-utils';
 
 const MAX_STRING_LENGTH = 10000;
@@ -60,8 +60,8 @@ function toApiShape(row: {
 
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const row = await prisma.userSettings.findUnique({
       where: { userId: session.userId },
@@ -97,8 +97,8 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody(req);
     if (!parsed.ok) return parsed.error;

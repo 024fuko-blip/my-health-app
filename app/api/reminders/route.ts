@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { parseJsonBody } from '@/lib/api-utils';
 import { buildMedicationSchedule } from '@/lib/medication-schedule';
 
 /** GET: 今日の服薬スケジュール + 検診リマインダー一覧 */
 export async function GET(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type'); // 'medication' | 'checkup' | null(両方)
@@ -73,8 +73,8 @@ export async function GET(req: Request) {
 /** POST: 検診リマインダー追加 */
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody<{ name?: string; due_date?: string; memo?: string }>(req);
     if (!parsed.ok) return parsed.error;

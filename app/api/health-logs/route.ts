@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { updateStatsAfterLog } from '@/lib/game-stats';
 import { isValidDateStr } from '@/lib/date-utils';
 import { parseJsonBody } from '@/lib/api-utils';
+import { toStringOrNull, toNumOrNull } from '@/lib/json-utils';
 import type { HealthLog } from '@prisma/client';
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
@@ -37,8 +38,8 @@ function toApiShape(log: HealthLog) {
 
 export async function GET(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const { searchParams } = new URL(req.url);
     const date = searchParams.get('date');
@@ -82,8 +83,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody(req);
     if (!parsed.ok) return parsed.error;
@@ -118,14 +119,6 @@ export async function POST(req: Request) {
     if (!isValidDateStr(date)) {
       return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
     }
-
-    const toStringOrNull = (v: unknown): string | null =>
-      typeof v === 'string' ? v : v == null ? null : String(v);
-    const toNumOrNull = (v: unknown): number | null => {
-      if (v == null || v === '') return null;
-      const n = Number(v);
-      return Number.isNaN(n) ? null : n;
-    };
 
     const data = {
       userId: session.userId,
@@ -171,8 +164,8 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const parsed = await parseJsonBody(req);
     if (!parsed.ok) return parsed.error;
@@ -189,14 +182,6 @@ export async function PATCH(req: Request) {
     if (!existing) {
       return new NextResponse('Not Found', { status: 404 });
     }
-
-    const toStringOrNull = (v: unknown): string | null =>
-      typeof v === 'string' ? v : v == null ? null : String(v);
-    const toNumOrNull = (v: unknown): number | null => {
-      if (v == null || v === '') return null;
-      const n = Number(v);
-      return Number.isNaN(n) ? null : n;
-    };
 
     const data: Partial<{
       memo: string;
@@ -229,8 +214,8 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

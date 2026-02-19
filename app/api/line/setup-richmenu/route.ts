@@ -4,7 +4,7 @@
  * 実行: POST /api/line/setup-richmenu
  */
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
 import {
   createRichMenu,
@@ -15,8 +15,8 @@ import { generateRichMenuImage } from '@/lib/line-richmenu-image';
 
 export async function POST() {
   try {
-    const session = await getSession();
-    if (!session) return new NextResponse('Unauthorized', { status: 401 });
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const baseUrl = getServerEnv().NEXTAUTH_URL ?? '';
     if (!baseUrl) {
