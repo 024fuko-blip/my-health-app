@@ -103,6 +103,10 @@ gcloud run deploy my-health-apps --project my-health-app-485805 --source . --reg
 
 ## トラブルシューティング
 
+### 内部サーバーエラー
+- **Secret Manager が原因のとき**: Cloud Run の環境変数に `USE_SECRET_MANAGER=false` を追加すると、Secret Manager を無効化して process.env（Cloud Run の環境変数）のみ使用
+- AUTH_SECRET, DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL がすべて設定されているか確認
+
 ### Prismaバイナリエラー
 `prisma/schema.prisma` に以下が必要：
 ```prisma

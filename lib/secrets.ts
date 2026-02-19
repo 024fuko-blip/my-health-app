@@ -61,7 +61,14 @@ export async function loadSecretsFromSecretManager(): Promise<void> {
     return;
   }
 
-  const client = new SecretManagerServiceClient();
+  let client: SecretManagerServiceClient;
+  try {
+    client = new SecretManagerServiceClient();
+  } catch (e) {
+    console.error('[Secrets] Secret Manager クライアント初期化失敗:', e);
+    return;
+  }
+
   const cache: Record<string, string> = {};
 
   await Promise.all(

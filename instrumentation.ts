@@ -9,7 +9,11 @@ export async function register() {
 
   const { shouldUseSecretManagerAsync, loadSecretsFromSecretManager } = await import('./lib/secrets');
   if (await shouldUseSecretManagerAsync()) {
-    await loadSecretsFromSecretManager();
+    try {
+      await loadSecretsFromSecretManager();
+    } catch (e) {
+      console.error('[Instrumentation] Secret Manager 読み込み失敗。process.env を使用します:', e);
+    }
   }
 
   validateRuntimeEnv();
