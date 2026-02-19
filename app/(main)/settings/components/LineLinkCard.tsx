@@ -129,8 +129,12 @@ export default function LineLinkCard() {
             解除
           </button>
         </div>
-        <div className="pt-2 border-t border-green-200">
-          <p className="text-xs text-gray-600 mb-2">チャット下のメニュー（Rich Menu）</p>
+        <div className="pt-2 border-t border-green-200 space-y-2">
+          <div className="p-2 bg-amber-50 rounded-lg border border-amber-200">
+            <p className="text-xs font-medium text-amber-800">⚠️ 「個別の問い合わせ受け付けておりません」と出る場合</p>
+            <p className="text-xs text-amber-700 mt-0.5">LINE公式アカウント管理画面 → 応答設定 → 「応答メッセージ」をオフにしてください。</p>
+          </div>
+          <p className="text-xs text-gray-600">チャット下のメニュー（Rich Menu）</p>
           <button
             onClick={handleSetupRichMenu}
             disabled={richMenuLoading}
@@ -186,8 +190,12 @@ export default function LineLinkCard() {
           {loading ? "処理中..." : "連携する"}
         </button>
       </div>
-      <div className="pt-2 border-t border-gray-100">
-        <p className="text-xs text-gray-500 mb-2">チャット下のメニュー（Rich Menu）</p>
+      <div className="pt-2 border-t border-gray-100 space-y-2">
+        <div className="p-2 bg-amber-50 rounded-lg border border-amber-200">
+          <p className="text-xs font-medium text-amber-800">⚠️ 連携後「個別の問い合わせ受け付けておりません」と出る場合</p>
+          <p className="text-xs text-amber-700 mt-0.5">LINE公式アカウント管理画面 → 応答設定 → 「応答メッセージ」をオフにしてください。</p>
+        </div>
+        <p className="text-xs text-gray-500">チャット下のメニュー（Rich Menu）</p>
         <button
           onClick={handleSetupRichMenu}
           disabled={richMenuLoading}

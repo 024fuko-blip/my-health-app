@@ -1,6 +1,7 @@
 /**
  * Rich Menu 用の画像を生成（2500x1686 PNG）
  * 4エリア（今日の記録・ペット・分析・相談）をシンプルなデザインで作成
+ * 注: Docker (Alpine) では日本語フォントがないため、ASCIIラベルで確実に表示
  */
 import sharp from 'sharp';
 
@@ -10,22 +11,24 @@ const HW = Math.floor(W / 2);
 const HH = Math.floor(H / 2);
 
 const AREAS = [
-  { x: 0, y: 0, w: HW, h: HH, label: '📝 今日の記録', bg: '#4A90D9' },
-  { x: HW, y: 0, w: HW, h: HH, label: '🐱 ペット', bg: '#7B68EE' },
-  { x: 0, y: HH, w: HW, h: HH, label: '📊 分析', bg: '#50C878' },
-  { x: HW, y: HH, w: HW, h: HH, label: '💬 相談', bg: '#E8A87C' },
+  { x: 0, y: 0, w: HW, h: HH, label: 'Record', bg: '#4A90D9' },
+  { x: HW, y: 0, w: HW, h: HH, label: 'Pet', bg: '#7B68EE' },
+  { x: 0, y: HH, w: HW, h: HH, label: 'Stats', bg: '#50C878' },
+  { x: HW, y: HH, w: HW, h: HH, label: 'Chat', bg: '#E8A87C' },
 ];
 
-/** 各エリアのSVGを組み合わせて1枚のPNGを生成 */
+/** 各エリアのSVGを組み合わせて1枚のPNGを生成（DejaVu Sans で確実に表示） */
 export async function generateRichMenuImage(): Promise<Buffer> {
   const svgParts: string[] = [];
 
   for (const a of AREAS) {
-    const fontSize = Math.min(80, Math.floor(a.w / 12));
+    const fontSize = 160;
+    const cx = a.x + a.w / 2;
+    const cy = a.y + a.h / 2;
     svgParts.push(`
       <rect x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" fill="${a.bg}"/>
-      <rect x="${a.x + 2}" y="${a.y + 2}" width="${a.w - 4}" height="${a.h - 4}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
-      <text x="${a.x + a.w / 2}" y="${a.y + a.h / 2}" font-size="${fontSize}" fill="white" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-weight="bold">${a.label}</text>
+      <rect x="${a.x + 4}" y="${a.y + 4}" width="${a.w - 8}" height="${a.h - 8}" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="4"/>
+      <text x="${cx}" y="${cy}" font-size="${fontSize}" fill="white" text-anchor="middle" dominant-baseline="central" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold">${a.label}</text>
     `);
   }
 

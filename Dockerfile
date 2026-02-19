@@ -43,8 +43,8 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Prisma実行に必要なライブラリをインストール
-RUN apk add --no-cache libc6-compat openssl
+# Prisma実行・Rich Menu画像生成に必要なライブラリをインストール
+RUN apk add --no-cache libc6-compat openssl fontconfig ttf-dejavu
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
