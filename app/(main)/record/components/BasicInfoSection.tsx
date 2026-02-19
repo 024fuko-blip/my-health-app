@@ -16,7 +16,11 @@ interface BasicInfoSectionProps {
   onPeriodStart?: (date: string) => Promise<void>;
   /** 生理終了時に periodDuration を更新するコールバック */
   onPeriodEnd?: (startDate: string, duration: number) => Promise<void>;
+  /** 生理ボタン選択をその日の記録に即時保存（保持用） */
+  onPeriodStatusSave?: (date: string, status: string) => Promise<void>;
   lastPeriodDate?: string;
+  /** 選択中の日付（即時保存時に使用） */
+  selectedDate?: string;
 }
 
 export function BasicInfoSection({
@@ -32,7 +36,9 @@ export function BasicInfoSection({
   setSkinCondition,
   onPeriodStart,
   onPeriodEnd,
+  onPeriodStatusSave,
   lastPeriodDate,
+  selectedDate,
 }: BasicInfoSectionProps) {
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
@@ -112,23 +118,24 @@ export function BasicInfoSection({
       )}
 
       {gender === 'female' && (
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-pink-700 block">🩸 生理</label>
+        <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+          <label className="text-xs font-bold block text-slate-700">🩸 生理</label>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={async () => {
+                const d = new Date();
+                const dateStr = selectedDate ?? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                 setPeriodStatus('生理中');
+                await onPeriodStatusSave?.(dateStr, '生理中');
                 if (onPeriodStart) {
-                  const d = new Date();
-                  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                   await onPeriodStart(dateStr);
                 }
               }}
               className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
                 periodStatus === '生理中'
-                  ? 'border-pink-500 bg-pink-100 text-pink-800'
-                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-pink-300'
+                  ? 'border-slate-500 bg-slate-200 text-slate-800 ring-2 ring-slate-400'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
               }`}
             >
               <span className="text-lg">🩸</span>
@@ -136,11 +143,16 @@ export function BasicInfoSection({
             </button>
             <button
               type="button"
-              onClick={() => setPeriodStatus(periodStatus === '生理中' ? 'なし' : '生理中')}
+              onClick={async () => {
+                const next = periodStatus === '生理中' ? 'なし' : '生理中';
+                const dateStr = selectedDate ?? new Date().toISOString().split('T')[0];
+                setPeriodStatus(next);
+                await onPeriodStatusSave?.(dateStr, next);
+              }}
               className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
                 periodStatus === '生理中'
-                  ? 'border-pink-500 bg-pink-100 text-pink-800'
-                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-pink-300'
+                  ? 'border-slate-500 bg-slate-200 text-slate-800 ring-2 ring-slate-400'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
               }`}
             >
               <span className="text-lg">💧</span>
@@ -149,32 +161,34 @@ export function BasicInfoSection({
             <button
               type="button"
               onClick={async () => {
+                const dateStr = selectedDate ?? new Date().toISOString().split('T')[0];
                 setPeriodStatus('生理終了');
+                await onPeriodStatusSave?.(dateStr, '生理終了');
                 if (onPeriodEnd && lastPeriodDate) {
                   const start = new Date(lastPeriodDate);
-                  const today = new Date();
-                  const diff = Math.ceil((today.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+                  const end = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
+                  const diff = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
                   const duration = Math.max(1, Math.min(14, diff));
                   await onPeriodEnd(lastPeriodDate, duration);
                 }
               }}
               className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
                 periodStatus === '生理終了'
-                  ? 'border-pink-500 bg-pink-100 text-pink-800'
-                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-pink-300'
+                  ? 'border-slate-500 bg-slate-200 text-slate-800 ring-2 ring-slate-400'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
               }`}
             >
               <span className="text-lg">✓</span>
               <span>生理終了</span>
             </button>
           </div>
-          <p className="text-xs text-gray-500">健康管理で手動入力も可能</p>
+          <p className="text-xs text-gray-500">選択はその日の記録にすぐ保存されます。健康管理で手動入力も可能</p>
         </div>
       )}
 
       {gender === 'female' && (
-        <div className="bg-pink-50 p-3 rounded-lg border border-pink-200">
-          <label className="text-xs font-bold text-pink-700 block mb-2">✨ 肌の調子</label>
+        <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-200">
+          <label className="text-xs font-bold text-slate-700 block mb-2">✨ 肌の調子</label>
           <div className="grid grid-cols-5 gap-2">
             {[1, 2, 3, 4, 5].map((level) => (
               <button
@@ -188,7 +202,7 @@ export function BasicInfoSection({
                       : level === 3
                         ? 'border-yellow-500 bg-yellow-100 text-yellow-800'
                         : 'border-red-500 bg-red-100 text-red-800'
-                    : 'border-gray-200 bg-white text-gray-500 hover:border-pink-300'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <span className="text-lg block">

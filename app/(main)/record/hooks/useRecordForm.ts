@@ -443,6 +443,20 @@ export function useRecordForm() {
     }
   };
 
+  /** 生理ボタン選択をその日の記録に即時保存（再表示時も保持される） */
+  const savePeriodStatusToLog = async (dateStr: string, status: string) => {
+    try {
+      await fetch('/api/health-logs/period-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: dateStr, period_status: status }),
+        credentials: 'include',
+      });
+    } catch (e) {
+      console.error('Period status save error:', e);
+    }
+  };
+
   return {
     loading,
     modes,
@@ -451,6 +465,7 @@ export function useRecordForm() {
     periodSettings,
     date,
     setDate,
+    savePeriodStatusToLog,
     memo,
     setMemo,
     medicationTaken,
@@ -462,6 +477,7 @@ export function useRecordForm() {
     setPeriodStatus,
     handlePeriodStart,
     handlePeriodEnd,
+    savePeriodStatusToLog,
     mealDescription,
     setMealDescription,
     mealImageBase64,
