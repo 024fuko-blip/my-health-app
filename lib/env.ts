@@ -81,6 +81,9 @@ export interface ServerEnv {
   LINE_CHANNEL_ID: string | undefined;
   LINE_CHANNEL_SECRET: string | undefined;
   LINE_CHANNEL_ACCESS_TOKEN: string | undefined;
+  /** LINE 友だち追加用（URL直接 or Basic ID。LINE_ADD_FRIEND_URL 優先） */
+  LINE_ADD_FRIEND_URL: string | undefined;
+  LINE_BOT_BASIC_ID: string | undefined;
   /** Web Push VAPID キー（未設定時はプッシュ通知オフ） */
   VAPID_PUBLIC_KEY: string | undefined;
   VAPID_PRIVATE_KEY: string | undefined;
@@ -103,6 +106,8 @@ function getBuildTimeDummyEnv(): ServerEnv {
     LINE_CHANNEL_ID: undefined,
     LINE_CHANNEL_SECRET: undefined,
     LINE_CHANNEL_ACCESS_TOKEN: undefined,
+    LINE_ADD_FRIEND_URL: undefined,
+    LINE_BOT_BASIC_ID: undefined,
     VAPID_PUBLIC_KEY: undefined,
     VAPID_PRIVATE_KEY: undefined,
     CRON_SECRET: undefined,
@@ -134,6 +139,8 @@ export function getServerEnv(): ServerEnv {
     LINE_CHANNEL_ID: optional(process.env.LINE_CHANNEL_ID),
     LINE_CHANNEL_SECRET: optional(process.env.LINE_CHANNEL_SECRET),
     LINE_CHANNEL_ACCESS_TOKEN: optional(process.env.LINE_CHANNEL_ACCESS_TOKEN),
+    LINE_ADD_FRIEND_URL: optional(process.env.LINE_ADD_FRIEND_URL),
+    LINE_BOT_BASIC_ID: optional(process.env.LINE_BOT_BASIC_ID),
     VAPID_PUBLIC_KEY: optional(process.env.VAPID_PUBLIC_KEY),
     VAPID_PRIVATE_KEY: optional(process.env.VAPID_PRIVATE_KEY),
     CRON_SECRET: optional(process.env.CRON_SECRET),

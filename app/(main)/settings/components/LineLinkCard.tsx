@@ -2,32 +2,25 @@
 
 import { useState, useEffect } from "react";
 
-// 友だち追加URL: 直接指定 or Basic ID（@156ipswe など）から生成
-function getAddFriendUrl(): string | null {
-  const fromEnv = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim() || null;
-  const basicId = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID?.trim()?.replace(/^@/, "") || null;
-  if (fromEnv && (fromEnv.startsWith("http://") || fromEnv.startsWith("https://"))) return fromEnv;
-  if (basicId) return `https://line.me/R/ti/p/@${basicId}`;
-  return null;
-}
-
 export default function LineLinkCard() {
   const [status, setStatus] = useState<"checking" | "linked" | "unlinked" | "requesting" | "unsupported">("checking");
   const [code, setCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const addFriendUrl = getAddFriendUrl();
+  const [addFriendUrl, setAddFriendUrl] = useState<string | null>(null);
   const isValidUrl = !!addFriendUrl;
 
   useEffect(() => {
-    fetch("/api/line/status", { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (!d.enabled) setStatus("unsupported");
-        else if (d.linked) setStatus("linked");
-        else setStatus("unlinked");
-      })
-      .catch(() => setStatus("unsupported"));
+    Promise.all([
+      fetch("/api/line/status", { credentials: "include" }).then((r) => r.json()),
+      fetch("/api/line/add-friend-url", { credentials: "include" }).then((r) => r.json().catch(() => ({ url: null }))),
+    ]).then(([statusData, urlData]) => {
+      if (!statusData.enabled) setStatus("unsupported");
+      else if (statusData.linked) setStatus("linked");
+      else setStatus("unlinked");
+      const url = urlData?.url?.trim();
+      if (url && (url.startsWith("http://") || url.startsWith("https://"))) setAddFriendUrl(url);
+    }).catch(() => setStatus("unsupported"));
   }, []);
 
   const handleLinkStart = async () => {
