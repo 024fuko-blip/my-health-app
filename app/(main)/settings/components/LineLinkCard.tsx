@@ -55,6 +55,7 @@ export default function LineLinkCard() {
   };
 
   const addFriendUrl = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim() || null;
+  const isValidUrl = addFriendUrl && (addFriendUrl.startsWith("http://") || addFriendUrl.startsWith("https://"));
 
   if (status === "checking") {
     return (
@@ -101,12 +102,12 @@ export default function LineLinkCard() {
         <h3 className="font-bold text-gray-800 mb-2">📱 LINE連携</h3>
         <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
           <li>
-            {addFriendUrl ? (
-              <a href={addFriendUrl} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-medium">
-                公式アカウントを友だち追加
+            {isValidUrl ? (
+              <a href={addFriendUrl!} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-medium inline-flex items-center gap-1">
+                公式アカウントを友だち追加 →
               </a>
             ) : (
-              <span>LINE Developers で友だち追加URL（NEXT_PUBLIC_LINE_ADD_FRIEND_URL）を設定し、公式アカウントを友だち追加</span>
+              <span>LINE公式アカウントを友だち追加（QRコードはLINE Developersで確認）</span>
             )}
           </li>
           <li>
@@ -133,6 +134,16 @@ export default function LineLinkCard() {
           {loading ? "処理中..." : "連携する"}
         </button>
       </div>
+      {isValidUrl && (
+        <a
+          href={addFriendUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-green-600 hover:underline"
+        >
+          LINE公式アカウントを友だち追加 →
+        </a>
+      )}
       {errorMsg && (
         <p className="text-xs text-red-600 mt-2">{errorMsg}</p>
       )}
