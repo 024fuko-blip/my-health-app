@@ -1,4 +1,18 @@
 import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/auth';
+import type { Session } from '@/lib/auth';
+
+/**
+ * 認証が必要な API ルートで使用。未認証の場合は 401 を返す。
+ * handler には認証済みの session が渡される。
+ */
+export async function withSession(
+  handler: (session: Session) => Promise<NextResponse>
+): Promise<NextResponse> {
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
+  return handler(session);
+}
 
 /**
  * req.json() を安全にパースする。

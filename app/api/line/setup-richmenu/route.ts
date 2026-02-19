@@ -4,7 +4,7 @@
  * 実行: POST /api/line/setup-richmenu
  */
 import { NextResponse } from 'next/server';
-import { requireSession } from '@/lib/auth';
+import { withSession } from '@/lib/api-utils';
 import { getServerEnv } from '@/lib/env';
 import {
   createRichMenu,
@@ -14,34 +14,33 @@ import {
 import { generateRichMenuImage } from '@/lib/line-richmenu-image';
 
 export async function POST() {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
+  return withSession(async () => {
+    try {
+      const baseUrl = getServerEnv().NEXTAUTH_URL ?? '';
+      if (!baseUrl) {
+        return NextResponse.json(
+          { error: 'NEXTAUTH_URL が設定されていません' },
+          { status: 500 }
+        );
+      }
 
-    const baseUrl = getServerEnv().NEXTAUTH_URL ?? '';
-    if (!baseUrl) {
-      return NextResponse.json(
-        { error: 'NEXTAUTH_URL が設定されていません' },
-        { status: 500 }
-      );
-    }
-
-    const imageBuffer = await generateRichMenuImage();
+      const imageBuffer = await generateRichMenuImage();
     const richMenuId = await createRichMenu(baseUrl);
     await uploadRichMenuImage(richMenuId, imageBuffer);
     await setDefaultRichMenu(richMenuId);
 
-    return NextResponse.json({
-      ok: true,
-      richMenuId,
-      message: 'Rich Menu をセットアップしました。LINE アプリで確認してください。',
-    });
-  } catch (error) {
-    console.error('Rich Menu setup error:', error);
-    const msg = error instanceof Error ? error.message : String(error);
-    return NextResponse.json(
-      { error: `Rich Menu セットアップ失敗: ${msg}` },
-      { status: 500 }
-    );
-  }
+      return NextResponse.json({
+        ok: true,
+        richMenuId,
+        message: 'Rich Menu をセットアップしました。LINE アプリで確認してください。',
+      });
+    } catch (error) {
+      console.error('Rich Menu setup error:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      return NextResponse.json(
+        { error: `Rich Menu セットアップ失敗: ${msg}` },
+        { status: 500 }
+      );
+    }
+  });
 }

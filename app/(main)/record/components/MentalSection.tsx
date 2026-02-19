@@ -1,6 +1,7 @@
 import { EMOTIONS } from '@/lib/record-constants';
 
 interface MentalSectionProps {
+  onUserEdit?: () => void;
   selectedEmotion: string;
   setSelectedEmotion: (v: string) => void;
   sleepQuality: string;
@@ -10,6 +11,7 @@ interface MentalSectionProps {
 }
 
 export function MentalSection({
+  onUserEdit,
   selectedEmotion,
   setSelectedEmotion,
   sleepQuality,
@@ -28,10 +30,12 @@ export function MentalSection({
             <button
               key={emotion.id}
               type="button"
-              onClick={() =>
-                setSelectedEmotion(selectedEmotion === emotion.label ? '' : emotion.label)
-              }
-              className={`p-2 rounded-lg border-2 transition-all ${
+              onClick={(e) => {
+                e.preventDefault();
+                onUserEdit?.();
+                setSelectedEmotion(selectedEmotion === emotion.label ? '' : emotion.label);
+              }}
+              className={`p-2 rounded-lg border-2 transition-all touch-manipulation active:scale-95 ${
                 selectedEmotion === emotion.label
                   ? 'border-green-500 bg-green-100 scale-105'
                   : 'border-gray-200 bg-white hover:border-green-300'
@@ -51,8 +55,8 @@ export function MentalSection({
             <button
               key={q}
               type="button"
-              onClick={() => setSleepQuality(q)}
-              className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition ${
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setSleepQuality(q); }}
+              className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition touch-manipulation active:scale-95 ${
                 sleepQuality === q
                   ? 'border-green-500 bg-green-100 text-green-800'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-green-300'

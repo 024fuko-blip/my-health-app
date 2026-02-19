@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseJsonBody, withSession } from "@/lib/api-utils";
 import {
   PET_FOODS,
   PET_OUTFITS,
@@ -14,11 +13,9 @@ import {
 
 /** GET: ペット状態・所持アイテム・ポイント・ショップ一覧 */
 export async function GET() {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const [pet, inventoryRows, gameStats] = await Promise.all([
+  return withSession(async (session) => {
+    try {
+      const [pet, inventoryRows, gameStats] = await Promise.all([
       prisma.userPet.findUnique({ where: { userId: session.userId } }),
       prisma.userPetInventory.findMany({
         where: { userId: session.userId },
@@ -87,9 +84,9 @@ export async function GET() {
         })
       ),
     });
-  } catch (error) {
-    console.error("pet GET error:", error);
-    return NextResponse.json({
+    } catch (error) {
+      console.error("pet GET error:", error);
+      return NextResponse.json({
       pet: null,
       points: 0,
       inventory: {} as Record<string, number>,
@@ -110,16 +107,15 @@ export async function GET() {
         equipped: false,
       })),
     });
-  }
+    }
+  });
 }
 
 /** POST: ペット作成 or 名前・種類の更新 */
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<{ pet_name?: string; pet_species?: string }>(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody<{ pet_name?: string; pet_species?: string }>(req);
     if (!parsed.ok) return parsed.error;
     const { pet_name, pet_species } = parsed.data;
 
@@ -156,12 +152,13 @@ export async function POST(req: Request) {
       happiness: pet.happiness,
       current_outfit_id: pet.currentOutfitId,
     });
-  } catch (error) {
-    console.error("pet POST error:", error);
-    const err = error as Error & { code?: string };
-    return NextResponse.json(
-      { error: err.message ?? "ペットの作成に失敗しました" },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error("pet POST error:", error);
+      const err = error as Error & { code?: string };
+      return NextResponse.json(
+        { error: err.message ?? "ペットの作成に失敗しました" },
+        { status: 500 }
+      );
+    }
+  });
 }

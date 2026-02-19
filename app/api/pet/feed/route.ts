@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseJsonBody, withSession } from "@/lib/api-utils";
 import { PET_FOODS, MAX_HAPPINESS, EXP_PER_FEED, getLevelFromExp } from "@/lib/pet-shop";
 
 /** POST: 餌をあげる（所持アイテムを1消費して幸福度アップ） */
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<{ itemId?: string }>(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody<{ itemId?: string }>(req);
     if (!parsed.ok) return parsed.error;
     const itemId = typeof parsed.data.itemId === 'string' ? parsed.data.itemId : undefined;
     if (!itemId) {
@@ -71,16 +68,17 @@ export async function POST(req: Request) {
       }),
     ]);
 
-    return NextResponse.json({
-      ok: true,
-      happiness: newHappiness,
-      used: food.name,
-      level: newLevel,
-      exp_points: newExp,
-      feed_count: newFeedCount,
-    });
-  } catch (error) {
-    console.error("pet feed error:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
-  }
+      return NextResponse.json({
+        ok: true,
+        happiness: newHappiness,
+        used: food.name,
+        level: newLevel,
+        exp_points: newExp,
+        feed_count: newFeedCount,
+      });
+    } catch (error) {
+      console.error("pet feed error:", error);
+      return new NextResponse("Internal Server Error", { status: 500 });
+    }
+  });
 }

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { requireSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
-import { parseJsonBody } from '@/lib/api-utils';
+import { parseJsonBody, withSession } from '@/lib/api-utils';
 
 const NUTRITION_JSON_PROMPT = `
 あなたは食事から栄養成分を推定する専門家です。
@@ -26,11 +25,9 @@ const NUTRITION_JSON_PROMPT = `
 `;
 
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<{ image_base64?: string; meal_description?: string }>(req);
+  return withSession(async () => {
+    try {
+      const parsed = await parseJsonBody<{ image_base64?: string; meal_description?: string }>(req);
     if (!parsed.ok) return parsed.error;
     const body = parsed.data;
     const imageBase64 = body.image_base64;
@@ -108,9 +105,10 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json(nutritionData);
-  } catch (error) {
-    console.error('Meal analysis error:', error);
-    return NextResponse.json({ error: '分析エラー' }, { status: 500 });
-  }
+      return NextResponse.json(nutritionData);
+    } catch (error) {
+      console.error('Meal analysis error:', error);
+      return NextResponse.json({ error: '分析エラー' }, { status: 500 });
+    }
+  });
 }

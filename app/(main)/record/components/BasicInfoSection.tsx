@@ -1,5 +1,116 @@
 import type React from 'react';
+import { useState, useCallback } from 'react';
 import type { Medication } from '../hooks/record-form-types';
+
+/** 生理ボタン専用（選択状態を分離・二重押下防止） */
+function PeriodButtons({
+  periodStatus,
+  setPeriodStatus,
+  lastPeriodDate,
+  selectedDate,
+  onPeriodStart,
+  onPeriodEnd,
+  onPeriodStatusSave,
+  onUserEdit,
+}: {
+  periodStatus: string;
+  setPeriodStatus: (v: string) => void;
+  lastPeriodDate?: string;
+  selectedDate?: string;
+  onPeriodStart?: (date: string) => Promise<void>;
+  onPeriodEnd?: (startDate: string, duration: number) => Promise<void>;
+  onPeriodStatusSave?: (date: string, status: string) => Promise<void>;
+  onUserEdit?: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+
+  const getDateStr = useCallback(() => {
+    if (selectedDate) return selectedDate;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, [selectedDate]);
+
+  const handleClick = useCallback(async (
+    status: string,
+    extra?: () => Promise<void>
+  ) => {
+    if (saving) return;
+    onUserEdit?.();
+    setSaving(true);
+    setPeriodStatus(status);
+    const dateStr = getDateStr();
+    try {
+      await onPeriodStatusSave?.(dateStr, status);
+      await extra?.();
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, getDateStr, setPeriodStatus, onPeriodStatusSave, onUserEdit]);
+
+  const dateStr = getDateStr();
+  const isStartDay = periodStatus === '生理中' && lastPeriodDate === dateStr;
+
+  const btnClass = (selected: boolean) =>
+    `p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition min-h-[72px] touch-manipulation ${
+      selected
+        ? 'border-slate-500 bg-slate-200 text-slate-800 ring-2 ring-slate-400'
+        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 active:bg-slate-100'
+    } ${saving ? 'opacity-70 pointer-events-none' : ''}`;
+
+  return (
+    <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+      <label className="text-xs font-bold block text-slate-700">🩸 生理</label>
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleClick('生理中', () => onPeriodStart?.(dateStr));
+          }}
+          className={btnClass(isStartDay)}
+        >
+          <span className="text-lg">🩸</span>
+          <span>生理が来た</span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const next = periodStatus === '生理中' ? 'なし' : '生理中';
+            handleClick(next);
+          }}
+          className={btnClass(periodStatus === '生理中' && !isStartDay)}
+        >
+          <span className="text-lg">💧</span>
+          <span>生理中</span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleClick('生理終了', async () => {
+              if (onPeriodEnd && lastPeriodDate) {
+                const start = new Date(lastPeriodDate);
+                const end = new Date(dateStr + 'T12:00:00');
+                const diff = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+                const duration = Math.max(1, Math.min(14, diff));
+                await onPeriodEnd(lastPeriodDate, duration);
+              }
+            });
+          }}
+          className={btnClass(periodStatus === '生理終了')}
+        >
+          <span className="text-lg">✓</span>
+          <span>生理終了</span>
+        </button>
+      </div>
+      <p className="text-xs text-gray-500">選択はその日の記録にすぐ保存されます。健康管理で手動入力も可能</p>
+    </div>
+  );
+}
 
 interface BasicInfoSectionProps {
   generalMood: number;
@@ -21,6 +132,8 @@ interface BasicInfoSectionProps {
   lastPeriodDate?: string;
   /** 選択中の日付（即時保存時に使用） */
   selectedDate?: string;
+  /** ユーザー編集時（loadLog による上書きを防ぐ） */
+  onUserEdit?: () => void;
 }
 
 export function BasicInfoSection({
@@ -39,6 +152,7 @@ export function BasicInfoSection({
   onPeriodStatusSave,
   lastPeriodDate,
   selectedDate,
+  onUserEdit,
 }: BasicInfoSectionProps) {
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
@@ -49,8 +163,8 @@ export function BasicInfoSection({
             <button
               key={level}
               type="button"
-              onClick={() => setGeneralMood(level)}
-              className={`flex-1 py-2 rounded-lg border-2 font-bold transition ${
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setGeneralMood(level); }}
+              className={`flex-1 py-2 rounded-lg border-2 font-bold transition touch-manipulation active:scale-95 ${
                 generalMood === level
                   ? 'border-blue-500 bg-blue-100 text-blue-800'
                   : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-blue-300'
@@ -94,13 +208,15 @@ export function BasicInfoSection({
                     <button
                       key={key}
                       type="button"
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onUserEdit?.();
                         setMedicationTaken((prev) => ({
                           ...prev,
                           [key]: !prev[key],
-                        }))
-                      }
-                      className={`py-1.5 rounded-lg border-2 font-bold text-xs transition ${
+                        }));
+                      }}
+                      className={`py-1.5 rounded-lg border-2 font-bold text-xs transition touch-manipulation active:scale-95 ${
                         medicationTaken[key]
                           ? 'border-green-500 bg-green-100 text-green-800'
                           : 'border-gray-200 bg-gray-50 text-gray-400'
@@ -118,72 +234,16 @@ export function BasicInfoSection({
       )}
 
       {gender === 'female' && (
-        <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-          <label className="text-xs font-bold block text-slate-700">🩸 生理</label>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                const d = new Date();
-                const dateStr = selectedDate ?? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                setPeriodStatus('生理中');
-                await onPeriodStatusSave?.(dateStr, '生理中');
-                if (onPeriodStart) {
-                  await onPeriodStart(dateStr);
-                }
-              }}
-              className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
-                periodStatus === '生理中'
-                  ? 'border-slate-500 bg-slate-200 text-slate-800 ring-2 ring-slate-400'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-              }`}
-            >
-              <span className="text-lg">🩸</span>
-              <span>生理が来た</span>
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                const next = periodStatus === '生理中' ? 'なし' : '生理中';
-                const dateStr = selectedDate ?? new Date().toISOString().split('T')[0];
-                setPeriodStatus(next);
-                await onPeriodStatusSave?.(dateStr, next);
-              }}
-              className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
-                periodStatus === '生理中'
-                  ? 'border-slate-500 bg-slate-200 text-slate-800 ring-2 ring-slate-400'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-              }`}
-            >
-              <span className="text-lg">💧</span>
-              <span>生理中</span>
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                const dateStr = selectedDate ?? new Date().toISOString().split('T')[0];
-                setPeriodStatus('生理終了');
-                await onPeriodStatusSave?.(dateStr, '生理終了');
-                if (onPeriodEnd && lastPeriodDate) {
-                  const start = new Date(lastPeriodDate);
-                  const end = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
-                  const diff = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
-                  const duration = Math.max(1, Math.min(14, diff));
-                  await onPeriodEnd(lastPeriodDate, duration);
-                }
-              }}
-              className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition ${
-                periodStatus === '生理終了'
-                  ? 'border-slate-500 bg-slate-200 text-slate-800 ring-2 ring-slate-400'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-              }`}
-            >
-              <span className="text-lg">✓</span>
-              <span>生理終了</span>
-            </button>
-          </div>
-          <p className="text-xs text-gray-500">選択はその日の記録にすぐ保存されます。健康管理で手動入力も可能</p>
-        </div>
+        <PeriodButtons
+          periodStatus={periodStatus}
+          setPeriodStatus={setPeriodStatus}
+          lastPeriodDate={lastPeriodDate}
+          selectedDate={selectedDate}
+          onPeriodStart={onPeriodStart}
+          onPeriodEnd={onPeriodEnd}
+          onPeriodStatusSave={onPeriodStatusSave}
+          onUserEdit={onUserEdit}
+        />
       )}
 
       {gender === 'female' && (
@@ -194,8 +254,8 @@ export function BasicInfoSection({
               <button
                 key={level}
                 type="button"
-                onClick={() => setSkinCondition(level)}
-                className={`py-2 rounded-lg border-2 font-bold transition ${
+                onClick={(e) => { e.preventDefault(); onUserEdit?.(); setSkinCondition(level); }}
+                className={`py-2 rounded-lg border-2 font-bold transition touch-manipulation active:scale-95 ${
                   skinCondition === level
                     ? level >= 4
                       ? 'border-green-500 bg-green-100 text-green-800'

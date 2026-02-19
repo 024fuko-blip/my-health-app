@@ -122,6 +122,7 @@ export default function RecordPage() {
           onPeriodStatusSave={form.savePeriodStatusToLog}
           lastPeriodDate={form.periodSettings.lastPeriodDate}
           selectedDate={form.date}
+          onUserEdit={form.markUserEdit}
         />
 
         <MealSection
@@ -142,6 +143,7 @@ export default function RecordPage() {
 
         {form.modes.mode_ibd && (
           <IbdSection
+            onUserEdit={form.markUserEdit}
             temperature={form.temperature}
             setTemperature={form.setTemperature}
             weight={form.weight}
@@ -170,6 +172,7 @@ export default function RecordPage() {
 
         {form.modes.mode_alcohol && (
           <AlcoholSection
+            onUserEdit={form.markUserEdit}
             addedDrinks={form.addedDrinks}
             selectedDrinkKey={form.selectedDrinkKey}
             setSelectedDrinkKey={form.setSelectedDrinkKey}
@@ -193,6 +196,7 @@ export default function RecordPage() {
 
         {form.modes.mode_mental && (
           <MentalSection
+            onUserEdit={form.markUserEdit}
             selectedEmotion={form.selectedEmotion}
             setSelectedEmotion={form.setSelectedEmotion}
             sleepQuality={form.sleepQuality}

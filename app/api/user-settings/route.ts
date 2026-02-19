@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireSession } from '@/lib/auth';
-import { parseJsonBody } from '@/lib/api-utils';
+import { parseJsonBody, withSession } from '@/lib/api-utils';
 
 const MAX_STRING_LENGTH = 10000;
 
@@ -59,16 +58,14 @@ function toApiShape(row: {
 }
 
 export async function GET() {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
+  return withSession(async (session) => {
+    try {
+      const row = await prisma.userSettings.findUnique({
+        where: { userId: session.userId },
+      });
 
-    const row = await prisma.userSettings.findUnique({
-      where: { userId: session.userId },
-    });
-
-    if (!row) {
-      return NextResponse.json(toApiShape({
+      if (!row) {
+        return NextResponse.json(toApiShape({
         modeIbd: true,
         modeAlcohol: false,
         modeMental: false,
@@ -86,77 +83,77 @@ export async function GET() {
         latitude: null,
         longitude: null,
       }));
-    }
+      }
 
-    return NextResponse.json(toApiShape(row));
-  } catch (error) {
-    console.error('user-settings GET error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return NextResponse.json(toApiShape(row));
+    } catch (error) {
+      console.error('user-settings GET error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }
 
 export async function PUT(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody(req);
+      if (!parsed.ok) return parsed.error;
+      const body = parsed.data;
 
-    const parsed = await parseJsonBody(req);
-    if (!parsed.ok) return parsed.error;
-    const body = parsed.data;
+      const {
+        mode_ibd,
+        mode_alcohol,
+        mode_mental,
+        mode_diet,
+        medical_history,
+        current_medications,
+        medication_reminder_times,
+        gender,
+        ai_personality,
+        profile_name,
+        birth_date,
+        height,
+        weight,
+        prefecture,
+        latitude,
+        longitude,
+      } = body;
 
-    const {
-      mode_ibd,
-      mode_alcohol,
-      mode_mental,
-      mode_diet,
-      medical_history,
-      current_medications,
-      medication_reminder_times,
-      gender,
-      ai_personality,
-      profile_name,
-      birth_date,
-      height,
-      weight,
-      prefecture,
-      latitude,
-      longitude,
-    } = body;
+      const personality = (['tsundere', 'amayama', 'ikemen', 'asuka'] as const).includes(ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
+        ? (ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
+        : 'asuka';
 
-    const personality = (['tsundere', 'amayama', 'ikemen', 'asuka'] as const).includes(ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
-      ? (ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
-      : 'asuka';
+      const genderStr = typeof gender === 'string' ? gender : 'unspecified';
 
-    const genderStr = typeof gender === 'string' ? gender : 'unspecified';
+      const data = {
+        modeIbd: Boolean(mode_ibd ?? true),
+        modeAlcohol: Boolean(mode_alcohol ?? false),
+        modeMental: Boolean(mode_mental ?? false),
+        modeDiet: Boolean(mode_diet ?? false),
+        medicalHistory: safeLongString(medical_history, MAX_STRING_LENGTH),
+        currentMedications: safeLongString(current_medications, MAX_STRING_LENGTH),
+        medicationReminderTimes: medication_reminder_times != null && medication_reminder_times !== '' ? String(medication_reminder_times).slice(0, 2000) : null,
+        gender: genderStr,
+        aiPersonality: personality,
+        profileName: profile_name != null && profile_name !== '' ? String(profile_name).slice(0, 100) : null,
+        birthDate: birth_date != null && birth_date !== '' ? String(birth_date).slice(0, 20) : null,
+        prefecture: prefecture != null && prefecture !== '' ? String(prefecture).slice(0, 50) : null,
+        height: safeNumber(height, 0, 300),
+        weight: safeNumber(weight, 0, 500),
+        latitude: safeNumber(latitude, -90, 90),
+        longitude: safeNumber(longitude, -180, 180),
+      };
 
-    const data = {
-      modeIbd: Boolean(mode_ibd ?? true),
-      modeAlcohol: Boolean(mode_alcohol ?? false),
-      modeMental: Boolean(mode_mental ?? false),
-      modeDiet: Boolean(mode_diet ?? false),
-      medicalHistory: safeLongString(medical_history, MAX_STRING_LENGTH),
-      currentMedications: safeLongString(current_medications, MAX_STRING_LENGTH),
-      medicationReminderTimes: medication_reminder_times != null && medication_reminder_times !== '' ? String(medication_reminder_times).slice(0, 2000) : null,
-      gender: genderStr,
-      aiPersonality: personality,
-      profileName: profile_name != null && profile_name !== '' ? String(profile_name).slice(0, 100) : null,
-      birthDate: birth_date != null && birth_date !== '' ? String(birth_date).slice(0, 20) : null,
-      prefecture: prefecture != null && prefecture !== '' ? String(prefecture).slice(0, 50) : null,
-      height: safeNumber(height, 0, 300),
-      weight: safeNumber(weight, 0, 500),
-      latitude: safeNumber(latitude, -90, 90),
-      longitude: safeNumber(longitude, -180, 180),
-    };
-
-    await prisma.userSettings.upsert({
-      where: { userId: session.userId },
-      create: { userId: session.userId, ...data },
+      await prisma.userSettings.upsert({
+        where: { userId: session.userId },
+        create: { userId: session.userId, ...data },
       update: data,
-    });
+      });
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('user-settings PUT error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      console.error('user-settings PUT error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }

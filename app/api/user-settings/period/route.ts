@@ -5,16 +5,13 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireSession } from '@/lib/auth';
-import { parseJsonBody } from '@/lib/api-utils';
+import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { safeParseJson } from '@/lib/json-utils';
 
 export async function PATCH(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<{ last_period_date?: string; period_duration?: number }>(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody<{ last_period_date?: string; period_duration?: number }>(req);
     const body = parsed.ok ? parsed.data : {};
     const { last_period_date, period_duration } = body;
 
@@ -37,9 +34,10 @@ export async function PATCH(req: Request) {
       data: { medicalHistory: JSON.stringify(medicalHistory) },
     });
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('period PATCH error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      console.error('period PATCH error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }

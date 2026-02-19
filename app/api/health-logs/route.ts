@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireSession } from '@/lib/auth';
 import { updateStatsAfterLog } from '@/lib/game-stats';
 import { isValidDateStr } from '@/lib/date-utils';
-import { parseJsonBody } from '@/lib/api-utils';
+import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { toStringOrNull, toNumOrNull } from '@/lib/json-utils';
 import type { HealthLog } from '@prisma/client';
 
@@ -37,56 +36,53 @@ function toApiShape(log: HealthLog) {
 }
 
 export async function GET(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
+  return withSession(async (session) => {
+    try {
+      const { searchParams } = new URL(req.url);
+      const date = searchParams.get('date');
+      const startDate = searchParams.get('startDate');
+      const endDate = searchParams.get('endDate');
 
-    const { searchParams } = new URL(req.url);
-    const date = searchParams.get('date');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-
-    if (date) {
-      if (!isValidDateStr(date)) {
-        return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
+      if (date) {
+        if (!isValidDateStr(date)) {
+          return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
+        }
+        const log = await prisma.healthLog.findUnique({
+          where: {
+            userId_date: { userId: session.userId, date },
+          },
+        });
+        return NextResponse.json(log ? toApiShape(log) : null);
       }
-      const log = await prisma.healthLog.findUnique({
-        where: {
-          userId_date: { userId: session.userId, date },
-        },
-      });
-      return NextResponse.json(log ? toApiShape(log) : null);
-    }
 
-    if (startDate && endDate) {
-      if (!isValidDateStr(startDate) || !isValidDateStr(endDate)) {
-        return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
+      if (startDate && endDate) {
+        if (!isValidDateStr(startDate) || !isValidDateStr(endDate)) {
+          return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
+        }
+        const logs = await prisma.healthLog.findMany({
+          where: {
+            userId: session.userId,
+            date: { gte: startDate, lte: endDate },
+          },
+          orderBy: { date: 'asc' },
+        });
+        return NextResponse.json(logs.map(toApiShape));
       }
-      const logs = await prisma.healthLog.findMany({
-        where: {
-          userId: session.userId,
-          date: { gte: startDate, lte: endDate },
-        },
-        orderBy: { date: 'asc' },
-      });
-      return NextResponse.json(logs.map(toApiShape));
-    }
 
-    return new NextResponse('Bad Request: date or startDate+endDate required', {
-      status: 400,
-    });
-  } catch (error) {
-    console.error('health-logs GET error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return new NextResponse('Bad Request: date or startDate+endDate required', {
+        status: 400,
+      });
+    } catch (error) {
+      console.error('health-logs GET error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }
 
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody(req);
     if (!parsed.ok) return parsed.error;
     const body = parsed.data;
     const {
@@ -155,19 +151,18 @@ export async function POST(req: Request) {
 
     await updateStatsAfterLog(session.userId, String(date));
 
-    return NextResponse.json(toApiShape(log));
-  } catch (error) {
-    console.error('health-logs POST error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return NextResponse.json(toApiShape(log));
+    } catch (error) {
+      console.error('health-logs POST error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }
 
 export async function PATCH(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody(req);
     if (!parsed.ok) return parsed.error;
     const body = parsed.data;
     const { id, ...updates } = body;
@@ -205,19 +200,18 @@ export async function PATCH(req: Request) {
       data,
     });
 
-    return NextResponse.json(toApiShape(log));
-  } catch (error) {
-    console.error('health-logs PATCH error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return NextResponse.json(toApiShape(log));
+    } catch (error) {
+      console.error('health-logs PATCH error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }
 
 export async function DELETE(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const { searchParams } = new URL(req.url);
+  return withSession(async (session) => {
+    try {
+      const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     const date = searchParams.get('date');
 
@@ -244,9 +238,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    return new NextResponse('Bad Request: id or date required', { status: 400 });
-  } catch (error) {
-    console.error('health-logs DELETE error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return new NextResponse('Bad Request: id or date required', { status: 400 });
+    } catch (error) {
+      console.error('health-logs DELETE error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }

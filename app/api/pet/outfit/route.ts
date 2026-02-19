@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseJsonBody, withSession } from "@/lib/api-utils";
 import { PET_OUTFITS } from "@/lib/pet-shop";
 
 /** POST: 着せ替え（所持している衣装を装着 / なしにする） */
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<{ outfitId?: string | null }>(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody<{ outfitId?: string | null }>(req);
     if (!parsed.ok) return parsed.error;
     const outfitId = typeof parsed.data.outfitId === 'string' ? parsed.data.outfitId : parsed.data.outfitId === null ? null : undefined;
 
@@ -55,12 +52,13 @@ export async function POST(req: Request) {
       update: { currentOutfitId: outfitId },
     });
 
-    return NextResponse.json({
-      ok: true,
-      current_outfit_id: outfitId,
-    });
-  } catch (error) {
-    console.error("pet outfit error:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
-  }
+      return NextResponse.json({
+        ok: true,
+        current_outfit_id: outfitId,
+      });
+    } catch (error) {
+      console.error("pet outfit error:", error);
+      return new NextResponse("Internal Server Error", { status: 500 });
+    }
+  });
 }

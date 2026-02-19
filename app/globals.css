@@ -24,3 +24,8 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* スマホでボタンタップの反応を即座にする（300ms遅延を除去） */
+.touch-manipulation {
+  touch-action: manipulation;
+}

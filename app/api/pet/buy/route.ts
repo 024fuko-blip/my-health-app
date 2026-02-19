@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseJsonBody, withSession } from "@/lib/api-utils";
 import { PET_FOODS, PET_OUTFITS } from "@/lib/pet-shop";
 
 /** POST: ポイントで餌 or 着せ替えを購入 */
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<{ itemId?: string; quantity?: number }>(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody<{ itemId?: string; quantity?: number }>(req);
     if (!parsed.ok) return parsed.error;
     const body = parsed.data;
     const itemId = typeof body.itemId === 'string' ? body.itemId : undefined;
@@ -63,14 +60,15 @@ export async function POST(req: Request) {
       }),
     ]);
 
-    return NextResponse.json({
-      ok: true,
-      points: newPoints,
-      item_id: itemId,
-      quantity: addQty,
-    });
-  } catch (error) {
-    console.error("pet buy error:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
-  }
+      return NextResponse.json({
+        ok: true,
+        points: newPoints,
+        item_id: itemId,
+        quantity: addQty,
+      });
+    } catch (error) {
+      console.error("pet buy error:", error);
+      return new NextResponse("Internal Server Error", { status: 500 });
+    }
+  });
 }

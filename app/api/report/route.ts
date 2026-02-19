@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
-import { requireSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
-import { parseJsonBody } from '@/lib/api-utils';
+import { parseJsonBody, withSession } from '@/lib/api-utils';
 
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<{ period?: number }>(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody<{ period?: number }>(req);
     if (!parsed.ok) return parsed.error;
     const body = parsed.data;
     const period = body.period === 30 ? 30 : 7;
@@ -110,13 +107,14 @@ ${charaSetting}
       temperature: 0.7,
     });
 
-    const report = completion.choices[0]?.message?.content ?? '分析結果を出せなかったわ。ごめんなさい！';
-    return NextResponse.json({ report });
-  } catch (error) {
-    console.error('Report API Error:', error);
-    return NextResponse.json(
-      { report: 'あらヤダ、サーバーのエラーよ！しばらくしてからもう一度試してちょうだい！', error: String(error) },
-      { status: 500 }
-    );
-  }
+      const report = completion.choices[0]?.message?.content ?? '分析結果を出せなかったわ。ごめんなさい！';
+      return NextResponse.json({ report });
+    } catch (error) {
+      console.error('Report API Error:', error);
+      return NextResponse.json(
+        { report: 'あらヤダ、サーバーのエラーよ！しばらくしてからもう一度試してちょうだい！', error: String(error) },
+        { status: 500 }
+      );
+    }
+  });
 }

@@ -17,6 +17,13 @@ import {
   replyAsCompanion,
   buildChatContextFromSettings,
 } from '@/lib/line-chat';
+import {
+  createRichMenu,
+  uploadRichMenuImage,
+  setDefaultRichMenu,
+} from '@/lib/line-richmenu';
+import { generateRichMenuImage } from '@/lib/line-richmenu-image';
+import { getServerEnv } from '@/lib/env';
 
 function verifySignature(body: string, signature: string | null, channelSecret: string): boolean {
   if (!signature || !channelSecret) return false;
@@ -56,12 +63,26 @@ export async function POST(req: Request) {
       const replyToken = event.replyToken;
       if (!lineUserId) continue;
 
-      // 友だち追加: 挨拶＋使い方＋ボタン
-      if (event.type === 'follow' && replyToken && config.accessToken) {
-        await replyLineMessages(config.accessToken, replyToken, [
-          buildWelcomeMessage(),
-          buildWelcomeButtons(),
-        ]);
+      // 友だち追加: 挨拶＋使い方＋ボタン＋Rich Menu を全員に設定
+      if (event.type === 'follow' && config.accessToken) {
+        if (replyToken) {
+          await replyLineMessages(config.accessToken, replyToken, [
+            buildWelcomeMessage(),
+            buildWelcomeButtons(),
+          ]);
+        }
+        // Rich Menu を自動作成して全ユーザーに表示（初回・毎回で確実に表示）
+        try {
+          const baseUrl = getServerEnv().NEXTAUTH_URL ?? '';
+          if (baseUrl) {
+            const imageBuffer = await generateRichMenuImage();
+            const richMenuId = await createRichMenu(baseUrl);
+            await uploadRichMenuImage(richMenuId, imageBuffer);
+            await setDefaultRichMenu(richMenuId);
+          }
+        } catch (e) {
+          console.error('[LINE] Rich Menu auto-setup error:', e);
+        }
         continue;
       }
 

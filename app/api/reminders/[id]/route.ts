@@ -1,17 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireSession } from '@/lib/auth';
-import { parseJsonBody } from '@/lib/api-utils';
+import { parseJsonBody, withSession } from '@/lib/api-utils';
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const { id } = await params;
+  return withSession(async (session) => {
+    try {
+      const { id } = await params;
     const parsed = await parseJsonBody<{ name?: string; due_date?: string; memo?: string }>(req);
     if (!parsed.ok) return parsed.error;
     const { name, due_date, memo } = parsed.data;
@@ -30,37 +27,37 @@ export async function PATCH(
       where: { id },
       data,
     });
-    return NextResponse.json({
-      id: updated.id,
-      name: updated.name,
-      due_date: updated.dueDate,
-      memo: updated.memo,
-      created_at: updated.createdAt,
-    });
-  } catch (error) {
-    console.error('reminders PATCH error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      return NextResponse.json({
+        id: updated.id,
+        name: updated.name,
+        due_date: updated.dueDate,
+        memo: updated.memo,
+        created_at: updated.createdAt,
+      });
+    } catch (error) {
+      console.error('reminders PATCH error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }
 
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const { id } = await params;
+  return withSession(async (session) => {
+    try {
+      const { id } = await params;
     const existing = await prisma.checkupReminder.findFirst({
       where: { id, userId: session.userId },
     });
     if (!existing) return new NextResponse('Not Found', { status: 404 });
 
-    await prisma.checkupReminder.delete({ where: { id } });
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('reminders DELETE error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+      await prisma.checkupReminder.delete({ where: { id } });
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      console.error('reminders DELETE error:', error);
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+  });
 }

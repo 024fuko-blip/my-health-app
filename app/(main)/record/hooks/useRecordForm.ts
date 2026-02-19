@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DRINK_PRESETS,
@@ -59,6 +59,7 @@ export function useRecordForm() {
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const lastUserEditRef = useRef<number>(0);
 
   const applyLog = useCallback(
     (log: HealthLogRow | null) => {
@@ -175,6 +176,7 @@ export function useRecordForm() {
 
   useEffect(() => {
     if (loading) return;
+    const fetchStarted = Date.now();
     const loadLogForDate = async () => {
       const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
       const sessionData = await sessionRes.json();
@@ -182,6 +184,7 @@ export function useRecordForm() {
       const logRes = await fetch(`/api/health-logs?date=${date}`, { credentials: 'include' });
       if (logRes.status === 401) return;
       const log = logRes.ok ? await logRes.json() : null;
+      if (lastUserEditRef.current > fetchStarted) return;
       applyLog((log as HealthLogRow) ?? null);
     };
     loadLogForDate();
@@ -445,6 +448,7 @@ export function useRecordForm() {
 
   /** 生理ボタン選択をその日の記録に即時保存（再表示時も保持される） */
   const savePeriodStatusToLog = async (dateStr: string, status: string) => {
+    lastUserEditRef.current = Date.now();
     try {
       await fetch('/api/health-logs/period-status', {
         method: 'PUT',
@@ -457,6 +461,10 @@ export function useRecordForm() {
     }
   };
 
+  const markUserEdit = useCallback(() => {
+    lastUserEditRef.current = Date.now();
+  }, []);
+
   return {
     loading,
     modes,
@@ -466,6 +474,7 @@ export function useRecordForm() {
     date,
     setDate,
     savePeriodStatusToLog,
+    markUserEdit,
     memo,
     setMemo,
     medicationTaken,

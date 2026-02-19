@@ -1,6 +1,7 @@
 import { DRINK_PRESETS, type AddedDrink } from '@/lib/alcohol-calc';
 
 interface AlcoholSectionProps {
+  onUserEdit?: () => void;
   addedDrinks: AddedDrink[];
   selectedDrinkKey: string;
   setSelectedDrinkKey: (v: string) => void;
@@ -22,6 +23,7 @@ interface AlcoholSectionProps {
 }
 
 export function AlcoholSection({
+  onUserEdit,
   addedDrinks,
   selectedDrinkKey,
   setSelectedDrinkKey,
@@ -99,8 +101,8 @@ export function AlcoholSection({
           />
           <button
             type="button"
-            onClick={handleAddDrink}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 rounded font-bold transition"
+            onClick={(e) => { e.preventDefault(); onUserEdit?.(); handleAddDrink(); }}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 rounded font-bold transition touch-manipulation active:scale-95"
           >
             追加
           </button>
@@ -120,8 +122,8 @@ export function AlcoholSection({
                   <span className="text-yellow-700 text-xs">{d.pureAlcohol.toFixed(1)}g</span>
                   <button
                     type="button"
-                    onClick={() => handleRemoveDrink(d.id)}
-                    className="text-red-500 hover:text-red-700 p-1"
+                    onClick={(e) => { e.preventDefault(); onUserEdit?.(); handleRemoveDrink(d.id); }}
+                    className="text-red-500 hover:text-red-700 p-1 touch-manipulation active:scale-95"
                   >
                     🗑️
                   </button>

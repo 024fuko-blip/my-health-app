@@ -134,13 +134,13 @@ export default function LineLinkCard() {
             <p className="text-xs font-medium text-amber-800">⚠️ 「個別の問い合わせ受け付けておりません」と出る場合</p>
             <p className="text-xs text-amber-700 mt-0.5">LINE公式アカウント管理画面 → 応答設定 → 「応答メッセージ」をオフにしてください。</p>
           </div>
-          <p className="text-xs text-gray-600">チャット下のメニュー（Rich Menu）</p>
+          <p className="text-xs text-gray-600">Rich Menu は友だち追加時に自動表示されます。表示されない場合のみ:</p>
           <button
             onClick={handleSetupRichMenu}
             disabled={richMenuLoading}
             className="text-sm font-medium text-blue-600 hover:underline disabled:opacity-50"
           >
-            {richMenuLoading ? "設定中..." : "Rich Menu を設定"}
+            {richMenuLoading ? "設定中..." : "Rich Menu を再設定"}
           </button>
           {richMenuMsg && (
             <p className={`text-xs mt-1 ${richMenuMsg.startsWith("✓") ? "text-green-600" : "text-red-600"}`}>
@@ -195,13 +195,13 @@ export default function LineLinkCard() {
           <p className="text-xs font-medium text-amber-800">⚠️ 連携後「個別の問い合わせ受け付けておりません」と出る場合</p>
           <p className="text-xs text-amber-700 mt-0.5">LINE公式アカウント管理画面 → 応答設定 → 「応答メッセージ」をオフにしてください。</p>
         </div>
-        <p className="text-xs text-gray-500">チャット下のメニュー（Rich Menu）</p>
+        <p className="text-xs text-gray-500">Rich Menu は友だち追加時に自動表示（表示されない場合のみ再設定可）</p>
         <button
           onClick={handleSetupRichMenu}
           disabled={richMenuLoading}
           className="text-sm font-medium text-blue-600 hover:underline disabled:opacity-50"
         >
-          {richMenuLoading ? "設定中..." : "Rich Menu を設定"}
+          {richMenuLoading ? "設定中..." : "Rich Menu を再設定"}
         </button>
         {richMenuMsg && (
           <p className={`text-xs mt-1 ${richMenuMsg.startsWith("✓") ? "text-green-600" : "text-red-600"}`}>

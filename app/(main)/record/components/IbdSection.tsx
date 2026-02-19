@@ -1,6 +1,7 @@
 import type React from 'react';
 
 interface IbdSectionProps {
+  onUserEdit?: () => void;
   temperature: string;
   setTemperature: (v: string) => void;
   weight: string;
@@ -12,6 +13,7 @@ interface IbdSectionProps {
 }
 
 export function IbdSection({
+  onUserEdit,
   temperature,
   setTemperature,
   weight,
@@ -61,16 +63,16 @@ export function IbdSection({
         <div className="flex items-center justify-center gap-4 bg-white p-3 rounded-lg border border-blue-200">
           <button
             type="button"
-            onClick={() => setToiletCount((c) => Math.max(0, c - 1))}
-            className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 text-2xl font-bold hover:bg-blue-200 transition"
+            onClick={(e) => { e.preventDefault(); onUserEdit?.(); setToiletCount((c) => Math.max(0, c - 1)); }}
+            className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 text-2xl font-bold hover:bg-blue-200 transition touch-manipulation active:scale-95"
           >
             −
           </button>
           <span className="text-4xl font-bold text-blue-800 w-16 text-center">{toiletCount}</span>
           <button
             type="button"
-            onClick={() => setToiletCount((c) => c + 1)}
-            className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 text-2xl font-bold hover:bg-blue-200 transition"
+            onClick={(e) => { e.preventDefault(); onUserEdit?.(); setToiletCount((c) => c + 1); }}
+            className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 text-2xl font-bold hover:bg-blue-200 transition touch-manipulation active:scale-95"
           >
             +
           </button>
@@ -84,8 +86,8 @@ export function IbdSection({
             <button
               key={level}
               type="button"
-              onClick={() => setPainLevel(level)}
-              className={`py-3 rounded-lg border-2 font-bold transition ${
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setPainLevel(level); }}
+              className={`py-3 rounded-lg border-2 font-bold transition touch-manipulation active:scale-95 ${
                 painLevel === level
                   ? level <= 2
                     ? 'border-green-500 bg-green-100 text-green-800'

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
-import { requireSession } from '@/lib/auth';
 import { getServerEnv } from '@/lib/env';
-import { parseJsonBody } from '@/lib/api-utils';
+import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { getCharaPrompt } from '@/lib/chara-settings';
 
 const RECORD_LABELS: Record<string, string> = {
@@ -131,11 +130,9 @@ async function callOpenAIForAdvice(
 }
 
 export async function POST(req: Request) {
-  try {
-    const session = await requireSession();
-    if (session instanceof NextResponse) return session;
-
-    const parsed = await parseJsonBody<Record<string, unknown>>(req);
+  return withSession(async (session) => {
+    try {
+      const parsed = await parseJsonBody<Record<string, unknown>>(req);
     if (!parsed.ok) return parsed.error;
     const body = parsed.data;
     const { mode, logs, meal_image_base64: mealImageBase64, ...dailyInput } = body;
@@ -207,13 +204,13 @@ export async function POST(req: Request) {
       : [{ type: 'text', text: userPrompt }];
 
     const advice = await callOpenAIForAdvice(systemPrompt, userContent, userPrompt, model);
-    return NextResponse.json({ advice });
-
-  } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json(
-      { advice: "あらヤダ、サーバーのエラーよ！システム管理者を呼んできて！", error: String(error) }, 
-      { status: 500 }
-    );
-  }
+      return NextResponse.json({ advice });
+    } catch (error) {
+      console.error('API Error:', error);
+      return NextResponse.json(
+        { advice: "あらヤダ、サーバーのエラーよ！システム管理者を呼んできて！", error: String(error) },
+        { status: 500 }
+      );
+    }
+  });
 }
