@@ -1,13 +1,22 @@
 /**
  * LINE Messaging API Webhook。
- * 友だち追加・メッセージ受信を処理。認証は LINE 署名検証で行う。
+ * 友だち追加・メッセージ受信・postback を処理。認証は LINE 署名検証で行う。
  */
 
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import prisma from '@/lib/prisma';
-import { getLineConfig } from '@/lib/line';
+import { getLineConfig, replyLineMessages } from '@/lib/line';
 import { getTodayJST } from '@/lib/date-utils';
+import {
+  buildWelcomeMessage,
+  buildWelcomeButtons,
+  buildQuickReplyItems,
+} from '@/lib/line-messages';
+import {
+  replyAsCompanion,
+  buildChatContextFromSettings,
+} from '@/lib/line-chat';
 
 function verifySignature(body: string, signature: string | null, channelSecret: string): boolean {
   if (!signature || !channelSecret) return false;
@@ -28,12 +37,18 @@ export async function POST(req: Request) {
       return new NextResponse('Invalid signature', { status: 401 });
     }
 
-    const body = JSON.parse(rawBody) as { events?: Array<{
+    let body: { events?: Array<{
       type: string;
       replyToken?: string;
       source?: { userId?: string };
       message?: { type: string; text?: string };
+      postback?: { data?: string };
     }> };
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return new NextResponse('Invalid JSON', { status: 400 });
+    }
 
     const events = body.events ?? [];
     for (const event of events) {
@@ -41,45 +56,79 @@ export async function POST(req: Request) {
       const replyToken = event.replyToken;
       if (!lineUserId) continue;
 
+      // 友だち追加: 挨拶＋使い方＋ボタン
+      if (event.type === 'follow' && replyToken && config.accessToken) {
+        await replyLineMessages(config.accessToken, replyToken, [
+          buildWelcomeMessage(),
+          buildWelcomeButtons(),
+        ]);
+        continue;
+      }
+
+      // テキストメッセージ
       if (event.type === 'message' && event.message?.type === 'text') {
-        const text = (event.message.text ?? '').trim();
+        let text = (event.message.text ?? '').trim();
+        if (text.length > 500) {
+          if (replyToken && config.accessToken) {
+            await replyLineMessages(config.accessToken, replyToken, [
+              { type: 'text', text: 'メッセージが長すぎるわ。500文字以内で送ってね。' },
+            ]);
+          }
+          continue;
+        }
 
         // 連携: 「連携 123456」形式
         const linkMatch = text.match(/^連携\s*(\d{6})$/);
         if (linkMatch) {
           const code = linkMatch[1];
-          const req = await prisma.lineLinkRequest.findUnique({
+          const linkReq = await prisma.lineLinkRequest.findUnique({
             where: { code },
           });
-          if (req && new Date() < req.expiresAt) {
+          if (linkReq && new Date() < linkReq.expiresAt) {
             await prisma.$transaction([
               prisma.lineLinkRequest.delete({ where: { code } }),
               prisma.lineLink.upsert({
-                where: { userId: req.userId },
-                create: { userId: req.userId, lineUserId },
+                where: { userId: linkReq.userId },
+                create: { userId: linkReq.userId, lineUserId },
                 update: { lineUserId },
               }),
             ]);
             if (replyToken && config.accessToken) {
-              await replyLine(config.accessToken, replyToken, '連携完了！服薬リマインダーと記録がLINEで受け取れるようになったわ。');
+              await replyLineMessages(config.accessToken, replyToken, [
+                {
+                  type: 'text',
+                  text: '連携完了！服薬リマインダーと記録がLINEで受け取れるようになったわ。相談もできるようになったから、何でも聞いてね。',
+                  quickReply: { items: buildQuickReplyItems() },
+                },
+                buildWelcomeButtons(),
+              ]);
             }
           }
           continue;
         }
 
-        // 記録: 「記録」「体調4」「食事: サラダ」などを簡易記録
+        // 連携済みユーザー
         const linked = await prisma.lineLink.findFirst({
           where: { lineUserId },
+          include: { user: { include: { userSettings: true } } },
         });
         if (linked) {
           const today = getTodayJST();
-          if (/^記録$|^体調\s*\d|^食事|^眠れ|^メモ/i.test(text) || text.length <= 100) {
+          const isRecordCommand =
+            /^記録$|^記録\s|^体調\s*\d|^食事|^眠れ|^メモ$/i.test(text) ||
+            (/^(体調|食事|眠れ|メモ)/i.test(text) && text.length <= 80);
+
+          if (isRecordCommand) {
             const log = await prisma.healthLog.findUnique({
               where: { userId_date: { userId: linked.userId, date: today } },
             });
             const moodMatch = text.match(/体調\s*(\d)/);
             const mealMatch = text.match(/食事[：:]\s*(.+)/);
-            const memo = mealMatch ? mealMatch[1].trim() : (text.startsWith('記録') || text.startsWith('メモ') ? text.replace(/^(記録|メモ)[：:\s]*/i, '').trim() : text);
+            const memo = mealMatch
+              ? mealMatch[1].trim()
+              : text.startsWith('記録') || text.startsWith('メモ')
+                ? text.replace(/^(記録|メモ)[：:\s]*/i, '').trim()
+                : text;
             const update: { mealDescription?: string; generalMood?: number; memo?: string } = {};
             if (mealMatch) update.mealDescription = memo;
             else if (moodMatch) update.generalMood = parseInt(moodMatch[1], 10);
@@ -100,9 +149,47 @@ export async function POST(req: Request) {
               });
             }
             if (replyToken && config.accessToken) {
-              await replyLine(config.accessToken, replyToken, '記録しておいたわ。');
+              await replyLineMessages(config.accessToken, replyToken, [
+                {
+                  type: 'text',
+                  text: '記録しておいたわ。',
+                  quickReply: { items: buildQuickReplyItems() },
+                },
+              ]);
             }
+            continue;
           }
+
+          // AI チャット（記録コマンド以外のテキスト）
+          const settings = linked.user.userSettings;
+          const context = buildChatContextFromSettings({
+            medicalHistory: settings?.medicalHistory ?? null,
+            currentMedications: settings?.currentMedications ?? null,
+            gender: settings?.gender ?? null,
+            birthDate: settings?.birthDate ?? null,
+            modeIbd: settings?.modeIbd ?? true,
+            aiPersonality: settings?.aiPersonality ?? null,
+          });
+          const aiReply = await replyAsCompanion(text, context);
+          if (replyToken && config.accessToken) {
+            await replyLineMessages(config.accessToken, replyToken, [
+              {
+                type: 'text',
+                text: aiReply,
+                quickReply: { items: buildQuickReplyItems() },
+              },
+            ]);
+          }
+        }
+      }
+
+      // Postback（ボタン押下で data が送られてくる場合）
+      if (event.type === 'postback' && event.postback?.data && replyToken && config.accessToken) {
+        const data = event.postback.data;
+        if (data === 'record' || data === 'pet') {
+          await replyLineMessages(config.accessToken, replyToken, [
+            { type: 'text', text: 'アプリを開いてね。', quickReply: { items: buildQuickReplyItems() } },
+          ]);
         }
       }
     }
@@ -111,23 +198,5 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('line webhook error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
-  }
-}
-
-async function replyLine(accessToken: string, replyToken: string, text: string) {
-  try {
-    await fetch('https://api.line.me/v2/bot/message/reply', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        replyToken,
-        messages: [{ type: 'text', text }],
-      }),
-    });
-  } catch (e) {
-    console.error('LINE reply error:', e);
   }
 }

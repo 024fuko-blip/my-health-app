@@ -19,6 +19,39 @@ export function getLineConfig() {
   };
 }
 
+/** 返信用メッセージ型（LINE Messaging API） */
+export type LineMessage = 
+  | { type: 'text'; text: string }
+  | { type: 'text'; text: string; quickReply?: { items: Array<{ type: 'action'; action: { type: 'uri' | 'message'; label: string; uri?: string; text?: string } }> } }
+  | Record<string, unknown>;
+
+/** 複数メッセージを reply で送信 */
+export async function replyLineMessages(
+  accessToken: string,
+  replyToken: string,
+  messages: LineMessage[]
+): Promise<boolean> {
+  try {
+    const res = await fetch('https://api.line.me/v2/bot/message/reply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ replyToken, messages }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.error('LINE reply error:', e);
+    return false;
+  }
+}
+
+/** テキストを reply で送信（従来互換） */
+export async function replyLine(accessToken: string, replyToken: string, text: string): Promise<boolean> {
+  return replyLineMessages(accessToken, replyToken, [{ type: 'text', text }]);
+}
+
 /** LINE プッシュメッセージを送信 */
 export async function sendLinePush(lineUserId: string, text: string): Promise<boolean> {
   const { accessToken } = getLineConfig();
