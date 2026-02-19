@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import type { HealthLogApiResponse, CalendarEditForm } from '../record/hooks/record-form-types';
 
 /** 生理周期に基づいて日付の状態を判定 */
 interface PeriodStatus {
@@ -70,13 +71,13 @@ function getPeriodStatus(
 export default function CalendarPage() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [logs, setLogs] = useState<any[]>([]);
-  const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [logs, setLogs] = useState<HealthLogApiResponse[]>([]);
+  const [selectedLog, setSelectedLog] = useState<HealthLogApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   
   // ✏️ 編集モード用のState
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<any>({});
+  const [editForm, setEditForm] = useState<CalendarEditForm>({});
   
   // 生理周期情報
   const [periodSettings, setPeriodSettings] = useState({
@@ -160,7 +161,7 @@ export default function CalendarPage() {
   const handleDelete = async () => {
     if (!confirm('本当に削除しますか？この操作は取り消せません。')) return;
 
-    const res = await fetch(`/api/health-logs?id=${selectedLog.id}`, {
+    const res = await fetch(`/api/health-logs?id=${selectedLog!.id}`, {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -186,7 +187,7 @@ export default function CalendarPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id: selectedLog.id,
+        id: selectedLog!.id,
         general_mood: editForm.general_mood,
         pain_level: editForm.pain_level,
         meal_description: editForm.meal_description,
@@ -200,7 +201,9 @@ export default function CalendarPage() {
     if (res.ok) {
       alert('修正しました✨');
       setIsEditing(false);
-      setSelectedLog(editForm); // 表示を更新
+      setSelectedLog((prev) =>
+        prev ? ({ ...prev, ...editForm } as HealthLogApiResponse) : null
+      ); // 表示を更新
       fetchLogs(); // カレンダー再読み込み
     } else {
       if (res.status === 401) {
@@ -252,7 +255,7 @@ export default function CalendarPage() {
       }
       
       // 記録がある場合は体調で上書き（生理周期情報がない場合のみ）
-      if (log && !periodStatus.type) {
+      if (log && !periodStatus.type && log.general_mood != null) {
         if (log.general_mood <= 2) {
           bgColor = "bg-red-50";
         } else if (log.general_mood === 3) {
@@ -280,8 +283,8 @@ export default function CalendarPage() {
           </div>
           {log && (
             <div className="mt-1 flex flex-wrap gap-1 content-start">
-              {log.pain_level >= 3 && <span title="腹痛">⚡</span>}
-              {log.alcohol_amount > 0 && <span title="飲酒">🍺</span>}
+              {(log.pain_level ?? 0) >= 3 && <span title="腹痛">⚡</span>}
+              {(log.alcohol_amount ?? 0) > 0 && <span title="飲酒">🍺</span>}
               {log.ai_comment && <span title="AI">🤖</span>}
               {log.period_status === '生理中' && <span title="生理中（記録）">💧</span>}
             </div>

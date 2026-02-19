@@ -13,6 +13,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/user-settings') ||
     pathname.startsWith('/api/report') ||
     pathname.startsWith('/api/advice') ||
+    pathname.startsWith('/api/analyze-meal') ||
     pathname.startsWith('/api/game-stats') ||
     pathname.startsWith('/api/reminders') ||
     pathname.startsWith('/api/pet') ||

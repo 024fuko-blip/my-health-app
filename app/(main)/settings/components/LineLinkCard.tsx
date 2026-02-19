@@ -6,6 +6,7 @@ export default function LineLinkCard() {
   const [status, setStatus] = useState<"checking" | "linked" | "unlinked" | "requesting" | "unsupported">("checking");
   const [code, setCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/line/status", { credentials: "include" })
@@ -20,15 +21,20 @@ export default function LineLinkCard() {
 
   const handleLinkStart = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const res = await fetch("/api/line/link-request", { method: "POST", credentials: "include" });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data.linked) {
         setStatus("linked");
       } else if (data.code) {
         setCode(data.code);
         setStatus("requesting");
+      } else if (!res.ok) {
+        setErrorMsg(data.error || `エラー (${res.status})`);
       }
+    } catch (err) {
+      setErrorMsg("通信エラー。ログインしているか確認してください。");
     } finally {
       setLoading(false);
     }
@@ -124,9 +130,12 @@ export default function LineLinkCard() {
           disabled={loading}
           className="text-sm font-bold text-green-600 hover:underline disabled:opacity-50"
         >
-          連携する
+          {loading ? "処理中..." : "連携する"}
         </button>
       </div>
+      {errorMsg && (
+        <p className="text-xs text-red-600 mt-2">{errorMsg}</p>
+      )}
     </div>
   );
 }

@@ -35,6 +35,9 @@ export async function POST() {
     return NextResponse.json({ code, expiresIn: 600 });
   } catch (error) {
     console.error('line link-request error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return NextResponse.json(
+      { error: 'サーバーエラーが発生しました。DBのテーブルが作成されているか確認してください。（npx prisma db push）' },
+      { status: 500 }
+    );
   }
 }

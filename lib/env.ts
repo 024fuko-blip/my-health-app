@@ -13,6 +13,14 @@ function isBuildTime(): boolean {
   );
 }
 
+/**
+ * ランタイム検証（validateRuntimeEnv）をスキップすべきか。
+ * ビルド時・Edge ランタイム時は true。instrumentation から使用。
+ */
+export function shouldSkipRuntimeValidation(): boolean {
+  return isBuildTime() || process.env.NEXT_RUNTIME !== 'nodejs';
+}
+
 /** 必須環境変数名（ランタイム起動時チェック用） */
 export const REQUIRED_RUNTIME_ENV_KEYS = [
   'AUTH_SECRET',
@@ -69,6 +77,15 @@ export interface ServerEnv {
   NEXTAUTH_URL: string;
   OPENAI_API_KEY: string | undefined;
   NODE_ENV: 'development' | 'production' | 'test';
+  /** LINE Messaging API（未設定時は LINE 連携オフ） */
+  LINE_CHANNEL_ID: string | undefined;
+  LINE_CHANNEL_SECRET: string | undefined;
+  LINE_CHANNEL_ACCESS_TOKEN: string | undefined;
+  /** Web Push VAPID キー（未設定時はプッシュ通知オフ） */
+  VAPID_PUBLIC_KEY: string | undefined;
+  VAPID_PRIVATE_KEY: string | undefined;
+  /** Cron API 保護用（Cloud Scheduler が X-Cron-Secret で送信） */
+  CRON_SECRET: string | undefined;
 }
 
 let cached: ServerEnv | null = null;
@@ -83,6 +100,12 @@ function getBuildTimeDummyEnv(): ServerEnv {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL?.trim() || 'http://localhost:3000',
     OPENAI_API_KEY: undefined,
     NODE_ENV: (process.env.NODE_ENV as ServerEnv['NODE_ENV']) || 'development',
+    LINE_CHANNEL_ID: undefined,
+    LINE_CHANNEL_SECRET: undefined,
+    LINE_CHANNEL_ACCESS_TOKEN: undefined,
+    VAPID_PUBLIC_KEY: undefined,
+    VAPID_PRIVATE_KEY: undefined,
+    CRON_SECRET: undefined,
   };
 }
 
@@ -108,6 +131,12 @@ export function getServerEnv(): ServerEnv {
     OPENAI_API_KEY: optional(process.env.OPENAI_API_KEY),
     NODE_ENV:
       (process.env.NODE_ENV as ServerEnv['NODE_ENV']) || 'development',
+    LINE_CHANNEL_ID: optional(process.env.LINE_CHANNEL_ID),
+    LINE_CHANNEL_SECRET: optional(process.env.LINE_CHANNEL_SECRET),
+    LINE_CHANNEL_ACCESS_TOKEN: optional(process.env.LINE_CHANNEL_ACCESS_TOKEN),
+    VAPID_PUBLIC_KEY: optional(process.env.VAPID_PUBLIC_KEY),
+    VAPID_PRIVATE_KEY: optional(process.env.VAPID_PRIVATE_KEY),
+    CRON_SECRET: optional(process.env.CRON_SECRET),
   };
   return cached;
 }

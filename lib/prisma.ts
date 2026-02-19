@@ -1,5 +1,6 @@
 // lib/prisma.ts
 import { PrismaClient } from '@prisma/client'
+import { getServerEnv } from './env'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -7,14 +8,15 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   console.log('Creating new PrismaClient instance...');
+  const nodeEnv = getServerEnv().NODE_ENV;
   return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: nodeEnv === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 }
 
 const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') {
+if (getServerEnv().NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }
 

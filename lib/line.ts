@@ -3,10 +3,13 @@
  * 環境変数 LINE_CHANNEL_ID, LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN で設定。
  */
 
+import { getServerEnv } from './env';
+
 export function getLineConfig() {
-  const channelId = process.env.LINE_CHANNEL_ID?.trim();
-  const channelSecret = process.env.LINE_CHANNEL_SECRET?.trim();
-  const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim();
+  const env = getServerEnv();
+  const channelId = env.LINE_CHANNEL_ID;
+  const channelSecret = env.LINE_CHANNEL_SECRET;
+  const accessToken = env.LINE_CHANNEL_ACCESS_TOKEN;
 
   return {
     channelId: channelId ?? null,

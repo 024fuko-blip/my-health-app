@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendPushNotification } from '@/lib/web-push';
 import { sendLinePush } from '@/lib/line';
+import { getServerEnv } from '@/lib/env';
 
 const DEFAULT_MEDICATION_TIMES: Record<string, string> = {
   朝: '08:00',
@@ -52,7 +53,7 @@ function getTodayJST(): string {
 
 export async function POST(req: Request) {
   try {
-    const cronSecret = process.env.CRON_SECRET?.trim();
+    const cronSecret = getServerEnv().CRON_SECRET;
     const headerSecret = req.headers.get('X-Cron-Secret');
     if (!cronSecret || headerSecret !== cronSecret) {
       return new NextResponse('Forbidden', { status: 403 });

@@ -5,6 +5,7 @@
  */
 
 import webPush from 'web-push';
+import { getServerEnv } from './env';
 
 export interface PushSubscriptionPayload {
   endpoint: string;
@@ -18,8 +19,9 @@ let configured = false;
 
 function ensureConfigured(): boolean {
   if (configured) return true;
-  const publicKey = process.env.VAPID_PUBLIC_KEY?.trim();
-  const privateKey = process.env.VAPID_PRIVATE_KEY?.trim();
+  const env = getServerEnv();
+  const publicKey = env.VAPID_PUBLIC_KEY;
+  const privateKey = env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) {
     return false;
   }
@@ -34,7 +36,7 @@ function ensureConfigured(): boolean {
 
 /** クライアントに渡す公開鍵（購読時に使用） */
 export function getVapidPublicKey(): string | null {
-  return process.env.VAPID_PUBLIC_KEY?.trim() ?? null;
+  return getServerEnv().VAPID_PUBLIC_KEY ?? null;
 }
 
 /** プッシュ通知を送信。失敗時はログのみ（購読が無効になった場合は throw しない） */
