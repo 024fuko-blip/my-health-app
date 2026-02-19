@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { updateStatsAfterLog } from '@/lib/game-stats';
+import { isValidDateStr } from '@/lib/date-utils';
 import type { HealthLog } from '@prisma/client';
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
@@ -44,6 +45,9 @@ export async function GET(req: Request) {
     const endDate = searchParams.get('endDate');
 
     if (date) {
+      if (!isValidDateStr(date)) {
+        return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
+      }
       const log = await prisma.healthLog.findUnique({
         where: {
           userId_date: { userId: session.userId, date },
@@ -53,6 +57,9 @@ export async function GET(req: Request) {
     }
 
     if (startDate && endDate) {
+      if (!isValidDateStr(startDate) || !isValidDateStr(endDate)) {
+        return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
+      }
       const logs = await prisma.healthLog.findMany({
         where: {
           userId: session.userId,
@@ -104,6 +111,9 @@ export async function POST(req: Request) {
 
     if (!date || typeof date !== 'string') {
       return new NextResponse('Bad Request: date required', { status: 400 });
+    }
+    if (!isValidDateStr(date)) {
+      return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
     }
 
     const data = {
@@ -215,6 +225,9 @@ export async function DELETE(req: Request) {
     }
 
     if (date) {
+      if (!isValidDateStr(date)) {
+        return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', { status: 400 });
+      }
       const existing = await prisma.healthLog.findUnique({
         where: { userId_date: { userId: session.userId, date } },
       });

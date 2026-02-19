@@ -122,6 +122,9 @@ model UserSettings {
   birthDate               String?  @map("birth_date")
   height                  Float?   @map("height")
   weight                  Float?   @map("weight")
+  prefecture              String?  @map("prefecture")
+  latitude                Float?   @map("latitude")
+  longitude               Float?   @map("longitude")
   updatedAt               DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -129,8 +129,12 @@ export default async function GuidePage({ searchParams }: Props) {
               <strong>📱 スマホに通知</strong> … リマインダー画面の「スマホに通知を届ける」ボタンで、服薬時刻・検診予定日にプッシュ通知を受け取れます。服薬通知には、記録に基づいたオネエのアドバイス（AIコメント）も一緒にお届けします。PWAとしてホーム画面に追加すると便利です。
             </p>
             <p>
-              <strong>💬 LINE連携</strong> … 設定画面の「LINE連携」から、公式アカウントを友だち追加して連携できます。連携すると、服薬リマインド・検診リマインドがLINEに届き、チャットで「体調4」「食事: サラダ」「記録 メモ」のように送るとその日の記録が保存されます。希望者のみの機能です。
+              <strong>💬 LINE連携</strong> … 設定画面の「LINE連携」から、公式アカウントを友だち追加して連携できます。連携すると、服薬リマインド・検診リマインドがLINEに届き、チャットで「体調4」「食事: サラダ」「記録 メモ」のように送るとその日の記録が保存されます。
             </p>
+            <p>
+              <strong>🌅 おはよう相棒</strong> … LINE連携済みのユーザーには毎朝、天気に合わせた服装アドバイス・花粉の一言・直近の記録からAIが予測する気分・体調の波をお届けします。プロフィールで現在地（都道府県）を設定すると、その地域の天気・花粉情報が反映されます。位置情報は任意で、拒否の場合は都道府県のみ手動設定できます。
+            </p>
+            <p className="text-xs text-gray-500">通知・LINE連携は希望者のみの機能です。</p>
             <div id="notification" className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="font-bold text-blue-800 mb-2">📲 通知が有効にならない場合</p>
               <p className="text-sm text-gray-700 mb-2"><strong>Android（Chrome）:</strong></p>

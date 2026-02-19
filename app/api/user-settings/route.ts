@@ -17,6 +17,9 @@ function toApiShape(row: {
   birthDate: string | null;
   height: number | null;
   weight: number | null;
+  prefecture: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }) {
   return {
     mode_ibd: row.modeIbd,
@@ -32,6 +35,9 @@ function toApiShape(row: {
     birth_date: row.birthDate ?? '',
     height: row.height ?? null,
     weight: row.weight ?? null,
+    prefecture: row.prefecture ?? null,
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
   };
 }
 
@@ -59,6 +65,9 @@ export async function GET() {
         birthDate: null,
         height: null,
         weight: null,
+        prefecture: null,
+        latitude: null,
+        longitude: null,
       }));
     }
 
@@ -89,6 +98,9 @@ export async function PUT(req: Request) {
       birth_date,
       height,
       weight,
+      prefecture,
+      latitude,
+      longitude,
     } = body;
 
     const personality = ['tsundere', 'amayama', 'ikemen'].includes(ai_personality)
@@ -109,6 +121,9 @@ export async function PUT(req: Request) {
       birthDate: birth_date != null && birth_date !== '' ? birth_date : null,
       height: height != null && height !== '' ? Number(height) : null,
       weight: weight != null && weight !== '' ? Number(weight) : null,
+      prefecture: prefecture != null && prefecture !== '' ? String(prefecture) : null,
+      latitude: latitude != null && latitude !== '' ? Number(latitude) : null,
+      longitude: longitude != null && longitude !== '' ? Number(longitude) : null,
     };
 
     await prisma.userSettings.upsert({

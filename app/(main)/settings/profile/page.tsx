@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { PREFECTURES, getNearestPrefecture } from "@/lib/prefectures";
 
 export default function SettingsProfilePage() {
   const router = useRouter();
@@ -14,7 +15,11 @@ export default function SettingsProfilePage() {
     height: "",
     weight: "",
     medical_history_text: "",
+    prefecture: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+  const [locationLoading, setLocationLoading] = useState(false);
   const [fullSettings, setFullSettings] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -48,6 +53,9 @@ export default function SettingsProfilePage() {
           height: data.height != null ? String(data.height) : "",
           weight: data.weight != null ? String(data.weight) : "",
           medical_history_text: medText,
+          prefecture: data.prefecture ?? "",
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
         });
       }
       setLoading(false);
@@ -75,6 +83,9 @@ export default function SettingsProfilePage() {
       height: profile.height ? profile.height : null,
       weight: profile.weight ? profile.weight : null,
       medical_history: medicalData,
+      prefecture: profile.prefecture || null,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
     };
     const res = await fetch("/api/user-settings", {
       method: "PUT",
@@ -155,6 +166,88 @@ export default function SettingsProfilePage() {
               placeholder="60"
             />
           </div>
+        </div>
+        <div className="border-t pt-4 mt-4">
+          <label className="block text-xs font-medium text-gray-500 mb-2">📍 現在地（おはよう相棒の天気・花粉に使用・任意）</label>
+          <p className="text-xs text-gray-500 mb-2">
+            拒否する場合は「設定しない」、または都道府県のみ手動で選べます。
+          </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (!navigator.geolocation) {
+                  alert("お使いのブラウザでは位置情報を取得できません。都道府県を手動で選択してください。");
+                  return;
+                }
+                setLocationLoading(true);
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const pref = getNearestPrefecture(lat, lon);
+                    setProfile((p) => ({
+                      ...p,
+                      prefecture: pref ?? "",
+                      latitude: lat,
+                      longitude: lon,
+                    }));
+                    setLocationLoading(false);
+                    if (pref) alert(`現在地を取得しました: ${pref}`);
+                  },
+                  (err) => {
+                    setLocationLoading(false);
+                    if (err.code === 1) {
+                      alert("位置情報が拒否されました。都道府県を手動で選択してください。");
+                    } else {
+                      alert("位置情報の取得に失敗しました。都道府県を手動で選択してください。");
+                    }
+                  },
+                  { enableHighAccuracy: false, timeout: 10000 }
+                );
+              }}
+              disabled={locationLoading}
+              className="px-4 py-2 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 disabled:opacity-50"
+            >
+              {locationLoading ? "取得中..." : "現在地を自動で取得"}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setProfile((p) => ({
+                  ...p,
+                  prefecture: "",
+                  latitude: null,
+                  longitude: null,
+                }))
+              }
+              className="px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-600 text-sm hover:bg-gray-100"
+            >
+              設定しない
+            </button>
+          </div>
+          <select
+            value={profile.prefecture}
+            onChange={(e) =>
+              setProfile((p) => ({
+                ...p,
+                prefecture: e.target.value,
+                latitude: null,
+                longitude: null,
+              }))
+            }
+            className="w-full p-2 border rounded text-sm"
+          >
+            <option value="">都道府県を手動で選択…</option>
+            {PREFECTURES.map((pf) => (
+              <option key={pf} value={pf}>
+                {pf}
+              </option>
+            ))}
+          </select>
+          {profile.prefecture && (
+            <p className="text-xs text-green-600 mt-1">設定中: {profile.prefecture}</p>
+          )}
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">既往歴・持病</label>

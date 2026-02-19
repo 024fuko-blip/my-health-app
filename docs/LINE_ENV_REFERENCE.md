@@ -1,5 +1,9 @@
 # LINE 連携 環境変数・キー一覧
 
+## おはよう相棒
+
+LINE連携済みユーザーに毎朝、天気・服装・花粉・直近の健康記録からAIが生成した応援メッセージを送信します。Cloud Scheduler で `/api/cron/send-morning-line` を毎朝 7:00 JST に呼び出してください。**OPENAI_API_KEY 必須**。
+
 ## 一覧表
 
 | 変数名 | 取得場所 | 用途 | 必須 |

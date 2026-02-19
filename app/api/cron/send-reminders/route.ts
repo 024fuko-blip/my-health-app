@@ -9,6 +9,7 @@ import prisma from '@/lib/prisma';
 import { sendPushNotification } from '@/lib/web-push';
 import { sendLinePush } from '@/lib/line';
 import { getServerEnv } from '@/lib/env';
+import { getTodayJST } from '@/lib/date-utils';
 
 const DEFAULT_MEDICATION_TIMES: Record<string, string> = {
   朝: '08:00',
@@ -34,21 +35,6 @@ function shouldSendCheckupReminders(): boolean {
   const now = new Date();
   const jst = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
   return jst.getHours() === 8 && jst.getMinutes() < 15;
-}
-
-/** 今日の日付を JST で YYYY-MM-DD */
-function getTodayJST(): string {
-  const formatter = new Intl.DateTimeFormat('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  const parts = formatter.formatToParts(new Date());
-  const y = parts.find((p) => p.type === 'year')!.value;
-  const m = parts.find((p) => p.type === 'month')!.value;
-  const d = parts.find((p) => p.type === 'day')!.value;
-  return `${y}-${m}-${d}`;
 }
 
 export async function POST(req: Request) {

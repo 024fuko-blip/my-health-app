@@ -93,14 +93,21 @@ gcloud run deploy my-health-apps --project my-health-app-485805 --source . --reg
 
 **Webhook URL**: `https://本番URL/api/line/webhook` を LINE Developers の Messaging API に設定すること。
 
-**Cloud Scheduler の設定（15分ごとに服薬・検診リマインダー送信）**
+**Cloud Scheduler の設定**
 
-1. Cloud Console → Cloud Scheduler → ジョブを作成
-2. 頻度: `*/15 * * * *`（15分ごと）
-3. ターゲット: HTTP
-4. URL: `https://my-health-apps-16867512037.asia-northeast2.run.app/api/cron/send-reminders`
-5. HTTP メソッド: POST
-6. ヘッダー: `X-Cron-Secret` = あなたの CRON_SECRET の値
+1. **服薬・検診リマインダー（15分ごと）**
+   - ジョブ名: `send-reminders`
+   - 頻度: `*/15 * * * *`
+   - URL: `https://my-health-apps-16867512037.asia-northeast2.run.app/api/cron/send-reminders`
+   - HTTP メソッド: POST
+   - ヘッダー: `X-Cron-Secret` = CRON_SECRET の値
+
+2. **おはよう相棒（毎朝7時 JST）**
+   - ジョブ名: `send-morning-line`
+   - 頻度: `0 22 * * *`（UTC 22:00 = JST 7:00）
+   - URL: `https://my-health-apps-16867512037.asia-northeast2.run.app/api/cron/send-morning-line`
+   - HTTP メソッド: POST
+   - ヘッダー: `X-Cron-Secret` = CRON_SECRET の値
 
 ## 構成
 

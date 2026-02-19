@@ -2,6 +2,20 @@
 
 import { useState, useEffect } from "react";
 
+/** スマホ判定（line:// で直接アプリ起動するために使用） */
+function isMobile(): boolean {
+  if (typeof window === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
+}
+
+/** スマホでは line:// で直接アプリ起動（QRページを挟まない） */
+function getAddFriendUrlForDevice(url: string): string {
+  if (!url) return url;
+  const m = url.match(/^https:\/\/line\.me\/R\/ti\/p\/(@[\w-]+)$/);
+  if (isMobile() && m) return `line://ti/p/${m[1]}`;
+  return url;
+}
+
 export default function LineLinkCard() {
   const [status, setStatus] = useState<"checking" | "linked" | "unlinked" | "requesting" | "unsupported">("checking");
   const [code, setCode] = useState<string | null>(null);
@@ -34,8 +48,8 @@ export default function LineLinkCard() {
       } else if (data.code) {
         setCode(data.code);
         setStatus("requesting");
-        // 友だち追加URLが有効なら、ボタン押下と同時にLINE友だち追加画面を開く
-        if (addFriendUrl) window.open(addFriendUrl, "_blank", "noopener");
+        // 友だち追加URLが有効なら、ボタン押下と同時にLINE友だち追加画面を開く（スマホなら line:// で直接アプリ起動）
+        if (addFriendUrl) window.open(getAddFriendUrlForDevice(addFriendUrl), "_blank", "noopener");
       } else if (!res.ok) {
         setErrorMsg(data.error || `エラー (${res.status})`);
       }
@@ -106,7 +120,7 @@ export default function LineLinkCard() {
         <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
           <li>
             {isValidUrl ? (
-              <a href={addFriendUrl!} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-medium inline-flex items-center gap-1">
+              <a href={getAddFriendUrlForDevice(addFriendUrl!)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-medium inline-flex items-center gap-1">
                 公式アカウントを友だち追加 →
               </a>
             ) : (
@@ -139,7 +153,7 @@ export default function LineLinkCard() {
       </div>
       {isValidUrl && (
         <a
-          href={addFriendUrl}
+          href={getAddFriendUrlForDevice(addFriendUrl!)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-green-600 hover:underline"
