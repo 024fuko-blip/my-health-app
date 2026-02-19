@@ -66,7 +66,7 @@ function PeriodButtons({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            handleClick('生理中', () => onPeriodStart?.(dateStr));
+            handleClick('生理中', async () => { await onPeriodStart?.(dateStr); });
           }}
           className={btnClass(isStartDay)}
         >
