@@ -2,11 +2,22 @@
 
 import { useState, useEffect } from "react";
 
+// 友だち追加URL: 直接指定 or Basic ID（@156ipswe など）から生成
+function getAddFriendUrl(): string | null {
+  const fromEnv = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim() || null;
+  const basicId = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID?.trim()?.replace(/^@/, "") || null;
+  if (fromEnv && (fromEnv.startsWith("http://") || fromEnv.startsWith("https://"))) return fromEnv;
+  if (basicId) return `https://line.me/R/ti/p/@${basicId}`;
+  return null;
+}
+
 export default function LineLinkCard() {
   const [status, setStatus] = useState<"checking" | "linked" | "unlinked" | "requesting" | "unsupported">("checking");
   const [code, setCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const addFriendUrl = getAddFriendUrl();
+  const isValidUrl = !!addFriendUrl;
 
   useEffect(() => {
     fetch("/api/line/status", { credentials: "include" })
@@ -30,6 +41,8 @@ export default function LineLinkCard() {
       } else if (data.code) {
         setCode(data.code);
         setStatus("requesting");
+        // 友だち追加URLが有効なら、ボタン押下と同時にLINE友だち追加画面を開く
+        if (addFriendUrl) window.open(addFriendUrl, "_blank", "noopener");
       } else if (!res.ok) {
         setErrorMsg(data.error || `エラー (${res.status})`);
       }
@@ -53,9 +66,6 @@ export default function LineLinkCard() {
       setLoading(false);
     }
   };
-
-  const addFriendUrl = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim() || null;
-  const isValidUrl = addFriendUrl && (addFriendUrl.startsWith("http://") || addFriendUrl.startsWith("https://"));
 
   if (status === "checking") {
     return (

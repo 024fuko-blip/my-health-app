@@ -62,7 +62,8 @@ gcloud run deploy my-health-apps --project my-health-app-485805 --source . --reg
 | LINE_CHANNEL_ID | Messaging API チャネルID |
 | LINE_CHANNEL_SECRET | Messaging API チャネルシークレット |
 | LINE_CHANNEL_ACCESS_TOKEN | チャネルアクセストークン（長期） |
-| NEXT_PUBLIC_LINE_ADD_FRIEND_URL | 友だち追加用URL（LINE Developers の Basic settings で取得） |
+| NEXT_PUBLIC_LINE_ADD_FRIEND_URL | 友だち追加用URL（lin.ee の短縮URLなど） |
+| NEXT_PUBLIC_LINE_BOT_BASIC_ID | 友だち追加URLの代用。Basic ID のみ（例: `156ipswe`）で `line.me/R/ti/p/@xxx` を自動生成 |
 
 **Webhook URL**: `https://本番URL/api/line/webhook` を LINE Developers の Messaging API に設定すること。
 
