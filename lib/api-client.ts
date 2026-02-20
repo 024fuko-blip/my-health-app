@@ -2,7 +2,12 @@
  * クライアント側の API 呼び出し用ユーティリティ。
  * 認証チェック・credentials・401 ハンドリングを共通化。
  */
-import type { AppRouterInstance } from 'next/navigation';
+
+/** useRouter() 互換型。next/navigation の AppRouterInstance は非公開のため自前定義 */
+export interface RouterLike {
+  replace(url: string): void;
+  push(url: string): void;
+}
 
 const DEFAULT_OPTIONS: RequestInit = {
   credentials: 'include',
@@ -17,7 +22,7 @@ export interface SessionUser {
 
 /** セッション取得。未認証の場合は router があれば /login へリダイレクト */
 export async function ensureSession(
-  router?: AppRouterInstance
+  router?: RouterLike
 ): Promise<{ user: SessionUser } | null> {
   const res = await fetch('/api/auth/session', { credentials: 'include' });
   const data = (await res.json()) as { user?: SessionUser };
@@ -53,7 +58,7 @@ export async function apiPost<T>(
 }
 
 /** 401 時の共通処理（alert + /login へリダイレクト） */
-export function handleUnauthorized(router?: AppRouterInstance): void {
+export function handleUnauthorized(router?: RouterLike): void {
   if (typeof window !== 'undefined') {
     alert('セッションが切れました。再度ログインしてください。');
     router?.replace('/login');

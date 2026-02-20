@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { AppRouterInstance } from 'next/navigation';
+import type { RouterLike } from '@/lib/api-client';
 import { ensureSession, apiFetch } from '@/lib/api-client';
 import type { HealthLogRow, UserSettingsMode } from './record-form-types';
 
@@ -28,7 +28,7 @@ export interface InitData {
  * 記録画面の初期データ（ユーザー設定＋当日ログ）を非同期で取得するフック。
  * 取得結果は initData にまとめて返し、呼び出し元でフォーム state へ反映する。
  */
-export function useRecordInit(router: AppRouterInstance) {
+export function useRecordInit(router: RouterLike) {
   const [loading, setLoading] = useState(true);
   const [initData, setInitData] = useState<InitData | null>(null);
   const initDoneRef = useRef(false);

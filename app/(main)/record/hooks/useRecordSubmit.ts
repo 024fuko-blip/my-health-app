@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { AppRouterInstance } from 'next/navigation';
+import type { RouterLike } from '@/lib/api-client';
 import { EMOTIONS } from '@/lib/record-constants';
 import { ensureSession, apiPost, handleUnauthorized } from '@/lib/api-client';
 import { buildRecordPayload } from '@/lib/validations/record-schema';
@@ -93,7 +93,7 @@ export interface SubmitFormSnapshot {
 }
 
 interface UseRecordSubmitDeps {
-  router: AppRouterInstance;
+  router: RouterLike;
   getSnapshot: () => SubmitFormSnapshot;
   onSaveSuccess: () => void;
 }
