@@ -147,13 +147,30 @@ export async function POST(req: Request) {
       exerciseMinutes: toNumOrNull(exercise_minutes),
     };
 
-    const log = await prisma.healthLog.upsert({
-      where: {
-        userId_date: { userId: session.userId, date: String(date) },
-      },
-      create: data,
-      update: data,
-    });
+    let log;
+    try {
+      log = await prisma.healthLog.upsert({
+        where: {
+          userId_date: { userId: session.userId, date: String(date) },
+        },
+        create: data,
+        update: data,
+      });
+    } catch (upsertError: unknown) {
+      const msg = upsertError instanceof Error ? upsertError.message : String(upsertError);
+      if (msg.includes('medication_taken_detail') || msg.includes('column')) {
+        const { medicationTakenDetail, ...dataWithoutDetail } = data;
+        log = await prisma.healthLog.upsert({
+          where: {
+            userId_date: { userId: session.userId, date: String(date) },
+          },
+          create: dataWithoutDetail,
+          update: dataWithoutDetail,
+        });
+      } else {
+        throw upsertError;
+      }
+    }
 
     await updateStatsAfterLog(session.userId, String(date));
 

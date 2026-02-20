@@ -142,7 +142,9 @@ export function useRecordForm() {
       med.timings.forEach((t) => { initialMedState[`${med.id}_${t}`] = false; });
     });
     setMedicationTaken(initialMedState);
-    applyLogToForm(initData.todayLog, initData.medications, formSetters());
+    if (Date.now() - lastUserEditRef.current >= 3000) {
+      applyLogToForm(initData.todayLog, initData.medications, formSetters());
+    }
   }, [initData, formSetters]);
 
   /* ---------- 日付変更時のログ読み込み ---------- */

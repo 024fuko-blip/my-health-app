@@ -52,7 +52,19 @@ function buildTodayRecordText(dailyInput: Record<string, unknown>): string {
   for (const [key, label] of Object.entries(RECORD_LABELS)) {
     const v = dailyInput[key];
     if (v === undefined || v === null || v === '') continue;
-    lines.push(key === 'medication_taken' ? `${label}: ${v ? '飲んだ' : 'まだ'}` : `${label}: ${v}`);
+    try {
+      const text =
+        key === 'medication_taken'
+          ? v
+            ? '飲んだ'
+            : 'まだ'
+          : typeof v === 'object'
+            ? JSON.stringify(v)
+            : String(v);
+      lines.push(`${label}: ${text}`);
+    } catch {
+      continue;
+    }
   }
   return lines.length > 0 ? lines.join('\n') : '（記録なし）';
 }

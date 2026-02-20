@@ -16,15 +16,17 @@ export async function GET(req: Request) {
           orderBy: { dueDate: 'asc' },
         });
         if (type === 'checkup') {
-          return NextResponse.json(
-            checkups.map((c) => ({
+          return NextResponse.json({
+            checkups: checkups.map((c) => ({
               id: c.id,
               name: c.name,
               due_date: c.dueDate,
+              scheduled_time: c.scheduledTime,
               memo: c.memo,
               created_at: c.createdAt,
-            }))
-          );
+            })),
+            hospital_names: [...new Set(checkups.map((c) => c.name).filter(Boolean))].sort(),
+          });
         }
 
         const settings = await prisma.userSettings.findUnique({
@@ -36,15 +38,18 @@ export async function GET(req: Request) {
           { includeLabel: true }
         );
 
+        const hospitalNames = [...new Set(checkups.map((c) => c.name).filter(Boolean))].sort();
         return NextResponse.json({
           medication_schedule: medicationSchedule,
           checkups: checkups.map((c) => ({
             id: c.id,
             name: c.name,
             due_date: c.dueDate,
+            scheduled_time: c.scheduledTime,
             memo: c.memo,
             created_at: c.createdAt,
           })),
+          hospital_names: hospitalNames,
         });
       }
 
@@ -72,26 +77,37 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   return withSession(async (session) => {
     try {
-      const parsed = await parseJsonBody<{ name?: string; due_date?: string; memo?: string }>(req);
+      const parsed = await parseJsonBody<{
+        name?: string;
+        due_date?: string;
+        scheduled_time?: string;
+        memo?: string;
+      }>(req);
       if (!parsed.ok) return parsed.error;
       const body = parsed.data;
-      const { name, due_date, memo } = body;
+      const { name, due_date, scheduled_time, memo } = body;
       if (!name || !due_date) {
         return new NextResponse('Bad Request: name and due_date required', { status: 400 });
       }
+      const scheduledTime =
+        scheduled_time != null && typeof scheduled_time === 'string' && /^\d{1,2}:\d{2}$/.test(scheduled_time)
+          ? scheduled_time
+          : null;
 
       const created = await prisma.checkupReminder.create({
         data: {
           userId: session.userId,
-          name: String(name),
+          name: String(name).trim(),
           dueDate: String(due_date),
-          memo: memo != null ? String(memo) : null,
+          scheduledTime,
+          memo: memo != null ? String(memo).trim() || null : null,
         },
       });
       return NextResponse.json({
         id: created.id,
         name: created.name,
         due_date: created.dueDate,
+        scheduled_time: created.scheduledTime,
         memo: created.memo,
         created_at: created.createdAt,
       });

@@ -148,12 +148,13 @@ model UserGameStats {
 }
 
 model CheckupReminder {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  name      String
-  dueDate   String   @map("due_date")
-  memo      String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  name          String
+  dueDate       String   @map("due_date")
+  scheduledTime String?  @map("scheduled_time")
+  memo          String?
+  createdAt     DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

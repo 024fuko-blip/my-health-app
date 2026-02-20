@@ -15,6 +15,7 @@ interface CheckupItem {
   id: string;
   name: string;
   due_date: string;
+  scheduled_time: string | null;
   memo: string | null;
   created_at: string;
 }
@@ -27,7 +28,9 @@ export default function RemindersPage() {
   const [showAddCheckup, setShowAddCheckup] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
+  const [newScheduledTime, setNewScheduledTime] = useState("");
   const [newMemo, setNewMemo] = useState("");
+  const [hospitalNames, setHospitalNames] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const fetchReminders = async () => {
@@ -47,6 +50,7 @@ export default function RemindersPage() {
       const data = await res.json();
       setMedicationSchedule(data.medication_schedule ?? []);
       setCheckups(data.checkups ?? []);
+      setHospitalNames(data.hospital_names ?? []);
     }
     setLoading(false);
   };
@@ -66,6 +70,7 @@ export default function RemindersPage() {
         body: JSON.stringify({
           name: newName.trim(),
           due_date: newDueDate,
+          scheduled_time: newScheduledTime.trim() || undefined,
           memo: newMemo.trim() || undefined,
         }),
         credentials: "include",
@@ -73,6 +78,7 @@ export default function RemindersPage() {
       if (res.ok) {
         setNewName("");
         setNewDueDate("");
+        setNewScheduledTime("");
         setNewMemo("");
         setShowAddCheckup(false);
         await fetchReminders();
@@ -148,28 +154,54 @@ export default function RemindersPage() {
 
         {showAddCheckup && (
           <form onSubmit={handleAddCheckup} className="mb-4 p-3 bg-white rounded-lg border border-blue-100 space-y-2">
-            <input
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="例: 健康診断"
-              className="w-full p-2 border rounded text-sm"
-              required
-            />
-            <input
-              type="date"
-              value={newDueDate}
-              onChange={(e) => setNewDueDate(e.target.value)}
-              className="w-full p-2 border rounded text-sm"
-              required
-            />
-            <input
-              type="text"
-              value={newMemo}
-              onChange={(e) => setNewMemo(e.target.value)}
-              placeholder="メモ（任意）"
-              className="w-full p-2 border rounded text-sm"
-            />
+            <div>
+              <label className="block text-xs text-gray-600 mb-0.5">病院名</label>
+              <input
+                type="text"
+                list="hospital-history"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="例: 〇〇病院"
+                className="w-full p-2 border rounded text-sm"
+                required
+              />
+              <datalist id="hospital-history">
+                {hospitalNames.map((h) => (
+                  <option key={h} value={h} />
+                ))}
+              </datalist>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-0.5">予定日</label>
+                <input
+                  type="date"
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                  className="w-full p-2 border rounded text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-0.5">予約時間（任意）</label>
+                <input
+                  type="time"
+                  value={newScheduledTime}
+                  onChange={(e) => setNewScheduledTime(e.target.value)}
+                  className="w-full p-2 border rounded text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-0.5">メモ（任意）</label>
+              <input
+                type="text"
+                value={newMemo}
+                onChange={(e) => setNewMemo(e.target.value)}
+                placeholder="例: 持参物、注意事項"
+                className="w-full p-2 border rounded text-sm"
+              />
+            </div>
             <button
               type="submit"
               disabled={saving}
@@ -190,7 +222,8 @@ export default function RemindersPage() {
                 <div>
                   <p className="font-bold text-gray-800">{c.name}</p>
                   <p className="text-xs text-gray-500">
-                    予定日: {c.due_date}
+                    {c.due_date}
+                    {c.scheduled_time ? ` ${c.scheduled_time}` : ""}
                     {c.memo ? ` ・ ${c.memo}` : ""}
                   </p>
                 </div>

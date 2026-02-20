@@ -18,6 +18,23 @@ export function getTodayJST(): string {
   return `${y}-${m}-${d}`;
 }
 
+/** 明日の日付を JST で YYYY-MM-DD */
+export function getTomorrowJST(): string {
+  const formatter = new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const parts = formatter.formatToParts(tomorrow);
+  const y = parts.find((p) => p.type === 'year')!.value;
+  const m = parts.find((p) => p.type === 'month')!.value;
+  const d = parts.find((p) => p.type === 'day')!.value;
+  return `${y}-${m}-${d}`;
+}
+
 /** 過去 N 日分の日付リスト（YYYY-MM-DD） */
 export function getPastDates(days: number): string[] {
   const formatter = new Intl.DateTimeFormat('ja-JP', {
