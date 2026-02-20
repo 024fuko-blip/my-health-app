@@ -58,7 +58,8 @@ export function useRecordForm() {
   const [steps, setSteps] = useState('');
   const [exerciseMinutes, setExerciseMinutes] = useState('');
   const [previousAlcoholSummary, setPreviousAlcoholSummary] = useState('');
-  const lastUserEditRef = useRef<number>(0);
+  /** 日付ごとの最終編集時刻。同一日のログ上書きを防ぐため日付を含む */
+  const lastUserEditRef = useRef<{ date: string; time: number }>({ date: '', time: 0 });
 
   /* ---------- サブフック ---------- */
   const { loading, initData } = useRecordInit(router);
@@ -74,7 +75,7 @@ export function useRecordForm() {
 
   const saveMedicationStatusToLog = useCallback(
     async (medKey: string, taken: boolean) => {
-      lastUserEditRef.current = Date.now();
+      lastUserEditRef.current = { date, time: Date.now() };
       try {
         await fetch('/api/health-logs/medication-status', {
           method: 'PUT',
@@ -142,7 +143,10 @@ export function useRecordForm() {
       med.timings.forEach((t) => { initialMedState[`${med.id}_${t}`] = false; });
     });
     setMedicationTaken(initialMedState);
-    if (Date.now() - lastUserEditRef.current >= 3000) {
+    const today = new Date().toISOString().split('T')[0];
+    const edit = lastUserEditRef.current;
+    const recentEditSameDay = edit.date === today && Date.now() - edit.time < 5000;
+    if (!recentEditSameDay) {
       applyLogToForm(initData.todayLog, initData.medications, formSetters());
     }
   }, [initData, formSetters]);
@@ -164,7 +168,12 @@ export function useRecordForm() {
       if (logRes.status === 401) return;
       const log = logRes.ok ? await logRes.json() : null;
       const now = Date.now();
-      if (lastUserEditRef.current > fetchStarted || now - lastUserEditRef.current < 3000) return;
+      const edit = lastUserEditRef.current;
+      // 同一日付で5秒以内の編集、または取得開始後に編集があった場合は上書きしない
+      const skipOverwrite =
+        edit.date === date &&
+        (now - edit.time < 5000 || edit.time > fetchStarted);
+      if (skipOverwrite) return;
       applyLog((log as HealthLogRow) ?? null);
     };
     loadLogForDate();
@@ -189,7 +198,12 @@ export function useRecordForm() {
   const decompositionHours = calculateDecompositionTime(currentTotalPureAlcohol, userWeight);
   const soberTime = drinkEndTime ? addHoursToTime(drinkEndTime, decompositionHours) : '--:--';
 
-  const markUserEdit = useCallback(() => { lastUserEditRef.current = Date.now(); }, []);
+  const markUserEdit = useCallback(
+    () => {
+      lastUserEditRef.current = { date, time: Date.now() };
+    },
+    [date]
+  );
 
   /* ---------- 公開 API ---------- */
   return {

@@ -3,7 +3,7 @@ import type { PeriodSettings } from './useRecordInit';
 
 interface UsePeriodHandlersDeps {
   setPeriodSettings: React.Dispatch<React.SetStateAction<PeriodSettings>>;
-  lastUserEditRef: React.MutableRefObject<number>;
+  lastUserEditRef: React.MutableRefObject<{ date: string; time: number }>;
 }
 
 export function usePeriodHandlers({ setPeriodSettings, lastUserEditRef }: UsePeriodHandlersDeps) {
@@ -47,7 +47,7 @@ export function usePeriodHandlers({ setPeriodSettings, lastUserEditRef }: UsePer
 
   const savePeriodStatusToLog = useCallback(
     async (dateStr: string, status: string) => {
-      lastUserEditRef.current = Date.now();
+      lastUserEditRef.current = { date: dateStr, time: Date.now() };
       try {
         await fetch('/api/health-logs/period-status', {
           method: 'PUT',

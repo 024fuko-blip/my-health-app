@@ -6,7 +6,8 @@ import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { getCharaPrompt } from '@/lib/chara-settings';
-import { buildYearlySystemPrompt, type UserContext } from './prompts';
+import { buildYearlySystemPrompt } from './prompts';
+import { buildUserContext } from './user-context';
 import type { GenerateResult, YearlyMetadata } from './types';
 
 export async function generateYearlyInsight(
@@ -14,37 +15,13 @@ export async function generateYearlyInsight(
   startDate: string,
   endDate: string
 ): Promise<GenerateResult> {
-  const monthlyInsights = await prisma.insight.findMany({
-    where: {
-      userId,
-      level: 'monthly',
-      startDate: { gte: startDate },
-      endDate: { lte: endDate },
-    },
-    orderBy: { startDate: 'asc' },
-  });
-
-  const userSettings = await prisma.userSettings.findUnique({
-    where: { userId },
-  });
-
-  const userContext: UserContext = userSettings
-    ? {
-        medicalHistory: userSettings.medicalHistory ?? 'なし',
-        currentMedications: userSettings.currentMedications ?? 'なし',
-        modeIbd: userSettings.modeIbd,
-        modeDiet: userSettings.modeDiet,
-        modeAlcohol: userSettings.modeAlcohol,
-        modeMental: userSettings.modeMental,
-      }
-    : {
-        medicalHistory: 'なし',
-        currentMedications: 'なし',
-        modeIbd: false,
-        modeDiet: false,
-        modeAlcohol: false,
-        modeMental: false,
-      };
+  const [monthlyInsights, userContext] = await Promise.all([
+    prisma.insight.findMany({
+      where: { userId, level: 'monthly', startDate: { gte: startDate }, endDate: { lte: endDate } },
+      orderBy: { startDate: 'asc' },
+    }),
+    buildUserContext(userId),
+  ]);
 
   const metadata: YearlyMetadata = {
     monthlyCount: monthlyInsights.length,
@@ -70,7 +47,7 @@ export async function generateYearlyInsight(
     throw new Error('OPENAI_API_KEY が未設定です');
   }
 
-  const chara = getCharaPrompt(userSettings?.aiPersonality ?? 'tsundere', 'advice');
+  const chara = getCharaPrompt(userContext.aiPersonality, 'advice');
   const systemPrompt = buildYearlySystemPrompt(chara, userContext);
   const userPrompt = `これが${startDate}〜${endDate}の月次要約よ！年全体の傾向・バイオリズムを分析してちょうだい！\n\n## 月次要約\n${JSON.stringify(monthlySummariesForPrompt, null, 2)}`;
 

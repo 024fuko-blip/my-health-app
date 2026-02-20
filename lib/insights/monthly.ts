@@ -6,7 +6,8 @@ import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { getCharaPrompt } from '@/lib/chara-settings';
-import { buildMonthlySystemPrompt, type UserContext } from './prompts';
+import { buildMonthlySystemPrompt } from './prompts';
+import { buildUserContext } from './user-context';
 import type { GenerateResult, MonthlyMetadata } from './types';
 
 export async function generateMonthlyInsight(
@@ -14,37 +15,13 @@ export async function generateMonthlyInsight(
   startDate: string,
   endDate: string
 ): Promise<GenerateResult> {
-  const weeklyInsights = await prisma.insight.findMany({
-    where: {
-      userId,
-      level: 'weekly',
-      startDate: { gte: startDate },
-      endDate: { lte: endDate },
-    },
-    orderBy: { startDate: 'asc' },
-  });
-
-  const userSettings = await prisma.userSettings.findUnique({
-    where: { userId },
-  });
-
-  const userContext: UserContext = userSettings
-    ? {
-        medicalHistory: userSettings.medicalHistory ?? 'なし',
-        currentMedications: userSettings.currentMedications ?? 'なし',
-        modeIbd: userSettings.modeIbd,
-        modeDiet: userSettings.modeDiet,
-        modeAlcohol: userSettings.modeAlcohol,
-        modeMental: userSettings.modeMental,
-      }
-    : {
-        medicalHistory: 'なし',
-        currentMedications: 'なし',
-        modeIbd: false,
-        modeDiet: false,
-        modeAlcohol: false,
-        modeMental: false,
-      };
+  const [weeklyInsights, userContext] = await Promise.all([
+    prisma.insight.findMany({
+      where: { userId, level: 'weekly', startDate: { gte: startDate }, endDate: { lte: endDate } },
+      orderBy: { startDate: 'asc' },
+    }),
+    buildUserContext(userId),
+  ]);
 
   const metadata: MonthlyMetadata = {
     weeklyCount: weeklyInsights.length,
@@ -70,7 +47,7 @@ export async function generateMonthlyInsight(
     throw new Error('OPENAI_API_KEY が未設定です');
   }
 
-  const chara = getCharaPrompt(userSettings?.aiPersonality ?? 'tsundere', 'advice');
+  const chara = getCharaPrompt(userContext.aiPersonality, 'advice');
   const systemPrompt = buildMonthlySystemPrompt(chara, userContext);
   const userPrompt = `これが${startDate}〜${endDate}の週次要約よ！月全体の傾向を分析してちょうだい！\n\n## 週次要約\n${JSON.stringify(weeklySummariesForPrompt, null, 2)}`;
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getServerEnv } from '@/lib/env';
+import { sanitizeForPrompt } from '@/lib/prompt-utils';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 
 const NUTRITION_JSON_PROMPT = `
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
           { role: 'system', content: NUTRITION_JSON_PROMPT + '\nユーザーが書いた食事の文字説明から、一般的な一食分の量を想定して栄養成分を推定すること。' },
           {
             role: 'user',
-            content: `以下の食事内容から栄養成分を推定してください。\n\n「${mealDescription}」`,
+            content: `以下の食事内容から栄養成分を推定してください。\n\n${sanitizeForPrompt(mealDescription)}`,
           },
         ],
         temperature: 0.3,

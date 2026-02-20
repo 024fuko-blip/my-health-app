@@ -6,7 +6,8 @@ import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { getCharaPrompt } from '@/lib/chara-settings';
-import { buildWeeklySystemPrompt, type UserContext } from './prompts';
+import { buildWeeklySystemPrompt } from './prompts';
+import { buildUserContext } from './user-context';
 import type { GenerateResult, WeeklyMetadata } from './types';
 
 export async function generateWeeklyInsight(
@@ -14,35 +15,13 @@ export async function generateWeeklyInsight(
   startDate: string,
   endDate: string
 ): Promise<GenerateResult> {
-  const logs = await prisma.healthLog.findMany({
-    where: {
-      userId,
-      date: { gte: startDate, lte: endDate },
-    },
-    orderBy: { date: 'asc' },
-  });
-
-  const userSettings = await prisma.userSettings.findUnique({
-    where: { userId },
-  });
-
-  const userContext: UserContext = userSettings
-    ? {
-        medicalHistory: userSettings.medicalHistory ?? 'なし',
-        currentMedications: userSettings.currentMedications ?? 'なし',
-        modeIbd: userSettings.modeIbd,
-        modeDiet: userSettings.modeDiet,
-        modeAlcohol: userSettings.modeAlcohol,
-        modeMental: userSettings.modeMental,
-      }
-    : {
-        medicalHistory: 'なし',
-        currentMedications: 'なし',
-        modeIbd: false,
-        modeDiet: false,
-        modeAlcohol: false,
-        modeMental: false,
-      };
+  const [logs, userContext] = await Promise.all([
+    prisma.healthLog.findMany({
+      where: { userId, date: { gte: startDate, lte: endDate } },
+      orderBy: { date: 'asc' },
+    }),
+    buildUserContext(userId),
+  ]);
 
   const metadata = computeWeeklyMetadata(logs);
   const logsForPrompt = logs.map((l) => ({
@@ -67,7 +46,7 @@ export async function generateWeeklyInsight(
     throw new Error('OPENAI_API_KEY が未設定です');
   }
 
-  const chara = getCharaPrompt(userSettings?.aiPersonality ?? 'tsundere', 'advice');
+  const chara = getCharaPrompt(userContext.aiPersonality, 'advice');
   const systemPrompt = buildWeeklySystemPrompt(chara, userContext);
   const userPrompt = `これが${startDate}〜${endDate}の記録よ！因果関係を暴いてちょうだい！\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
 
