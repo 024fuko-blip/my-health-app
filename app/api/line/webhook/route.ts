@@ -17,6 +17,7 @@ import {
   replyAsCompanion,
   buildChatContextFromSettings,
 } from '@/lib/line-chat';
+import { generateHealthPrediction } from '@/lib/line-health-prediction';
 import {
   createRichMenu,
   uploadRichMenuImage,
@@ -122,6 +123,40 @@ export async function POST(req: Request) {
                   quickReply: { items: buildQuickReplyItems() },
                 },
                 buildWelcomeButtons(),
+              ]);
+            }
+          }
+          continue;
+        }
+
+        // 今日の体調予想（未連携時は案内）
+        if (text === '今日の体調予想') {
+          const linked = await prisma.lineLink.findFirst({
+            where: { lineUserId },
+            include: { user: { include: { userSettings: true } } },
+          });
+          if (!linked && replyToken && config.accessToken) {
+            await replyLineMessages(config.accessToken, replyToken, [
+              { type: 'text', text: '体調予想を使うにはアプリで連携してね。設定→LINE連携から。' },
+            ]);
+          } else if (linked) {
+            const prediction = await generateHealthPrediction({
+              userId: linked.userId,
+              settings: {
+                prefecture: linked.user.userSettings?.prefecture ?? null,
+                latitude: linked.user.userSettings?.latitude ?? null,
+                longitude: linked.user.userSettings?.longitude ?? null,
+                aiPersonality: linked.user.userSettings?.aiPersonality ?? null,
+                medicalHistory: linked.user.userSettings?.medicalHistory ?? null,
+              },
+            });
+            if (replyToken && config.accessToken) {
+              await replyLineMessages(config.accessToken, replyToken, [
+                {
+                  type: 'text',
+                  text: prediction,
+                  quickReply: { items: buildQuickReplyItems() },
+                },
               ]);
             }
           }

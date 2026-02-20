@@ -19,13 +19,13 @@ export function buildWelcomeMessage(): { type: 'text'; text: string } {
 📌 【使い方】
 1️⃣ アプリで「連携する」→ 表示された6桁コードを「連携 123456」のように送ってね
 2️⃣ 記録: 「記録」「体調4」「食事: サラダ」などでその日の記録ができるわ
-3️⃣ 相談: 何でも聞いて。既往歴や薬の情報を踏まえて相棒が答えるわ
+3️⃣ 今日の体調予想: タップするとAIが過去1週間の記録・天気・花粉から今日の体調を予測するわ
 
 下のボタンからアプリを開けるわよ 👇`,
   };
 }
 
-/** ボタン付きテンプレート（今日の記録・ペット・相談） */
+/** ボタン付きテンプレート（記録・体調予想・ペット・分析） */
 export function buildWelcomeButtons() {
   const base = getAppBaseUrl();
   return {
@@ -35,20 +35,22 @@ export function buildWelcomeButtons() {
       type: 'buttons' as const,
       text: '何をしましょうか？',
       actions: [
-        { type: 'uri' as const, label: '📝 今日の記録', uri: `${base}/record` },
-        { type: 'uri' as const, label: '🐱 ペットを見る', uri: `${base}/game/pet` },
-        { type: 'message' as const, label: '💬 相談する', text: '相談したいことがあります' },
+        { type: 'uri' as const, label: '記録', uri: `${base}/record` },
+        { type: 'message' as const, label: '今日の体調予想', text: '今日の体調予想' },
+        { type: 'uri' as const, label: 'ペット', uri: `${base}/game/pet` },
+        { type: 'uri' as const, label: '分析', uri: `${base}/dashboard` },
       ],
     },
   };
 }
 
-/** Quick Reply（今日の記録・ペット・記録する） */
+/** Quick Reply（記録・体調予想・ペット・分析） */
 export function buildQuickReplyItems() {
   const base = getAppBaseUrl();
   return [
-    { type: 'action' as const, action: { type: 'uri' as const, label: '今日の記録', uri: `${base}/record` } },
+    { type: 'action' as const, action: { type: 'uri' as const, label: '記録', uri: `${base}/record` } },
+    { type: 'action' as const, action: { type: 'message' as const, label: '今日の体調予想', text: '今日の体調予想' } },
     { type: 'action' as const, action: { type: 'uri' as const, label: 'ペット', uri: `${base}/game/pet` } },
-    { type: 'action' as const, action: { type: 'message' as const, label: '記録する', text: '記録' } },
+    { type: 'action' as const, action: { type: 'uri' as const, label: '分析', uri: `${base}/dashboard` } },
   ];
 }

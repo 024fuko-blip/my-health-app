@@ -18,6 +18,17 @@ import type { HealthLogApiResponse, UserSettingsMode } from '@/app/(main)/record
 type PeriodDays = 7 | 30;
 type HealthLogRow = HealthLogApiResponse;
 
+type InsightTab = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+interface InsightRow {
+  id: string;
+  level: string;
+  startDate: string;
+  endDate: string;
+  summary: string;
+  metadata: Record<string, unknown> | null;
+}
+
 // グラフ表示可能な項目（モードとの対応付き）
 const CHART_ITEMS = [
   { key: '体調', color: '#3b82f6', label: '体調', mode: null }, // 常に表示
@@ -30,15 +41,18 @@ const CHART_ITEMS = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [insightTab, setInsightTab] = useState<InsightTab>('daily');
   const [logs, setLogs] = useState<HealthLogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<PeriodDays>(7);
   const [report, setReport] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
-  
+  const [insights, setInsights] = useState<InsightRow[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightGenerating, setInsightGenerating] = useState(false);
+
   // ユーザーの設定モード
   const [modes, setModes] = useState<UserSettingsMode>({});
-  
   // 表示する項目の選択状態
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set(['体調']));
 
@@ -48,7 +62,6 @@ export default function DashboardPage() {
       const sessionData = await sessionRes.json();
       if (!sessionData.user) return;
 
-      // 設定を取得
       const settingsRes = await fetch('/api/user-settings', { credentials: 'include' });
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
@@ -58,6 +71,11 @@ export default function DashboardPage() {
           mode_mental: Boolean(settings.mode_mental),
           mode_diet: Boolean(settings.mode_diet),
         });
+      }
+
+      if (insightTab !== 'daily') {
+        setLoading(false);
+        return;
       }
 
       const endDate = new Date();
@@ -76,16 +94,39 @@ export default function DashboardPage() {
       }
       const data = res.ok ? await res.json() : [];
       if (Array.isArray(data)) setLogs(data as HealthLogRow[]);
-      if (!res.ok) {
-        console.error('Dashboard logs fetch error:', res.status);
-      }
+      if (!res.ok) console.error('Dashboard logs fetch error:', res.status);
       setLoading(false);
     };
     fetchData();
-  }, [period]);
+  }, [period, insightTab]);
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      if (insightTab === 'daily') return;
+      setInsightsLoading(true);
+      try {
+        const level = insightTab === 'weekly' ? 'weekly' : insightTab === 'monthly' ? 'monthly' : 'yearly';
+        const res = await fetch(`/api/insights?level=${level}&limit=20`, { credentials: 'include' });
+        if (res.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.insights)) {
+          setInsights(data.insights as InsightRow[]);
+        }
+      } catch (e) {
+        console.error('Insights fetch error:', e);
+      } finally {
+        setInsightsLoading(false);
+      }
+    };
+    fetchInsights();
+  }, [insightTab]);
 
   useEffect(() => {
     const fetchReport = async () => {
+      if (insightTab !== 'daily') return;
       setAnalyzing(true);
       setReport('');
       try {
@@ -116,9 +157,35 @@ export default function DashboardPage() {
     };
 
     fetchReport();
-  }, [period]);
+  }, [period, insightTab]);
 
-  if (loading) return <div className="p-4">読み込み中...</div>;
+  if (insightTab === 'daily' && loading) return <div className="p-4">読み込み中...</div>;
+  if (insightTab !== 'daily' && insightsLoading) return <div className="p-4">読み込み中...</div>;
+
+  const handleRegenerateInsight = async () => {
+    const level = insightTab === 'weekly' ? 'weekly' : insightTab === 'monthly' ? 'monthly' : 'yearly';
+    setInsightGenerating(true);
+    try {
+      const res = await fetch('/api/insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const listRes = await fetch(`/api/insights?level=${level}&limit=20`, { credentials: 'include' });
+        const listData = await listRes.json();
+        if (listRes.ok && Array.isArray(listData.insights)) setInsights(listData.insights as InsightRow[]);
+      } else {
+        console.error('Insight generation failed:', data);
+      }
+    } catch (e) {
+      console.error('Regenerate error:', e);
+    } finally {
+      setInsightGenerating(false);
+    }
+  };
 
   // 設定モードに応じてフィルタリングされた項目
   const availableItems = CHART_ITEMS.filter(item => {
@@ -156,8 +223,66 @@ export default function DashboardPage() {
     };
   });
 
+  const insightLabels: Record<Exclude<InsightTab, 'daily'>, string> = {
+    weekly: '週次',
+    monthly: '月次',
+    yearly: '年次',
+  };
+
   return (
     <div className="space-y-6 pb-20">
+      {/* 分析タブ */}
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-full max-w-md">
+        {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setInsightTab(tab)}
+            className={`flex-1 py-2.5 px-2 rounded-lg font-bold text-sm transition ${
+              insightTab === tab ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab === 'daily' ? '日次' : insightLabels[tab]}
+          </button>
+        ))}
+      </div>
+
+      {insightTab !== 'daily' ? (
+        /* 週次・月次・年次インサイト一覧 */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-gray-800">{insightLabels[insightTab]}レポート</h2>
+            <button
+              type="button"
+              onClick={handleRegenerateInsight}
+              disabled={insightGenerating}
+              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium disabled:opacity-50 hover:bg-purple-700"
+            >
+              {insightGenerating ? '生成中...' : '再生成'}
+            </button>
+          </div>
+          {insights.length === 0 ? (
+            <div className="bg-gray-50 p-6 rounded-xl text-center text-gray-500 text-sm">
+              まだ分析データがありません。週次は毎週月曜、月次は毎月1日、年次は1月1日に自動生成されます。上の「再生成」で手動生成もできます。
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {insights.map((i) => (
+                <div
+                  key={i.id}
+                  className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"
+                >
+                  <p className="text-xs text-gray-500 mb-2">
+                    {i.startDate} 〜 {i.endDate}
+                  </p>
+                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{i.summary}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
       {/* 期間切り替えトグル */}
       <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-full max-w-xs">
         <button
@@ -287,6 +412,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 /**
  * Rich Menu 用の画像を生成（2500x1686 PNG）
- * 4エリア（記録・ペット・分析・相談）をシンプルに日本語表示
+ * 4エリア（記録・今日の体調予想・ペット・分析）を日本語でシンプルに表示
  */
 import sharp from 'sharp';
 
@@ -10,13 +10,13 @@ const HW = Math.floor(W / 2);
 const HH = Math.floor(H / 2);
 
 const AREAS = [
-  { x: 0, y: 0, w: HW, h: HH, label: '記録', emoji: '📝', bg: '#4A90D9' },
-  { x: HW, y: 0, w: HW, h: HH, label: 'ペット', emoji: '🐾', bg: '#7B68EE' },
-  { x: 0, y: HH, w: HW, h: HH, label: '分析', emoji: '📊', bg: '#50C878' },
-  { x: HW, y: HH, w: HW, h: HH, label: '相談', emoji: '💬', bg: '#E8A87C' },
+  { x: 0, y: 0, w: HW, h: HH, label: '記録' },
+  { x: HW, y: 0, w: HW, h: HH, label: '今日の体調予想' },
+  { x: 0, y: HH, w: HW, h: HH, label: 'ペット' },
+  { x: HW, y: HH, w: HW, h: HH, label: '分析' },
 ];
 
-/** 各エリアのSVGを組み合わせて1枚のPNGを生成（日本語＋絵文字でわかりやすく） */
+/** 各エリアを白背景・枠線・黒文字でシンプルに生成 */
 export async function generateRichMenuImage(): Promise<Buffer> {
   const svgParts: string[] = [];
 
@@ -24,9 +24,8 @@ export async function generateRichMenuImage(): Promise<Buffer> {
     const cx = a.x + a.w / 2;
     const cy = a.y + a.h / 2;
     svgParts.push(`
-      <rect x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" fill="${a.bg}"/>
-      <text x="${cx}" y="${cy - 28}" font-size="180" fill="white" text-anchor="middle" dominant-baseline="central" font-family="IPAGothic, IPAゴシック, sans-serif">${a.emoji}</text>
-      <text x="${cx}" y="${cy + 52}" font-size="120" fill="white" text-anchor="middle" dominant-baseline="central" font-family="IPAGothic, IPAゴシック, sans-serif">${a.label}</text>
+      <rect x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+      <text x="${cx}" y="${cy}" font-size="100" fill="#212529" text-anchor="middle" dominant-baseline="central" font-family="IPAGothic, IPAゴシック, sans-serif">${a.label}</text>
     `);
   }
 

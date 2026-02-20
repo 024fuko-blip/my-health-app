@@ -27,6 +27,7 @@ model User {
   userPetInventory UserPetInventory[]
   pushSubscriptions PushSubscription[]
   lineLink         LineLink?
+  insights         Insight[]
 
   @@map("users")
 }
@@ -225,4 +226,21 @@ model HealthLog {
 
   @@unique([userId, date])
   @@map("health_logs")
+}
+
+model Insight {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  level     String   // "weekly" | "monthly" | "yearly"
+  startDate String   @map("start_date")   // 期間開始 YYYY-MM-DD
+  endDate   String   @map("end_date")     // 期間終了 YYYY-MM-DD
+  summary   String   @db.Text             // AI生成の要約テキスト
+  metadata  Json?                        // 構造化データ（平均値等）
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, level, startDate])
+  @@map("insights")
 }

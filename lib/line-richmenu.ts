@@ -37,22 +37,10 @@ export function buildRichMenuObject(baseUrl: string): {
     name: '健康相棒メニュー',
     chatBarText: 'メニューを開く',
     areas: [
-      {
-        bounds: { x: 0, y: 0, width: hw, height: hh },
-        action: { type: 'uri', label: '記録', uri: `${base}/record` },
-      },
-      {
-        bounds: { x: hw, y: 0, width: hw, height: hh },
-        action: { type: 'uri', label: 'ペット', uri: `${base}/game/pet` },
-      },
-      {
-        bounds: { x: 0, y: hh, width: hw, height: hh },
-        action: { type: 'uri', label: '分析', uri: `${base}/dashboard` },
-      },
-      {
-        bounds: { x: hw, y: hh, width: hw, height: hh },
-        action: { type: 'message', label: '相談', text: '相談したいことがあります' },
-      },
+      { bounds: { x: 0, y: 0, width: hw, height: hh }, action: { type: 'uri', label: '記録', uri: `${base}/record` } },
+      { bounds: { x: hw, y: 0, width: hw, height: hh }, action: { type: 'message', label: '今日の体調予想', text: '今日の体調予想' } },
+      { bounds: { x: 0, y: hh, width: hw, height: hh }, action: { type: 'uri', label: 'ペット', uri: `${base}/game/pet` } },
+      { bounds: { x: hw, y: hh, width: hw, height: hh }, action: { type: 'uri', label: '分析', uri: `${base}/dashboard` } },
     ],
   };
 }
