@@ -1,6 +1,6 @@
 "use client";
 
-import { getCyclePhase, getTsundereComment, getAsukaComment } from '@/lib/cycle-phase';
+import { getCyclePhase, getTsundereComment, getAmayamaComment, getKibishimeComment } from '@/lib/cycle-phase';
 import { ResultModal } from './components/ResultModal';
 import { MentalSection } from './components/MentalSection';
 import { IbdSection } from './components/IbdSection';
@@ -26,9 +26,11 @@ export default function RecordPage() {
       : null;
   const cycleComment =
     cyclePhase && form.gender === 'female'
-      ? form.aiPersonality === 'asuka'
-        ? getAsukaComment(cyclePhase)
-        : getTsundereComment(cyclePhase)
+      ? form.aiPersonality === 'amayama'
+        ? getAmayamaComment(cyclePhase)
+        : form.aiPersonality === 'kibishime'
+          ? getKibishimeComment(cyclePhase)
+          : getTsundereComment(cyclePhase)
       : '';
 
   const dateObj = new Date(form.date);
@@ -58,7 +60,7 @@ export default function RecordPage() {
 
       {form.gender === 'female' && form.periodSettings.lastPeriodDate && cyclePhase && (
         <div className="relative">
-          <div className="p-4 rounded-2xl border border-slate-200 shadow-sm relative bg-gradient-to-br from-slate-50 to-blue-50/50">
+          <div className="p-4 rounded-2xl border border-slate-200 shadow-sm relative bg-slate-50">
             <div className="flex items-start gap-3">
               <div className="text-4xl flex-shrink-0">
                 {cyclePhase.phase === 'period' && '😣'}
@@ -70,7 +72,7 @@ export default function RecordPage() {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-sm text-slate-700">
-                    {form.aiPersonality === 'asuka' ? '💙 今日のあなたへ' : '💋 今日のあんたへ'}
+                    今日のあなたへ
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full text-slate-600 bg-slate-200/80">
                     周期 {cyclePhase.dayInCycle}日目
@@ -99,9 +101,6 @@ export default function RecordPage() {
               </div>
             </div>
           </div>
-          <div className="absolute -bottom-1 left-2 text-3xl">
-            {form.aiPersonality === 'asuka' ? '💙' : '👹'}
-          </div>
         </div>
       )}
 
@@ -109,6 +108,10 @@ export default function RecordPage() {
         <BasicInfoSection
           generalMood={form.generalMood}
           setGeneralMood={form.setGeneralMood}
+          temperature={form.temperature}
+          setTemperature={form.setTemperature}
+          weight={form.weight}
+          setWeight={form.setWeight}
           medications={form.medications}
           medicationTaken={form.medicationTaken}
           setMedicationTaken={form.setMedicationTaken}
@@ -144,10 +147,6 @@ export default function RecordPage() {
         {form.modes.mode_ibd && (
           <IbdSection
             onUserEdit={form.markUserEdit}
-            temperature={form.temperature}
-            setTemperature={form.setTemperature}
-            weight={form.weight}
-            setWeight={form.setWeight}
             toiletCount={form.toiletCount}
             setToiletCount={form.setToiletCount}
             painLevel={form.painLevel}

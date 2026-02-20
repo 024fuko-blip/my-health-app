@@ -10,28 +10,28 @@ export default async function GuidePage({ searchParams }: Props) {
   const showLoginButton = params.from === "consent";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/80 via-white to-sky-50/60 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="mx-auto w-full max-w-2xl space-y-5">
         {/* ヘッダー: 戻るボタン（左・設定へ） + タイトル */}
         <div className="flex items-center gap-3 pb-2">
           <Link
             href="/settings"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm border border-rose-100 text-gray-700 hover:bg-rose-50 transition"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
             aria-label="設定に戻る"
           >
             ←
           </Link>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-rose-400 font-medium tracking-wide">How to use</p>
-            <h1 className="text-xl font-bold text-gray-800">アプリの使い方</h1>
-            <p className="text-xs text-gray-500">はじめての方もこれでバッチリ</p>
+            <p className="text-sm text-slate-500 font-medium tracking-wide">How to use</p>
+            <h1 className="text-xl font-bold text-slate-800">アプリの使い方</h1>
+            <p className="text-xs text-slate-500">はじめての方もこれでバッチリ</p>
           </div>
         </div>
 
         {/* 1. ログイン */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-rose-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 text-lg">📱</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">📱</span>
             <h2 className="text-lg font-bold text-gray-800">1. ログイン</h2>
           </div>
           <p className="text-sm text-gray-600 pl-12">
@@ -40,9 +40,9 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* 2. 記録 */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-amber-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg">✏️</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">✏️</span>
             <h2 className="text-lg font-bold text-gray-800">2. 記録をつける</h2>
           </div>
           <p className="text-sm text-gray-600 pl-12">
@@ -51,9 +51,9 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* 食事画像・食事分析 */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-emerald-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg">📸</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">📸</span>
             <h2 className="text-lg font-bold text-gray-800">食事画像・食事分析</h2>
           </div>
           <div className="space-y-2 pl-12 text-sm text-gray-600">
@@ -67,16 +67,16 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* 3. 分析AI */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-violet-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-lg">📊</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">📊</span>
             <h2 className="text-lg font-bold text-gray-800">3. 分析AIを見る</h2>
           </div>
           <div className="space-y-3 pl-12 text-sm text-gray-600">
             <p>「分析」画面で期間ごとの傾向やAIのコメントを確認できます。記録が増えるほど、気づきの精度が上がります。</p>
             <p className="font-medium text-gray-700">AIについて</p>
             <p>
-              本アプリのAIは、あなたの記録（食事・体調・便・腹痛・運動・アルコール・睡眠・ストレスなど）を<strong>まとめて</strong>見て、因果関係（例：お酒を飲んだ翌日は腹痛、脂っこい食事で便が悪い、生理前でイライラしやすい など）を指摘します。相棒の性格は<strong>基本設定</strong>で「あすか（おすすめ）」「ツンデレ（オネエ）」「あまあま」「イケメン口調」から選べます。
+              本アプリのAIは、あなたの記録（食事・体調・便・腹痛・運動・アルコール・睡眠・ストレスなど）を<strong>まとめて</strong>見て、因果関係（例：お酒を飲んだ翌日は腹痛、脂っこい食事で便が悪い、生理前でイライラしやすい など）を指摘します。相棒の性格は<strong>基本設定</strong>で「ツンデレ」「厳しめ」「あまあま」から選べます。
             </p>
             <p>
               アドバイスは、プロフィール・健康管理で入力した既往歴・服薬・有効にしたモードをサーバー側で安全に参照したうえで生成されます。<strong>医療診断や治療の代替ではありません。</strong> 体の不安がある場合は必ず医師に相談してください。
@@ -89,9 +89,9 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* 4. 履歴 */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-sky-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg">📅</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">📅</span>
             <h2 className="text-lg font-bold text-gray-800">4. 履歴を確認</h2>
           </div>
           <p className="text-sm text-gray-600 pl-12">
@@ -100,9 +100,9 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* ゲーム（モチベーション） */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-amber-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg">🎮</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">🎮</span>
             <h2 className="text-lg font-bold text-gray-800">ゲーム（モチベーション）</h2>
           </div>
           <div className="space-y-2 pl-12 text-sm text-gray-600">
@@ -116,9 +116,9 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* リマインダー（服薬・検診） */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-green-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg">⏰</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">⏰</span>
             <h2 className="text-lg font-bold text-gray-800">リマインダー（服薬・検診）</h2>
           </div>
           <div className="space-y-2 pl-12 text-sm text-gray-600">
@@ -142,8 +142,8 @@ export default async function GuidePage({ searchParams }: Props) {
               <strong>🌅 おはよう相棒</strong> … 毎朝、天気・服装・花粉・直近の記録からAIが予測する気分・体調の波をお届けします。プロフィールで現在地を設定すると、その地域の天気が反映されます。
             </p>
             <p className="text-xs text-gray-500">通知・LINE連携は希望者のみの機能です。</p>
-            <div id="notification" className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <p className="font-bold text-blue-800 mb-2">📲 通知が有効にならない場合</p>
+            <div id="notification" className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <p className="font-bold text-slate-800 mb-2">通知が有効にならない場合</p>
               <p className="text-sm text-gray-700 mb-2"><strong>Android（Chrome）:</strong></p>
               <ol className="list-decimal pl-5 text-sm text-gray-600 space-y-1 mb-3">
                 <li>画面右上の ︙ メニュー → 設定</li>
@@ -161,15 +161,15 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* 5. 設定 */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-pink-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-lg">⚙️</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">⚙️</span>
             <h2 className="text-lg font-bold text-gray-800">5. 設定</h2>
           </div>
           <div className="space-y-3 pl-12 text-sm text-gray-600">
             <p>「設定」はメニューから3つのページに分かれています。</p>
             <ul className="list-disc pl-4 space-y-1">
-              <li><strong>基本設定</strong> … AIの口調（ツンデレ・あまあま・イケメン）と、使用する健康管理モード（IBD・アルコール・メンタル・ボディメイク）のON/OFF。</li>
+              <li><strong>基本設定</strong> … AIの口調（ツンデレ・厳しめ・あまあま）と、使用する健康管理モード（IBD・アルコール・メンタル・ボディメイク）のON/OFF。</li>
               <li><strong>プロフィール</strong> … 名前・生年月日・性別・身長・体重・既往歴。AIのアドバイスや生理予測に使われます。</li>
               <li><strong>健康管理</strong> … 生理周期（最後の生理開始日・周期・期間）と、服薬中の薬と服用タイミング（朝・昼・晩・眠前）。服薬リマインダーで使う表示時刻もここで設定できます。</li>
               <li><strong>リマインダー</strong> … 今日の服薬スケジュールの確認と、検診予定の追加・一覧・削除。</li>
@@ -182,9 +182,9 @@ export default async function GuidePage({ searchParams }: Props) {
         </section>
 
         {/* 6. モードの説明 */}
-        <section className="rounded-2xl bg-white/90 p-5 shadow-sm border border-indigo-100/80">
+        <section className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-lg">🏷️</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">🏷️</span>
             <h2 className="text-lg font-bold text-gray-800">6. モードの説明</h2>
           </div>
           <p className="text-sm text-gray-600 pl-12 mb-2">基本設定でONにしたモードだけ、記録・分析で使えます。</p>
@@ -207,7 +207,7 @@ export default async function GuidePage({ searchParams }: Props) {
           <div className="pt-2">
             <a
               href="/login"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-4 text-sm font-bold text-white shadow-lg shadow-rose-200/50 hover:from-rose-600 hover:to-rose-700 transition-all"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-600 px-4 py-4 text-sm font-bold text-white hover:bg-slate-700 transition"
             >
               <span>ログインへ進む</span>
               <span aria-hidden>→</span>

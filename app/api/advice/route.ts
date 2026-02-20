@@ -142,7 +142,7 @@ export async function POST(req: Request) {
       where: { userId: session.userId },
     });
 
-    const aiPersonality = userSettings?.aiPersonality ?? 'asuka';
+    const aiPersonality = userSettings?.aiPersonality ?? 'tsundere';
     const settings = userSettings
       ? {
           medical_history: userSettings.medicalHistory ?? 'なし',

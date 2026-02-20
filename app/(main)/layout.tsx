@@ -6,10 +6,10 @@ import FooterLink from '../components/FooterLink';
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   // アクティブなタブの色を変える関数
-  const isActive = (path: string) => pathname === path ? "text-blue-600 font-bold" : "text-gray-400";
+  const isActive = (path: string) => pathname === path ? "text-slate-700 font-bold" : "text-slate-400";
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 pb-24">
+    <div className="flex flex-col min-h-screen bg-slate-50 pb-24">
       <main className="flex-1 w-full max-w-md mx-auto p-4 bg-white shadow-sm min-h-screen">
         {children}
       </main>
@@ -17,7 +17,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <FooterLink />
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around py-2 pb-6 z-50 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around py-2 pb-6 z-50 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         
         {/* 分析 (Dashboard) */}
         <Link href="/dashboard" className={`flex flex-col items-center text-[10px] w-16 py-1 ${isActive('/dashboard')}`}>
@@ -33,10 +33,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
         {/* 記録 (Record) - 真ん中で強調 */}
         <Link href="/record" className="flex flex-col items-center text-[10px] w-16 relative">
-          <div className="bg-blue-600 rounded-full w-14 h-14 -mt-6 shadow-lg border-4 border-white flex items-center justify-center transform transition active:scale-95">
+          <div className="bg-slate-600 rounded-full w-14 h-14 -mt-6 shadow-lg border-4 border-white flex items-center justify-center transform transition active:scale-95">
              <span className="text-2xl text-white">✏️</span>
           </div>
-          <span className={`mt-1 font-bold ${pathname === '/record' ? 'text-blue-600' : 'text-gray-400'}`}>記録</span>
+          <span className={`mt-1 font-bold ${pathname === '/record' ? 'text-slate-700' : 'text-slate-400'}`}>記録</span>
         </Link>
 
         {/* ゲーム */}
@@ -46,7 +46,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </Link>
 
         {/* 設定 (Settings) */}
-        <Link href="/settings" className={`flex flex-col items-center text-[10px] w-14 py-1 ${pathname.startsWith('/settings') ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>
+        <Link href="/settings" className={`flex flex-col items-center text-[10px] w-14 py-1 ${pathname.startsWith('/settings') ? 'text-slate-700 font-bold' : 'text-slate-400'}`}>
           <span className="text-xl mb-0.5">⚙️</span>
           <span>設定</span>
         </Link>

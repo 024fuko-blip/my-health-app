@@ -46,7 +46,7 @@ function toApiShape(row: {
     current_medications: row.currentMedications ?? '',
     medication_reminder_times: row.medicationReminderTimes ?? '',
     gender: row.gender ?? 'unspecified',
-    ai_personality: row.aiPersonality ?? 'asuka',
+    ai_personality: row.aiPersonality ?? 'tsundere',
     profile_name: row.profileName ?? '',
     birth_date: row.birthDate ?? '',
     height: row.height ?? null,
@@ -74,7 +74,7 @@ export async function GET() {
         currentMedications: null,
         medicationReminderTimes: null,
         gender: 'unspecified',
-        aiPersonality: 'asuka',
+        aiPersonality: 'tsundere',
         profileName: null,
         birthDate: null,
         height: null,
@@ -119,9 +119,9 @@ export async function PUT(req: Request) {
         longitude,
       } = body;
 
-      const personality = (['tsundere', 'amayama', 'ikemen', 'asuka'] as const).includes(ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
-        ? (ai_personality as 'tsundere' | 'amayama' | 'ikemen' | 'asuka')
-        : 'asuka';
+      const personality = (['tsundere', 'kibishime', 'amayama'] as const).includes(ai_personality as 'tsundere' | 'kibishime' | 'amayama')
+        ? (ai_personality as 'tsundere' | 'kibishime' | 'amayama')
+        : 'tsundere';
 
       const genderStr = typeof gender === 'string' ? gender : 'unspecified';
 

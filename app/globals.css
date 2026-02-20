@@ -25,7 +25,16 @@ body {
   font-family: var(--font-sans);
 }
 
-/* スマホでボタンタップの反応を即座にする（300ms遅延を除去） */
+/* スマホでボタンタップの反応を即座にする */
 .touch-manipulation {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+/* 記録画面ボタン：タップ時の見た目を即時反映 */
+.record-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  min-height: 44px;
 }

@@ -16,19 +16,8 @@ export function ResultModal({ msg, aiPersonality, onClose }: ResultModalProps) {
           <p className="font-bold text-lg text-slate-700">ポイント獲得！</p>
           <p className="font-bold text-slate-600">+10 pt</p>
         </div>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-4xl">
-            {aiPersonality === 'asuka' ? '💙' : aiPersonality === 'amayama' ? '💕' : aiPersonality === 'ikemen' ? '😎' : '💋'}
-          </span>
-          <h3 className="text-xl font-bold text-slate-800">
-            {aiPersonality === 'asuka'
-              ? 'あすかからの言葉'
-              : aiPersonality === 'amayama'
-                ? 'デレデレからの言葉'
-                : aiPersonality === 'ikemen'
-                  ? 'イケメンコーチからの言葉'
-                  : 'ツンデレコーチからの言葉'}
-          </h3>
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-slate-800">相棒からの言葉</h3>
         </div>
         <div className="p-4 rounded-xl text-gray-800 leading-relaxed whitespace-pre-wrap max-h-[60vh] overflow-y-auto bg-slate-50 border border-slate-100">
           {msg}

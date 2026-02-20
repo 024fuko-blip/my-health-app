@@ -12,7 +12,7 @@ export default function SettingsBasicPage() {
     mode_alcohol: false,
     mode_mental: false,
     mode_diet: false,
-    ai_personality: "asuka" as "tsundere" | "amayama" | "ikemen" | "asuka",
+    ai_personality: "tsundere" as "tsundere" | "kibishime" | "amayama",
   });
   const [fullSettings, setFullSettings] = useState<Record<string, unknown>>({});
 
@@ -39,11 +39,9 @@ export default function SettingsBasicPage() {
           mode_mental: data.mode_mental ?? false,
           mode_diet: data.mode_diet ?? false,
           ai_personality:
-            ["amayama", "ikemen", "asuka"].includes(data.ai_personality)
+            ["tsundere", "kibishime", "amayama"].includes(data.ai_personality)
               ? data.ai_personality
-              : data.ai_personality === "tsundere"
-                ? "tsundere"
-                : "asuka",
+              : "tsundere",
         });
       }
       setLoading(false);
@@ -87,8 +85,8 @@ export default function SettingsBasicPage() {
   return (
     <div className="space-y-6">
       <div className="bg-white p-4 rounded-xl border space-y-4">
-        <h3 className="font-bold text-gray-700">使用モード</h3>
-        <p className="text-xs text-gray-500">記録・分析で使う項目を選びます</p>
+        <h3 className="font-bold text-slate-700">使用モード</h3>
+        <p className="text-xs text-slate-500">記録・分析で使う項目を選びます</p>
         <div className="space-y-2">
           <label className="flex justify-between items-center py-2">
             <span>💊 IBD管理</span>
@@ -110,14 +108,13 @@ export default function SettingsBasicPage() {
       </div>
 
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-        <h3 className="font-bold text-slate-800">🎭 相棒の性格</h3>
-        <p className="text-xs text-slate-600">アドバイスする相棒の話し方を選べます</p>
+        <h3 className="font-bold text-slate-800">AIモード</h3>
+        <p className="text-xs text-slate-600">相棒の話し方を選べます</p>
         <div className="space-y-2">
           {[
-            { value: "asuka" as const, label: "💙 あすか（おすすめ）" },
-            { value: "tsundere" as const, label: "😤 ツンデレ（オネエ）" },
-            { value: "amayama" as const, label: "🥰 あまあま" },
-            { value: "ikemen" as const, label: "😎 イケメン口調" },
+            { value: "tsundere" as const, label: "ツンデレ" },
+            { value: "kibishime" as const, label: "厳しめ" },
+            { value: "amayama" as const, label: "あまあま" },
           ].map(({ value, label }) => (
             <button
               key={value}
@@ -126,7 +123,7 @@ export default function SettingsBasicPage() {
               className={`w-full flex items-center justify-between py-2.5 px-3 rounded-lg border-2 text-left transition ${
                 settings.ai_personality === value
                   ? "border-slate-400 bg-slate-100 text-slate-900"
-                  : "border-slate-200 bg-white text-gray-700 hover:border-slate-300"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
               }`}
             >
               <span className="font-medium">{label}</span>
@@ -139,7 +136,7 @@ export default function SettingsBasicPage() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold disabled:opacity-50"
+        className="w-full bg-slate-600 text-white p-3 rounded-lg font-bold disabled:opacity-50 hover:bg-slate-700 transition"
       >
         {saving ? "保存中..." : "保存する"}
       </button>

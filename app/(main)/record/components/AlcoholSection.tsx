@@ -102,7 +102,7 @@ export function AlcoholSection({
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); onUserEdit?.(); handleAddDrink(); }}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 rounded font-bold transition touch-manipulation active:scale-95"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 rounded font-bold transition record-btn touch-manipulation active:scale-95"
           >
             追加
           </button>
@@ -123,7 +123,7 @@ export function AlcoholSection({
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); onUserEdit?.(); handleRemoveDrink(d.id); }}
-                    className="text-red-500 hover:text-red-700 p-1 touch-manipulation active:scale-95"
+                    className="text-red-500 hover:text-red-700 p-1 record-btn touch-manipulation active:scale-95"
                   >
                     🗑️
                   </button>

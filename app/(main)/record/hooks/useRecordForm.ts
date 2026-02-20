@@ -17,7 +17,7 @@ export function useRecordForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [modes, setModes] = useState<UserSettingsMode>({});
-  const [aiPersonality, setAiPersonality] = useState<string>('asuka');
+  const [aiPersonality, setAiPersonality] = useState<string>('tsundere');
   const [gender, setGender] = useState('unspecified');
   const [periodSettings, setPeriodSettings] = useState({
     lastPeriodDate: '',
@@ -115,7 +115,7 @@ export function useRecordForm() {
             mode_alcohol: Boolean(settings.mode_alcohol),
             mode_mental: Boolean(settings.mode_mental),
           });
-          setAiPersonality((settings.ai_personality as string) || 'asuka');
+          setAiPersonality((settings.ai_personality as string) || 'tsundere');
           setGender((settings.gender as string) || 'unspecified');
 
           try {

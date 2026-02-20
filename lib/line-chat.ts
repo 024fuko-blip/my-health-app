@@ -68,7 +68,7 @@ export function buildChatContextFromSettings(settings: {
     ageYears: age,
     periodInfo,
     modeIbd: settings.modeIbd,
-    aiPersonality: settings.aiPersonality ?? 'asuka',
+    aiPersonality: settings.aiPersonality ?? 'tsundere',
   };
 }
 

@@ -49,7 +49,7 @@ export function getCyclePhase(
   };
 }
 
-export function getAsukaComment(phase: CyclePhase): string {
+export function getAmayamaComment(phase: CyclePhase): string {
   const { phase: p, dayInCycle, daysUntilPeriod, daysUntilOvulation, isOvulationWindow } = phase;
 
   switch (p) {
@@ -88,6 +88,51 @@ ${daysUntilOvulation > 0 ? `排卵日まであと${daysUntilOvulation}日だよ�
 💢 肌荒れに注意
 
 データ的にも体が変化してるタイミング。周りに当たらず、チョコとかで気分を落ち着けてね。`;
+    }
+
+    default:
+      return '';
+  }
+}
+
+export function getKibishimeComment(phase: CyclePhase): string {
+  const { phase: p, dayInCycle, daysUntilPeriod, daysUntilOvulation, isOvulationWindow } = phase;
+
+  switch (p) {
+    case 'period':
+      return `生理${dayInCycle}日目です。体がつらい時期ですね。
+無理せず、温かいもので体を温めて、しっかり休んでください。
+貧血にも注意しましょう。`;
+
+    case 'follicular':
+      return `周期${dayInCycle}日目、卵胞期です。
+肌も体も軽い時期。調子を活かして有効に過ごしましょう。
+${daysUntilOvulation > 0 ? `排卵日まであと${daysUntilOvulation}日です。` : ''}`;
+
+    case 'ovulation': {
+      const ovuMsg = isOvulationWindow
+        ? `\n妊娠の可能性を考える場合は、気をつけてください。`
+        : '';
+      return `排卵期（周期${dayInCycle}日目）です。
+おりものの変化や、お腹の張りを感じることがあります。
+体温が上がり、だるさを感じることもあります。${ovuMsg}`;
+    }
+
+    case 'luteal_early':
+      return `黄体期前半（周期${dayInCycle}日目）です。
+次の生理まであと${daysUntilPeriod}日。比較的安定しているうちに、やりたいことを済ませておきましょう。`;
+
+    case 'pms': {
+      const intensity = daysUntilPeriod <= 3 ? '特に' : '';
+      return `PMS期間です（周期${dayInCycle}日目）。
+生理まであと${daysUntilPeriod}日。${intensity}イライラしやすい時期なので注意してください。
+
+・イライラ・情緒不安定
+・甘いもの欲
+・眠気・だるさ
+・肌荒れ
+
+体が変化している時期です。周囲に当たらず、チョコなどで気分を落ち着けましょう。`;
     }
 
     default:

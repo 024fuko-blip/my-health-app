@@ -194,7 +194,7 @@ export async function POST(req: Request) {
         });
 
         const message = await generateMorningMessage(openai, {
-          aiPersonality: link.user.userSettings?.aiPersonality ?? 'asuka',
+          aiPersonality: link.user.userSettings?.aiPersonality ?? 'tsundere',
           weather,
           pollenNote,
           prefectureLabel: prefLabel,
