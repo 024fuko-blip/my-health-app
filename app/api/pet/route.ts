@@ -10,20 +10,68 @@ import {
   getLevelFromExp,
   getExpToNextLevel,
 } from "@/lib/pet-shop";
+import { fetchWeather } from "@/lib/weather";
+import { getCoordsFromPrefecture } from "@/lib/prefectures";
 
-/** GET: ペット状態・所持アイテム・ポイント・ショップ一覧 */
+/** 花粉シーズンか（2〜5月） */
+function isPollenSeason(): boolean {
+  const month = new Date().getMonth() + 1;
+  return month >= 2 && month <= 5;
+}
+
+/** GET: ペット状態・所持アイテム・ポイント・ショップ一覧＋心身相関フラグ */
 export async function GET() {
   return withSession(async (session) => {
     try {
-      const [pet, inventoryRows, gameStats] = await Promise.all([
-      prisma.userPet.findUnique({ where: { userId: session.userId } }),
-      prisma.userPetInventory.findMany({
-        where: { userId: session.userId },
-      }),
-      prisma.userGameStats.findUnique({
-        where: { userId: session.userId },
-      }),
-    ]);
+      const today = new Date().toISOString().split("T")[0];
+      const [pet, inventoryRows, gameStats, todayLog, userSettings] =
+        await Promise.all([
+          prisma.userPet.findUnique({ where: { userId: session.userId } }),
+          prisma.userPetInventory.findMany({
+            where: { userId: session.userId },
+          }),
+          prisma.userGameStats.findUnique({
+            where: { userId: session.userId },
+          }),
+          prisma.healthLog.findUnique({
+            where: {
+              userId_date: { userId: session.userId, date: today },
+            },
+          }),
+          prisma.userSettings.findUnique({
+            where: { userId: session.userId },
+          }),
+        ]);
+
+      // 天気・花粉（心身相関表示用）
+      let weather: { temp: number; desc: string } | null = null;
+      const pollenSeason = isPollenSeason();
+      const lat = userSettings?.latitude ?? null;
+      const lon = userSettings?.longitude ?? null;
+      const prefecture = userSettings?.prefecture ?? null;
+      if (lat != null && lon != null) {
+        weather = await fetchWeather(lat, lon);
+      } else if (prefecture) {
+        const coords = getCoordsFromPrefecture(prefecture);
+        if (coords) weather = await fetchWeather(coords[0], coords[1]);
+      }
+      if (!weather) {
+        weather = await fetchWeather();
+      }
+
+      // 心身相関フラグ
+      const sleepQuality = todayLog?.sleepQuality ?? "";
+      const stressLevel = todayLog?.stressLevel ?? 0;
+      const bodyMood = todayLog?.generalMood ?? null;
+      const contextFlags = {
+        sleepy: sleepQuality.includes("悪"),
+        wearing_mask: pollenSeason,
+        worried: stressLevel >= 7,
+        low_mood: bodyMood != null && bodyMood <= 2,
+        weather: weather
+          ? { temp: weather.temp, desc: weather.desc }
+          : null,
+      };
 
     const points = gameStats?.totalPoints ?? 0;
     const inventory = Object.fromEntries(
@@ -61,8 +109,10 @@ export async function GET() {
             mood_face: mood.face,
             mood_label: mood.label,
             mood_comment: mood.comment,
+            ...contextFlags,
           }
         : null,
+      context: contextFlags,
       points,
       inventory,
       foods: PET_FOODS.map((f) => ({

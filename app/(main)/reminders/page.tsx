@@ -106,9 +106,9 @@ export default function RemindersPage() {
     <div className="space-y-6 pb-20">
       <div className="flex items-center gap-3">
         <Link
-          href="/dashboard"
+          href="/settings"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 text-gray-700 hover:bg-green-200 transition"
-          aria-label="分析に戻る"
+          aria-label="設定に戻る"
         >
           ←
         </Link>

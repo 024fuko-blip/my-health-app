@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { updateStatsAfterLog } from '@/lib/game-stats';
+import { updateCorrelationStatsAfterLog } from '@/lib/correlation/save';
 import { isValidDateStr } from '@/lib/date-utils';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { toStringOrNull, toNumOrNull } from '@/lib/json-utils';
@@ -173,8 +174,9 @@ export async function POST(req: Request) {
     }
 
     await updateStatsAfterLog(session.userId, String(date));
+    await updateCorrelationStatsAfterLog(session.userId, String(date));
 
-      return NextResponse.json(toApiShape(log));
+    return NextResponse.json(toApiShape(log));
     } catch (error) {
       console.error('health-logs POST error:', error);
       return new NextResponse('Internal Server Error', { status: 500 });
@@ -209,6 +211,13 @@ export async function PATCH(req: Request) {
       stoolType: string;
       weight: number | null;
       steps: number | null;
+      periodStatus: string | null;
+      alcoholAmount: number;
+      stressLevel: number | null;
+      sleepQuality: string | null;
+      bodyFat: number | null;
+      calories: number | null;
+      protein: number | null;
     }> = {};
     if (updates.memo !== undefined) data.memo = toStringOrNull(updates.memo) ?? '';
     if (updates.general_mood !== undefined) data.generalMood = toNumOrNull(updates.general_mood) ?? 0;
@@ -217,6 +226,13 @@ export async function PATCH(req: Request) {
     if (updates.stool_type !== undefined) data.stoolType = toStringOrNull(updates.stool_type) ?? '';
     if (updates.weight !== undefined) data.weight = toNumOrNull(updates.weight);
     if (updates.steps !== undefined) data.steps = toNumOrNull(updates.steps);
+    if (updates.period_status !== undefined) data.periodStatus = toStringOrNull(updates.period_status);
+    if (updates.alcohol_amount !== undefined) data.alcoholAmount = Number(updates.alcohol_amount) || 0;
+    if (updates.stress_level !== undefined) data.stressLevel = toNumOrNull(updates.stress_level);
+    if (updates.sleep_quality !== undefined) data.sleepQuality = toStringOrNull(updates.sleep_quality);
+    if (updates.body_fat !== undefined) data.bodyFat = toNumOrNull(updates.body_fat);
+    if (updates.calories !== undefined) data.calories = toNumOrNull(updates.calories);
+    if (updates.protein !== undefined) data.protein = toNumOrNull(updates.protein);
 
     const log = await prisma.healthLog.update({
       where: { id: String(id) },

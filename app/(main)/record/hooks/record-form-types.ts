@@ -45,6 +45,14 @@ export interface CalendarEditForm {
   memo?: string | null;
   weight?: number | string | null;
   steps?: number | string | null;
+  period_status?: string | null;
+  stool_type?: string | null;
+  alcohol_amount?: number | null;
+  stress_level?: number | null;
+  sleep_quality?: string | null;
+  body_fat?: number | string | null;
+  calories?: number | string | null;
+  protein?: number | string | null;
 }
 
 export interface HealthLogRow {

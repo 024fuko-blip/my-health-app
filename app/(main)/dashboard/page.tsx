@@ -29,15 +29,27 @@ interface InsightRow {
   metadata: Record<string, unknown> | null;
 }
 
-// グラフ表示可能な項目（モードとの対応付き）
+// 色を簡素化: メイン2色（スレート系＋アクセント）
+const CHART_COLOR_PRIMARY = '#475569'; // slate-600
+const CHART_COLOR_ACCENT = '#7c3aed'; // violet-600
+
+// グラフ表示可能な項目（モードとの対応付き・色は2色で統一）
 const CHART_ITEMS = [
-  { key: '体調', color: '#3b82f6', label: '体調', mode: null }, // 常に表示
-  { key: '腹痛', color: '#ef4444', label: '腹痛', mode: 'mode_ibd' },
-  { key: 'トイレ', color: '#f59e0b', label: 'トイレ', mode: 'mode_ibd' },
-  { key: '気分', color: '#10b981', label: '気分', mode: 'mode_mental' },
-  { key: '体重', color: '#8b5cf6', label: '体重', mode: 'mode_diet' },
-  { key: 'アルコール', color: '#ec4899', label: 'アルコール', mode: 'mode_alcohol' },
+  { key: '体調', color: CHART_COLOR_PRIMARY, label: '体調', mode: null },
+  { key: '腹痛', color: CHART_COLOR_ACCENT, label: '腹痛', mode: 'mode_ibd' },
+  { key: 'トイレ', color: CHART_COLOR_PRIMARY, label: 'トイレ', mode: 'mode_ibd' },
+  { key: '気分', color: CHART_COLOR_ACCENT, label: '気分', mode: 'mode_mental' },
+  { key: '体重', color: CHART_COLOR_PRIMARY, label: '体重', mode: 'mode_diet' },
+  { key: 'アルコール', color: CHART_COLOR_ACCENT, label: 'アルコール', mode: 'mode_alcohol' },
 ] as const;
+
+const CORRELATION_LABELS: Record<string, string> = {
+  sleep_mood: '睡眠↔体調',
+  stress_mood: 'ストレス↔体調',
+  period_mood: '生理↔体調',
+  alcohol_pain_next: '飲酒→翌日腹痛',
+  stress_mood_next: 'ストレス→翌日体調',
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -50,6 +62,16 @@ export default function DashboardPage() {
   const [insights, setInsights] = useState<InsightRow[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [insightGenerating, setInsightGenerating] = useState(false);
+  const [triggers, setTriggers] = useState<Array<{ label: string; ratio: number; description: string }>>([]);
+  const [correlations, setCorrelations] = useState<Record<string, number>>({});
+  const [todayLog, setTodayLog] = useState<HealthLogRow | null>(null);
+  const [sectionOpen, setSectionOpen] = useState({
+    report: true,
+    chart: true,
+    mindBody: false,
+    correlation: false,
+    triggers: false,
+  });
 
   // ユーザーの設定モード
   const [modes, setModes] = useState<UserSettingsMode>({});
@@ -84,17 +106,20 @@ export default function DashboardPage() {
       const startStr = startDate.toISOString().split('T')[0];
       const endStr = endDate.toISOString().split('T')[0];
 
-      const res = await fetch(`/api/health-logs?startDate=${startStr}&endDate=${endStr}`, {
-        credentials: 'include',
-      });
-      if (res.status === 401) {
+      const [logsRes, todayRes] = await Promise.all([
+        fetch(`/api/health-logs?startDate=${startStr}&endDate=${endStr}`, { credentials: 'include' }),
+        fetch(`/api/health-logs?date=${endStr}`, { credentials: 'include' }),
+      ]);
+      if (logsRes.status === 401 || todayRes.status === 401) {
         router.replace('/login');
         setLoading(false);
         return;
       }
-      const data = res.ok ? await res.json() : [];
-      if (Array.isArray(data)) setLogs(data as HealthLogRow[]);
-      if (!res.ok) console.error('Dashboard logs fetch error:', res.status);
+      const logsData = logsRes.ok ? await logsRes.json() : [];
+      if (Array.isArray(logsData)) setLogs(logsData as HealthLogRow[]);
+      const todayData = todayRes.ok ? await todayRes.json() : null;
+      setTodayLog(todayData as HealthLogRow | null);
+      if (!logsRes.ok) console.error('Dashboard logs fetch error:', logsRes.status);
       setLoading(false);
     };
     fetchData();
@@ -122,6 +147,23 @@ export default function DashboardPage() {
       }
     };
     fetchInsights();
+  }, [insightTab]);
+
+  useEffect(() => {
+    const fetchCorrelationStats = async () => {
+      if (insightTab !== 'daily') return;
+      try {
+        const res = await fetch('/api/correlation-stats', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setTriggers(data.triggers ?? []);
+          setCorrelations(data.correlations ?? {});
+        }
+      } catch (e) {
+        console.error('Correlation stats fetch error:', e);
+      }
+    };
+    fetchCorrelationStats();
   }, [insightTab]);
 
   useEffect(() => {
@@ -206,6 +248,26 @@ export default function DashboardPage() {
     });
   };
 
+  const mindScore = (() => {
+    const withStress = logs.filter((r) => r.stress_level != null).map((r) => (10 - (r.stress_level ?? 0)) / 5);
+    const withSleep = logs.filter((r) => r.sleep_quality).map((r) => {
+      const s = r.sleep_quality ?? '';
+      if (s.includes('良')) return 5;
+      if (s.includes('普')) return 3;
+      return 1;
+    });
+    const vals = [...withStress, ...withSleep];
+    if (vals.length === 0) return null;
+    return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+  })();
+  const bodyScore = (() => {
+    const withMood = logs.filter((r) => r.general_mood != null).map((r) => (r.general_mood ?? 0));
+    const withPain = logs.filter((r) => r.pain_level != null).map((r) => 6 - (r.pain_level ?? 0));
+    const vals = [...withMood, ...withPain];
+    if (vals.length === 0) return null;
+    return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+  })();
+
   const chartData = logs.map((row) => {
     // stool_typeからトイレ回数を抽出
     const toiletMatch = (row.stool_type || '').match(/トイレ(\d+)回/);
@@ -232,19 +294,27 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 pb-20">
       {/* 分析タブ */}
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-full max-w-md">
-        {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setInsightTab(tab)}
-            className={`flex-1 py-2.5 px-2 rounded-lg font-bold text-sm transition ${
-              insightTab === tab ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {tab === 'daily' ? '日次' : insightLabels[tab]}
-          </button>
-        ))}
+      <div className="space-y-1">
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-full max-w-md">
+          {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setInsightTab(tab)}
+              className={`flex-1 py-2.5 px-2 rounded-lg font-bold text-sm transition ${
+                insightTab === tab ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {tab === 'daily' ? '日次' : insightLabels[tab]}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 px-1">
+          {insightTab === 'daily' && '直近の傾向を把握'}
+          {insightTab === 'weekly' && '週単位のパターン'}
+          {insightTab === 'monthly' && '月単位の流れ'}
+          {insightTab === 'yearly' && '年間の変化'}
+        </p>
       </div>
 
       {insightTab !== 'daily' ? (
@@ -263,7 +333,7 @@ export default function DashboardPage() {
           </div>
           {insights.length === 0 ? (
             <div className="bg-gray-50 p-6 rounded-xl text-center text-gray-500 text-sm">
-              まだ分析データがありません。週次は毎週月曜、月次は毎月1日、年次は1月1日に自動生成されます。上の「再生成」で手動生成もできます。
+              まだ分析データがありません。週次は毎週月曜、月次は毎月1日、年次は1月1日に自動生成されます（cron 設定時）。上の「再生成」で手動生成もできます。
             </div>
           ) : (
             <div className="space-y-3">
@@ -283,6 +353,46 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+      {/* 今日の体調カード（最上部・認知負荷軽減） */}
+      <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4">
+        <h2 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <span>📋</span> 今日の体調
+        </h2>
+        {todayLog ? (
+          <div className="space-y-2 text-sm">
+            <div className="flex flex-wrap gap-2">
+              {todayLog.general_mood != null && (
+                <span className="px-2 py-1 rounded-full bg-slate-200 text-slate-700 font-medium">
+                  体調 {todayLog.general_mood}/5
+                </span>
+              )}
+              {todayLog.sleep_quality && (
+                <span className="px-2 py-1 rounded-full bg-slate-200 text-slate-700">
+                  睡眠: {todayLog.sleep_quality}
+                </span>
+              )}
+              {todayLog.stress_level != null && (
+                <span className="px-2 py-1 rounded-full bg-slate-200 text-slate-700">
+                  ストレス {todayLog.stress_level}/10
+                </span>
+              )}
+              {todayLog.pain_level != null && modes.mode_ibd && (
+                <span className="px-2 py-1 rounded-full bg-slate-200 text-slate-700">
+                  腹痛 {todayLog.pain_level}/5
+                </span>
+              )}
+            </div>
+            {todayLog.memo && (
+              <p className="text-gray-600 text-xs line-clamp-2">{todayLog.memo}</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm">
+            まだ今日の記録がないわ。記録してから出直しなさい！
+          </p>
+        )}
+      </div>
+
       {/* 期間切り替えトグル */}
       <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-full max-w-xs">
         <button
@@ -305,12 +415,16 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* グラフエリア（週間 / 月間で表示切り替え） */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-700 mb-1 flex items-center">
-          <span className="mr-2">📈</span>
-          {period === 7 ? '週間グラフ' : '月間グラフ'}
-        </h3>
+      {/* グラフエリア（折りたたみ可） */}
+      <details open={sectionOpen.chart} onToggle={(e) => setSectionOpen(s => ({ ...s, chart: (e.target as HTMLDetailsElement).open }))} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-gray-700 hover:bg-gray-50">
+          <span className="flex items-center gap-2">
+            <span>📈</span>
+            {period === 7 ? '週間グラフ' : '月間グラフ'}
+          </span>
+          <span className="text-xs font-normal text-gray-400">{sectionOpen.chart ? '閉じる' : '開く'}</span>
+        </summary>
+        <div className="px-4 pb-4 border-t border-gray-100">
         <p className="text-xs text-gray-500 mb-3">
           {period === 7 ? '直近7日間' : '直近30日間'}の推移
         </p>
@@ -392,26 +506,121 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </details>
 
-      {/* AI分析レポート表示エリア */}
-      <div className="bg-purple-50 p-5 rounded-xl border-2 border-purple-200 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-3xl">💋</span>
-          <h2 className="font-bold text-purple-900">オネエの期間総評（因果関係分析）</h2>
+      {/* 心身スコアカード（折りたたみ可・色を簡素化） */}
+      {(mindScore != null || bodyScore != null) && (
+        <details open={sectionOpen.mindBody} onToggle={(e) => setSectionOpen(s => ({ ...s, mindBody: (e.target as HTMLDetailsElement).open }))} className="overflow-hidden rounded-xl border border-gray-200">
+          <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-gray-700 bg-slate-50 hover:bg-slate-100">
+            <span>心身スコア</span>
+            <span className="text-xs font-normal text-gray-400">{sectionOpen.mindBody ? '閉じる' : '開く'}</span>
+          </summary>
+          <div className="p-4 bg-white border-t border-gray-100">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <span className="text-xs font-bold text-slate-600">心（メンタル）</span>
+            <p className="text-2xl font-bold text-slate-800 mt-1">{mindScore ?? '—'}</p>
+            <p className="text-xs text-slate-500">直近{period}日平均</p>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <span className="text-xs font-bold text-slate-600">身（フィジカル）</span>
+            <p className="text-2xl font-bold text-slate-800 mt-1">{bodyScore ?? '—'}</p>
+            <p className="text-xs text-slate-500">直近{period}日平均</p>
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-lg text-gray-800 font-medium leading-relaxed shadow-sm min-h-[120px] whitespace-pre-wrap">
-          {analyzing ? (
-            <span className="text-purple-600">分析中... 因果関係を暴いてるわよ、ちょっと待ちなさい！</span>
-          ) : report ? (
-            report
-          ) : (
-            <span className="text-gray-400 text-sm">
-              記録がたまると、ここに「〇〇食べた翌日はお腹壊してる」「生理前だからイライラするのね」みたいな気づきを出してくれるわよ。
+          </div>
+        </details>
+      )}
+
+      {/* 相関ヒートマップ（折りたたみ可） */}
+      {Object.keys(correlations).length > 0 && (
+        <details open={sectionOpen.correlation} onToggle={(e) => setSectionOpen(s => ({ ...s, correlation: (e.target as HTMLDetailsElement).open }))} className="overflow-hidden rounded-xl border border-slate-200">
+          <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">
+            <span>相関マップ</span>
+            <span className="text-xs font-normal text-gray-400">{sectionOpen.correlation ? '閉じる' : '開く'}</span>
+          </summary>
+          <div className="p-4 bg-white border-t border-slate-100">
+          <div className="space-y-2">
+            {Object.entries(correlations).map(([key, val]) => {
+              const intensity = Math.min(1, Math.abs(val));
+              const isPos = val > 0;
+              const bg = isPos
+                ? `rgba(34,197,94,${0.2 + intensity * 0.5})`
+                : `rgba(239,68,68,${0.2 + intensity * 0.5})`;
+              return (
+                <div key={key} className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-slate-600 w-32">
+                    {CORRELATION_LABELS[key] ?? key}
+                  </span>
+                  <div
+                    className="flex-1 h-6 rounded bg-slate-200 overflow-hidden"
+                    style={{ maxWidth: 120 }}
+                  >
+                    <div
+                      className="h-full rounded transition-all"
+                      style={{
+                        width: `${(Math.abs(val) + 1) * 50}%`,
+                        backgroundColor: bg,
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 w-10">{val > 0 ? '+' : ''}{val}</span>
+                </div>
+              );
+            })}
+          </div>
+          </div>
+        </details>
+      )}
+
+      {/* トリガーカード（折りたたみ可・色簡素化） */}
+      {triggers.length > 0 && (
+        <details open={sectionOpen.triggers} onToggle={(e) => setSectionOpen(s => ({ ...s, triggers: (e.target as HTMLDetailsElement).open }))} className="overflow-hidden rounded-xl border border-slate-200">
+          <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-slate-800 bg-slate-50 hover:bg-slate-100">
+            <span className="flex items-center gap-2">
+              <span>🔬</span>
+              心身相関の発見
             </span>
-          )}
+            <span className="text-xs font-normal text-gray-400">{sectionOpen.triggers ? '閉じる' : '開く'}</span>
+          </summary>
+          <div className="p-4 bg-white border-t border-slate-100 space-y-2">
+            {triggers.map((t, i) => (
+              <div
+                key={i}
+                className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm"
+              >
+                <span className="font-bold text-slate-800">{t.label}</span>
+                <p className="text-gray-700 mt-1">{t.description}</p>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* AI分析レポート（折りたたみ可・色簡素化） */}
+      <details open={sectionOpen.report} onToggle={(e) => setSectionOpen(s => ({ ...s, report: (e.target as HTMLDetailsElement).open }))} className="overflow-hidden rounded-xl border border-slate-200">
+        <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-slate-800 bg-slate-50 hover:bg-slate-100">
+          <span className="flex items-center gap-2">
+            <span>💋</span>
+            オネエの期間総評（因果関係分析）
+          </span>
+          <span className="text-xs font-normal text-gray-400">{sectionOpen.report ? '閉じる' : '開く'}</span>
+        </summary>
+        <div className="p-4 bg-white border-t border-slate-100">
+          <div className="bg-slate-50 p-4 rounded-lg text-gray-800 font-medium leading-relaxed min-h-[120px] whitespace-pre-wrap">
+            {analyzing ? (
+              <span className="text-slate-600">分析中... 因果関係を暴いてるわよ、ちょっと待ちなさい！</span>
+            ) : report ? (
+              report
+            ) : (
+              <span className="text-gray-400 text-sm">
+                記録がたまると、ここに「〇〇食べた翌日はお腹壊してる」「生理前だからイライラするのね」みたいな気づきを出してくれるわよ。
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      </details>
         </>
       )}
     </div>

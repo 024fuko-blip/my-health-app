@@ -21,6 +21,12 @@ interface PetState {
   mood_face?: string;
   mood_label?: string;
   mood_comment?: string;
+  /** 心身相関フラグ（API から返却） */
+  sleepy?: boolean;
+  wearing_mask?: boolean;
+  worried?: boolean;
+  low_mood?: boolean;
+  weather?: { temp: number; desc: string } | null;
 }
 
 interface FoodItem {
@@ -281,13 +287,34 @@ export default function GamePetPage() {
                 <span className="mr-1">{dataToUse.pet.current_outfit_emoji}</span>
               )}
               <span>{dataToUse.pet?.species_emoji}</span>
+              {dataToUse.pet?.wearing_mask && (
+                <span className="ml-1 text-4xl align-middle" title="花粉シーズンでマスクしてる">😷</span>
+              )}
             </div>
             <p className="font-bold text-gray-800 text-lg">{dataToUse.pet?.pet_name}</p>
             <span className="text-xs text-amber-600 font-medium">Lv.{dataToUse.pet?.level ?? 1}</span>
-            {dataToUse.pet?.mood_comment && (
+            {(dataToUse.pet?.mood_comment || dataToUse.pet?.sleepy || dataToUse.pet?.worried) && (
               <div className="mt-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100">
-                <span className="text-2xl mr-1" aria-hidden>{dataToUse.pet.mood_face ?? "😐"}</span>
-                <span className="text-sm text-gray-700 italic">「{dataToUse.pet.mood_comment}」</span>
+                <span className="text-2xl mr-1" aria-hidden>
+                  {dataToUse.pet?.sleepy
+                    ? "😴"
+                    : dataToUse.pet?.worried
+                      ? "😟"
+                      : dataToUse.pet?.low_mood
+                        ? "😢"
+                        : dataToUse.pet?.mood_face ?? "😐"}
+                </span>
+                <span className="text-sm text-gray-700 italic">
+                  「
+                  {dataToUse.pet?.sleepy
+                    ? "眠そう... おやすみしてね"
+                    : dataToUse.pet?.worried
+                      ? "大丈夫？ 無理しないでね"
+                      : dataToUse.pet?.low_mood
+                        ? "元気だしていこう..."
+                        : dataToUse.pet?.mood_comment ?? "んー"}
+                  」
+                </span>
               </div>
             )}
             <div className="mt-2 flex items-center justify-center gap-2">
@@ -312,6 +339,11 @@ export default function GamePetPage() {
                   />
                 </div>
               </div>
+            )}
+            {dataToUse.pet?.weather && (
+              <p className="mt-2 text-xs text-slate-500">
+                🌤 {dataToUse.pet.weather.desc} {Math.round(dataToUse.pet.weather.temp)}°C
+              </p>
             )}
             {(dataToUse.pet?.adopted_at != null || (dataToUse.pet?.feed_count ?? 0) > 0) && (
               <div className="mt-3 pt-3 border-t border-amber-100 text-xs text-gray-500 text-left">

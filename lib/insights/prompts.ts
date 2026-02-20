@@ -32,7 +32,7 @@ ${charaSetting}
 ## ユーザー情報
 - 既往歴: ${userContext.medicalHistory}
 - 薬: ${userContext.currentMedications}
-- 関心: IBD=${userContext.modeIbd} / ダイエット=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
+- 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
 `;
 }
 
@@ -57,7 +57,7 @@ ${charaSetting}
 ## ユーザー情報
 - 既往歴: ${userContext.medicalHistory}
 - 薬: ${userContext.currentMedications}
-- 関心: IBD=${userContext.modeIbd} / ダイエット=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
+- 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
 `;
 }
 
@@ -82,6 +82,6 @@ ${charaSetting}
 ## ユーザー情報
 - 既往歴: ${userContext.medicalHistory}
 - 薬: ${userContext.currentMedications}
-- 関心: IBD=${userContext.modeIbd} / ダイエット=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
+- 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
 `;
 }

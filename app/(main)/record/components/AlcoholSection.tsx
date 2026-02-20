@@ -18,8 +18,8 @@ interface AlcoholSectionProps {
   previousAlcoholSummary: string;
   decompositionHours: number;
   soberTime: string;
-  userWeight: number;
-  setUserWeight: (v: number) => void;
+  /** 分解計算に使用する体重（基本情報の体重。未入力時は60kg） */
+  effectiveWeight: number;
 }
 
 export function AlcoholSection({
@@ -40,8 +40,7 @@ export function AlcoholSection({
   previousAlcoholSummary,
   decompositionHours,
   soberTime,
-  userWeight,
-  setUserWeight,
+  effectiveWeight,
 }: AlcoholSectionProps) {
   return (
     <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200 space-y-4">
@@ -150,16 +149,9 @@ export function AlcoholSection({
               <span className="font-bold text-amber-800">{soberTime}</span>
             </div>
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs text-amber-700">体重</span>
-            <input
-              type="number"
-              value={userWeight}
-              onChange={(e) => setUserWeight(parseInt(e.target.value) || 60)}
-              className="w-16 p-1 border rounded text-xs text-center"
-            />
-            <span className="text-xs text-amber-700">kg で計算</span>
-          </div>
+          <p className="text-xs text-amber-700 mt-2">
+            {effectiveWeight} kg で計算（基本情報の体重を使用。未入力時は60kg）
+          </p>
           <p className="text-xs text-amber-600 mt-2">※ 個人差があります。運転は完全に抜けてから！</p>
         </div>
       )}

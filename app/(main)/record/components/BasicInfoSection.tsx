@@ -48,7 +48,6 @@ function PeriodButtons({
   }, [saving, getDateStr, setPeriodStatus, onPeriodStatusSave, onUserEdit]);
 
   const dateStr = getDateStr();
-  const isStartDay = periodStatus === '生理中' && lastPeriodDate === dateStr;
 
   const btnClass = (selected: boolean) =>
     `p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-1 font-bold text-sm transition min-h-[72px] record-btn touch-manipulation ${
@@ -60,31 +59,22 @@ function PeriodButtons({
   return (
     <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
       <label className="text-xs font-bold block text-slate-700">🩸 生理</label>
-      <div className="grid grid-cols-3 gap-2">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleClick('生理中', async () => { await onPeriodStart?.(dateStr); });
-          }}
-          className={btnClass(isStartDay)}
-        >
-          <span className="text-lg">🩸</span>
-          <span>生理が来た</span>
-        </button>
+      <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             const next = periodStatus === '生理中' ? 'なし' : '生理中';
-            handleClick(next);
+            handleClick(next, async () => {
+              if (next === '生理中') await onPeriodStart?.(dateStr);
+            });
           }}
-          className={`${btnClass(periodStatus === '生理中' && !isStartDay)} relative z-10`}
+          className={btnClass(periodStatus === '生理中')}
         >
-          <span className="text-lg">💧</span>
+          <span className="text-lg">🩸</span>
           <span>生理中</span>
+          <span className="text-[10px] font-normal text-slate-500">タップでON/OFF</span>
         </button>
         <button
           type="button"
@@ -107,7 +97,7 @@ function PeriodButtons({
           <span>生理終了</span>
         </button>
       </div>
-      <p className="text-xs text-gray-500">選択はその日の記録にすぐ保存されます。健康管理で手動入力も可能</p>
+      <p className="text-xs text-gray-500">選択はその日の記録にすぐ保存されます。生理中を選ぶと開始日も記録されます</p>
     </div>
   );
 }

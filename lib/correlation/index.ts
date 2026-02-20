@@ -1,0 +1,135 @@
+/**
+ * 心身相関のローカル統計計算（OpenAI 不要・コスト 0）
+ */
+
+import { pearsonCorrelation } from './pearson';
+import { detectAllTriggers, type HealthLogForTrigger, type TriggerResult } from './triggers';
+
+export type { TriggerResult, HealthLogForTrigger };
+
+/** 睡眠品質を数値化 */
+function sleepToNum(s: string | null | undefined): number | null {
+  if (!s) return null;
+  if (s.includes('悪') || s === '悪い') return 1;
+  if (s.includes('普') || s === '普通') return 2;
+  if (s.includes('良') || s === '良い') return 3;
+  return null;
+}
+
+/** 生理中を 1、それ以外を 0 */
+function periodToNum(s: string | null | undefined): number | null {
+  if (!s) return null;
+  return s === '生理中' ? 1 : 0;
+}
+
+export interface CorrelationPair {
+  key: string;
+  label: string;
+  x: (log: HealthLogForTrigger) => number | null;
+  y: (log: HealthLogForTrigger) => number | null;
+}
+
+const CORRELATION_PAIRS: CorrelationPair[] = [
+  {
+    key: 'sleep_mood',
+    label: '睡眠↔体調',
+    x: (l) => sleepToNum(l.sleepQuality),
+    y: (l) => (l.generalMood != null ? l.generalMood : null),
+  },
+  {
+    key: 'stress_mood',
+    label: 'ストレス↔体調',
+    x: (l) => (l.stressLevel != null ? l.stressLevel : null),
+    y: (l) => (l.generalMood != null ? l.generalMood : null),
+  },
+  {
+    key: 'period_mood',
+    label: '生理↔体調',
+    x: (l) => periodToNum(l.periodStatus),
+    y: (l) => (l.generalMood != null ? l.generalMood : null),
+  },
+];
+
+export interface LogWithNext extends HealthLogForTrigger {
+  nextDay?: HealthLogForTrigger;
+}
+
+/** 翌日相関用ペア（X の翌日の Y） */
+const LAG_PAIRS: { key: string; label: string; x: (l: HealthLogForTrigger) => number | null; yNext: (l: HealthLogForTrigger) => number | null }[] = [
+  {
+    key: 'alcohol_pain_next',
+    label: '飲酒→翌日腹痛',
+    x: (l) => ((l.alcoholAmount ?? 0) > 0 ? 1 : 0),
+    yNext: (l) => (l.painLevel != null ? l.painLevel : null),
+  },
+  {
+    key: 'stress_mood_next',
+    label: 'ストレス→翌日体調',
+    x: (l) => (l.stressLevel != null ? l.stressLevel : null),
+    yNext: (l) => (l.generalMood != null ? l.generalMood : null),
+  },
+];
+
+export interface CorrelationResult {
+  correlations: Record<string, number>;
+  triggers: TriggerResult[];
+}
+
+/**
+ * 直近 N 日分のログから相関・トリガーを計算
+ */
+export function computeCorrelations(
+  logs: HealthLogForTrigger[],
+  days = 30
+): CorrelationResult {
+  const recent = logs
+    .slice(-days)
+    .filter((l) => l.date);
+
+  const correlations: Record<string, number> = {};
+  for (const pair of CORRELATION_PAIRS) {
+    const xArr: number[] = [];
+    const yArr: number[] = [];
+    for (const log of recent) {
+      const x = pair.x(log);
+      const y = pair.y(log);
+      if (x != null && y != null) {
+        xArr.push(x);
+        yArr.push(y);
+      }
+    }
+    const r = pearsonCorrelation(xArr, yArr);
+    if (r != null && Math.abs(r) >= 0.3) {
+      correlations[pair.key] = Math.round(r * 100) / 100;
+    }
+  }
+
+  const byDate = new Map<string, HealthLogForTrigger>();
+  recent.forEach((l) => byDate.set(l.date, l));
+
+  for (const pair of LAG_PAIRS) {
+    const xArr: number[] = [];
+    const yArr: number[] = [];
+    for (const log of recent) {
+      const x = pair.x(log);
+      if (x == null) continue;
+      const nextDate = new Date(log.date + 'T12:00:00');
+      nextDate.setDate(nextDate.getDate() + 1);
+      const nextStr = nextDate.toISOString().split('T')[0];
+      const nextLog = byDate.get(nextStr);
+      if (!nextLog) continue;
+      const y = pair.yNext(nextLog);
+      if (y == null) continue;
+      xArr.push(x);
+      yArr.push(y);
+    }
+    const r = pearsonCorrelation(xArr, yArr);
+    if (r != null && Math.abs(r) >= 0.3) {
+      correlations[pair.key] = Math.round(r * 100) / 100;
+    }
+  }
+
+  const triggers = detectAllTriggers(recent);
+
+  return { correlations, triggers };
+}

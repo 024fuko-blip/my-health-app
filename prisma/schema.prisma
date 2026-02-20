@@ -27,7 +27,8 @@ model User {
   userPetInventory UserPetInventory[]
   pushSubscriptions PushSubscription[]
   lineLink         LineLink?
-  insights         Insight[]
+  insights              Insight[]
+  userCorrelationStats  UserCorrelationStats?
 
   @@map("users")
 }
@@ -231,7 +232,7 @@ model HealthLog {
 model Insight {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
-  level     String   // "weekly" | "monthly" | "yearly"
+  level     String   // "weekly" | "monthly" | "yearly" | "daily_report_7" | "daily_report_30"
   startDate String   @map("start_date")   // 期間開始 YYYY-MM-DD
   endDate   String   @map("end_date")     // 期間終了 YYYY-MM-DD
   summary   String   @db.Text             // AI生成の要約テキスト
@@ -243,4 +244,16 @@ model Insight {
 
   @@unique([userId, level, startDate])
   @@map("insights")
+}
+
+model UserCorrelationStats {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  correlations Json?  // { pairKey: number } 相関係数
+  triggers   Json?    // [{ label, ratio, description }] トリガー検出結果
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_correlation_stats")
 }

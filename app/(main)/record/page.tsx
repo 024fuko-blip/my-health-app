@@ -41,6 +41,28 @@ export default function RecordPage() {
     weekday: 'short',
   });
 
+  // 今日の記録プログレス（次に何をすべきか明確に）
+  const progress = (() => {
+    if (!isToday) return null;
+    const sections: { filled: boolean; label: string }[] = [
+      { filled: form.generalMood != null, label: '体調' },
+      { filled: (form.mealDescription ?? '').trim().length > 0, label: '食事' },
+      ...(form.modes.mode_ibd
+        ? [{ filled: form.painLevel != null || form.toiletCount > 0 || (form.stoolType ?? '').length > 0, label: 'IBD' }]
+        : []),
+      ...(form.modes.mode_diet
+        ? [{ filled: (form.weight ?? '').length > 0 || (form.calories ?? '').length > 0 || (form.steps ?? '').length > 0, label: 'ダイエット' }]
+        : []),
+      ...(form.modes.mode_alcohol ? [{ filled: form.addedDrinks.length > 0, label: '飲酒' }] : []),
+      ...(form.modes.mode_mental
+        ? [{ filled: (form.sleepQuality ?? '').length > 0 || (form.selectedEmotion ?? '').length > 0 || (form.mentalDiary ?? '').trim().length > 0, label: 'メンタル' }]
+        : []),
+    ];
+    const filled = sections.filter((s) => s.filled).length;
+    const total = sections.length;
+    return { filled, total, sections };
+  })();
+
   return (
     <div className="space-y-6 pb-24 relative bg-slate-50/30">
       <div className="p-4 rounded-xl shadow-sm bg-white border border-slate-100">
@@ -56,6 +78,27 @@ export default function RecordPage() {
             className="text-sm border border-slate-200 p-2 rounded w-auto text-slate-600"
           />
         </div>
+        {progress && progress.total > 0 && (
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <p className="text-xs font-medium text-slate-600 mb-2">
+              今日の記録 {progress.filled}/{progress.total} 項目
+            </p>
+            <div className="flex gap-1 flex-wrap">
+              {progress.sections.map((s, i) => (
+                <span
+                  key={i}
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    s.filled
+                      ? 'bg-slate-200 text-slate-700'
+                      : 'bg-slate-100 text-slate-400 border border-dashed border-slate-300'
+                  }`}
+                >
+                  {s.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {form.gender === 'female' && form.periodSettings.lastPeriodDate && cyclePhase && (
@@ -158,7 +201,6 @@ export default function RecordPage() {
         {form.modes.mode_diet && (
           <DietSection
             weight={form.weight}
-            setWeight={form.setWeight}
             onUserEdit={form.markUserEdit}
             bodyFat={form.bodyFat}
             setBodyFat={form.setBodyFat}
@@ -190,8 +232,7 @@ export default function RecordPage() {
             previousAlcoholSummary={form.previousAlcoholSummary}
             decompositionHours={form.decompositionHours}
             soberTime={form.soberTime}
-            userWeight={form.userWeight}
-            setUserWeight={form.setUserWeight}
+            effectiveWeight={form.effectiveWeight}
           />
         )}
 

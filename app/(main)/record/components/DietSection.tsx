@@ -1,6 +1,6 @@
 interface DietSectionProps {
+  /** 体重は基本情報で入力（ここでは参照表示のみ） */
   weight: string;
-  setWeight: (v: string) => void;
   onUserEdit?: () => void;
   bodyFat: string;
   setBodyFat: (v: string) => void;
@@ -14,7 +14,6 @@ interface DietSectionProps {
 
 export function DietSection({
   weight,
-  setWeight,
   onUserEdit,
   bodyFat,
   setBodyFat,
@@ -31,13 +30,9 @@ export function DietSection({
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="text-xs font-bold">体重(kg)</label>
-          <input
-            type="number"
-            step="0.1"
-            value={weight}
-            onChange={(e) => { onUserEdit?.(); setWeight(e.target.value); }}
-            className="w-full p-2 border rounded"
-          />
+          <div className="p-2 border rounded bg-purple-100/50 text-gray-600 text-sm">
+            {weight || '—'}（基本情報で入力）
+          </div>
         </div>
         <div>
           <label className="text-xs font-bold">体脂肪(%)</label>

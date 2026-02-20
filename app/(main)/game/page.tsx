@@ -93,13 +93,14 @@ export default function GamePage() {
   return (
     <div className="space-y-6 pb-20">
       <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard"
+        <button
+          type="button"
+          onClick={() => router.back()}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-gray-700 hover:bg-amber-200 transition"
-          aria-label="分析に戻る"
+          aria-label="戻る"
         >
           ←
-        </Link>
+        </button>
         <h1 className="text-xl font-bold text-amber-900">ゲーム</h1>
       </div>
 

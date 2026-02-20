@@ -30,7 +30,7 @@ const PRIORITY_RULES = `
 
 1. **【最優先】体調の急変・危険信号**
    腹痛レベルが高い（3以上）、血便・下痢・粘液便などIBD症状がある、または体調・気分が悪い（2以下）場合は、
-   **ダイエット・ボディメイク・運動の話は一切しないこと。**
+   **ボディメイク・食事・運動の話は一切しないこと。**
    消化に良い食事・安静・服薬の確認を最優先し、お母さんのように優しく接しなさい。
 
 2. **【高優先】悪い生活習慣の指摘**
@@ -92,7 +92,7 @@ function buildAdviceSystemPrompt(params: {
 }): string {
   const { charaSetting, settings, activeModesText, mode, hasImage } = params;
   const imageInstruction = hasImage
-    ? '\n**画像がある場合**: その食事写真の内容（品目・量・カロリーや栄養バランスの目安）を解析し、IBDやダイエットの観点からフィードバックを行うこと。'
+    ? '\n**画像がある場合**: その食事写真の内容（品目・量・カロリーや栄養バランスの目安）を解析し、IBDやボディメイクの観点からフィードバックを行うこと。'
     : '';
   if (mode === 'weekly') {
     return `${charaSetting}

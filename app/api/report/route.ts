@@ -4,21 +4,38 @@ import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 
+const DAILY_REPORT_LEVEL_PREFIX = 'daily_report_';
+
 export async function POST(req: Request) {
   return withSession(async (session) => {
     try {
       const parsed = await parseJsonBody<{ period?: number }>(req);
-    if (!parsed.ok) return parsed.error;
-    const body = parsed.data;
-    const period = body.period === 30 ? 30 : 7;
+      if (!parsed.ok) return parsed.error;
+      const body = parsed.data;
+      const period = body.period === 30 ? 30 : 7;
 
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - period);
-    const startStr = startDate.toISOString().split('T')[0];
-    const endStr = endDate.toISOString().split('T')[0];
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - period);
+      const startStr = startDate.toISOString().split('T')[0];
+      const endStr = endDate.toISOString().split('T')[0];
 
-    const logs = await prisma.healthLog.findMany({
+      // 同一期間のキャッシュを確認（insights テーブルに daily_report_7 / daily_report_30 として保存）
+      const cacheLevel = `${DAILY_REPORT_LEVEL_PREFIX}${period}`;
+      const cached = await prisma.insight.findUnique({
+        where: {
+          userId_level_startDate: {
+            userId: session.userId,
+            level: cacheLevel,
+            startDate: startStr,
+          },
+        },
+      });
+      if (cached) {
+        return NextResponse.json({ report: cached.summary });
+      }
+
+      const logs = await prisma.healthLog.findMany({
       where: {
         userId: session.userId,
         date: { gte: startStr, lte: endStr },
@@ -88,7 +105,7 @@ ${charaSetting}
       steps: l.steps,
       ai_comment: l.aiComment,
     }));
-    const userPrompt = `これが過去${period}日分の記録よ！ 因果関係を暴いてちょうだい！\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ダイエット=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
+    const userPrompt = `これが過去${period}日分の記録よ！ 因果関係を暴いてちょうだい！\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ボディメイク=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
 
     const env = getServerEnv();
     if (!env.OPENAI_API_KEY) {
@@ -108,6 +125,31 @@ ${charaSetting}
     });
 
       const report = completion.choices[0]?.message?.content ?? '分析結果を出せなかったわ。ごめんなさい！';
+
+      // キャッシュ保存（同一期間の次回以降はDBから返す）
+      await prisma.insight.upsert({
+        where: {
+          userId_level_startDate: {
+            userId: session.userId,
+            level: cacheLevel,
+            startDate: startStr,
+          },
+        },
+        create: {
+          userId: session.userId,
+          level: cacheLevel,
+          startDate: startStr,
+          endDate: endStr,
+          summary: report,
+          metadata: { period },
+        },
+        update: {
+          endDate: endStr,
+          summary: report,
+          metadata: { period },
+        },
+      });
+
       return NextResponse.json({ report });
     } catch (error) {
       console.error('Report API Error:', error);

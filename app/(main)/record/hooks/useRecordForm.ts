@@ -47,7 +47,6 @@ export function useRecordForm() {
   const [drinkCount, setDrinkCount] = useState(1);
   const [drinkStartTime, setDrinkStartTime] = useState('19:00');
   const [drinkEndTime, setDrinkEndTime] = useState('21:00');
-  const [userWeight, setUserWeight] = useState(60);
   const [selectedEmotion, setSelectedEmotion] = useState('');
   const [sleepQuality, setSleepQuality] = useState('普通');
   const [mentalDiary, setMentalDiary] = useState('');
@@ -195,7 +194,8 @@ export function useRecordForm() {
 
   const currentTotalPureAlcohol = addedDrinks.reduce((sum, d) => sum + d.pureAlcohol, 0);
   const currentTotalMl = addedDrinks.reduce((sum, d) => sum + d.ml * d.count, 0);
-  const decompositionHours = calculateDecompositionTime(currentTotalPureAlcohol, userWeight);
+  const effectiveWeight = weight ? parseFloat(weight) || 60 : 60;
+  const decompositionHours = calculateDecompositionTime(currentTotalPureAlcohol, effectiveWeight);
   const soberTime = drinkEndTime ? addHoursToTime(drinkEndTime, decompositionHours) : '--:--';
 
   const markUserEdit = useCallback(
@@ -228,7 +228,7 @@ export function useRecordForm() {
     drinkCount, setDrinkCount,
     drinkStartTime, setDrinkStartTime,
     drinkEndTime, setDrinkEndTime,
-    userWeight, setUserWeight,
+    effectiveWeight,
     selectedEmotion, setSelectedEmotion,
     sleepQuality, setSleepQuality,
     mentalDiary, setMentalDiary,

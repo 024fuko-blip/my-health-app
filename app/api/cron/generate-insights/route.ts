@@ -34,10 +34,10 @@ export async function POST(req: Request) {
     const isJanFirst = month === 1 && dayOfMonth === 1;
     const isMonday = dayOfWeek === 1;
 
-    const lineLinks = await prisma.lineLink.findMany({
-      select: { userId: true },
+    const users = await prisma.user.findMany({
+      select: { id: true },
     });
-    const userIds = [...new Set(lineLinks.map((l) => l.userId))];
+    const userIds = users.map((u) => u.id);
 
     if (userIds.length === 0) {
       return NextResponse.json({ generated: 0, message: 'No users to process' });

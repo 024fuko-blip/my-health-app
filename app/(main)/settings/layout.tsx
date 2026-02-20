@@ -65,6 +65,26 @@ export default function SettingsLayout({
         >
           健康管理
         </Link>
+        <Link
+          href="/reminders"
+          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+            pathname === "/reminders"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          リマインダー
+        </Link>
+        <Link
+          href="/game/pet"
+          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+            pathname === "/game/pet"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          マイペット
+        </Link>
       </nav>
 
       {children}
