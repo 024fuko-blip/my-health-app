@@ -171,7 +171,11 @@ export async function POST(req: Request) {
       modeMental: settings.mode_mental,
     });
     const todayRecordText = buildTodayRecordText(dailyInput as Record<string, unknown>);
-    const hasImage = typeof mealImageBase64 === 'string' && mealImageBase64.startsWith('data:image');
+    const MAX_IMAGE_BASE64 = 3 * 1024 * 1024; // 3MB（DoS防止）
+    const hasImage =
+      typeof mealImageBase64 === 'string' &&
+      mealImageBase64.startsWith('data:image') &&
+      mealImageBase64.length <= MAX_IMAGE_BASE64;
 
     const systemPrompt = buildAdviceSystemPrompt({
       charaSetting,

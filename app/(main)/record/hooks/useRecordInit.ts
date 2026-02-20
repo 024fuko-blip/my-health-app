@@ -1,0 +1,124 @@
+import { useState, useEffect, useRef } from 'react';
+import type { AppRouterInstance } from 'next/navigation';
+import { ensureSession, apiFetch } from '@/lib/api-client';
+import type { HealthLogRow, UserSettingsMode } from './record-form-types';
+
+export interface PeriodSettings {
+  lastPeriodDate: string;
+  periodCycle: number;
+  periodDuration: number;
+}
+
+export interface Medication {
+  id: number;
+  name: string;
+  timings: string[];
+}
+
+export interface InitData {
+  modes: UserSettingsMode;
+  aiPersonality: string;
+  gender: string;
+  periodSettings: PeriodSettings;
+  medications: Medication[];
+  todayLog: HealthLogRow | null;
+}
+
+/**
+ * 記録画面の初期データ（ユーザー設定＋当日ログ）を非同期で取得するフック。
+ * 取得結果は initData にまとめて返し、呼び出し元でフォーム state へ反映する。
+ */
+export function useRecordInit(router: AppRouterInstance) {
+  const [loading, setLoading] = useState(true);
+  const [initData, setInitData] = useState<InitData | null>(null);
+  const initDoneRef = useRef(false);
+
+  useEffect(() => {
+    if (initDoneRef.current) return;
+    initDoneRef.current = true;
+
+    const init = async () => {
+      try {
+        if (!(await ensureSession(router))) return;
+
+        const settingsRes = await apiFetch('/api/user-settings');
+        if (settingsRes.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        const settings = settingsRes.ok ? await settingsRes.json() : null;
+
+        let modes: UserSettingsMode = {};
+        let aiPersonality = 'tsundere';
+        let gender = 'unspecified';
+        let meds: Medication[] = [];
+        let periodSettings: PeriodSettings = {
+          lastPeriodDate: '',
+          periodCycle: 28,
+          periodDuration: 5,
+        };
+
+        if (settings) {
+          modes = {
+            mode_ibd: Boolean(settings.mode_ibd),
+            mode_diet: Boolean(settings.mode_diet),
+            mode_alcohol: Boolean(settings.mode_alcohol),
+            mode_mental: Boolean(settings.mode_mental),
+          };
+          aiPersonality = (settings.ai_personality as string) || 'tsundere';
+          gender = (settings.gender as string) || 'unspecified';
+
+          try {
+            const medData = JSON.parse(settings.current_medications || '{}');
+            if (medData.medications && Array.isArray(medData.medications)) {
+              meds = medData.medications;
+            } else if (medData.name || medData.timings) {
+              if (medData.name || (medData.timings && medData.timings.length > 0)) {
+                meds = [
+                  { id: Date.now(), name: medData.name || '薬', timings: medData.timings || [] },
+                ];
+              }
+            }
+          } catch {
+            /* no medications */
+          }
+
+          try {
+            const medHistory = JSON.parse(settings.medical_history || '{}');
+            periodSettings = {
+              lastPeriodDate: medHistory.lastPeriodDate || '',
+              periodCycle: medHistory.periodCycle || 28,
+              periodDuration: medHistory.periodDuration || 5,
+            };
+          } catch {
+            /* keep defaults */
+          }
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const logRes = await fetch(`/api/health-logs?date=${today}`, { credentials: 'include' });
+        if (logRes.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        const log = logRes.ok ? await logRes.json() : null;
+
+        setInitData({
+          modes,
+          aiPersonality,
+          gender,
+          periodSettings,
+          medications: meds,
+          todayLog: (log as HealthLogRow) ?? null,
+        });
+      } catch (err) {
+        console.error('Record init error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, [router]);
+
+  return { loading, initData };
+}

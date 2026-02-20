@@ -13,18 +13,10 @@ import {
   Legend,
 } from 'recharts';
 
-type PeriodDays = 7 | 30;
+import type { HealthLogApiResponse, UserSettingsMode } from '@/app/(main)/record/hooks/record-form-types';
 
-interface HealthLogRow {
-  date: string;
-  general_mood?: number | null;
-  pain_level?: number | null;
-  stress_level?: number | null;
-  weight?: number | null;
-  alcohol_amount?: number | null;
-  stool_type?: string | null;
-  [key: string]: unknown;
-}
+type PeriodDays = 7 | 30;
+type HealthLogRow = HealthLogApiResponse;
 
 // グラフ表示可能な項目（モードとの対応付き）
 const CHART_ITEMS = [
@@ -36,13 +28,6 @@ const CHART_ITEMS = [
   { key: 'アルコール', color: '#ec4899', label: 'アルコール', mode: 'mode_alcohol' },
 ] as const;
 
-interface UserModes {
-  mode_ibd?: boolean;
-  mode_alcohol?: boolean;
-  mode_mental?: boolean;
-  mode_diet?: boolean;
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   const [logs, setLogs] = useState<HealthLogRow[]>([]);
@@ -52,7 +37,7 @@ export default function DashboardPage() {
   const [analyzing, setAnalyzing] = useState(false);
   
   // ユーザーの設定モード
-  const [modes, setModes] = useState<UserModes>({});
+  const [modes, setModes] = useState<UserSettingsMode>({});
   
   // 表示する項目の選択状態
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set(['体調']));
@@ -138,7 +123,7 @@ export default function DashboardPage() {
   // 設定モードに応じてフィルタリングされた項目
   const availableItems = CHART_ITEMS.filter(item => {
     if (item.mode === null) return true; // 常に表示
-    return modes[item.mode as keyof UserModes];
+    return modes[item.mode as keyof UserSettingsMode];
   });
 
   // 項目選択のトグル

@@ -4,6 +4,26 @@ import { parseJsonBody, withSession } from '@/lib/api-utils';
 
 const MAX_STRING_LENGTH = 10000;
 
+/** 設定が存在しないときのデフォルト値 */
+const DEFAULT_USER_SETTINGS = {
+  modeIbd: true,
+  modeAlcohol: false,
+  modeMental: false,
+  modeDiet: false,
+  medicalHistory: null as string | null,
+  currentMedications: null as string | null,
+  medicationReminderTimes: null as string | null,
+  gender: 'unspecified' as const,
+  aiPersonality: 'tsundere' as const,
+  profileName: null as string | null,
+  birthDate: null as string | null,
+  height: null as number | null,
+  weight: null as number | null,
+  prefecture: null as string | null,
+  latitude: null as number | null,
+  longitude: null as number | null,
+};
+
 function safeNumber(val: unknown, min: number, max: number): number | null {
   if (val == null || val === '') return null;
   const n = Number(val);
@@ -65,24 +85,7 @@ export async function GET() {
       });
 
       if (!row) {
-        return NextResponse.json(toApiShape({
-        modeIbd: true,
-        modeAlcohol: false,
-        modeMental: false,
-        modeDiet: false,
-        medicalHistory: null,
-        currentMedications: null,
-        medicationReminderTimes: null,
-        gender: 'unspecified',
-        aiPersonality: 'tsundere',
-        profileName: null,
-        birthDate: null,
-        height: null,
-        weight: null,
-        prefecture: null,
-        latitude: null,
-        longitude: null,
-      }));
+        return NextResponse.json(toApiShape(DEFAULT_USER_SETTINGS));
       }
 
       return NextResponse.json(toApiShape(row));
