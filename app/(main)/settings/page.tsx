@@ -95,6 +95,21 @@ export default function SettingsIndexPage() {
         </div>
       </Link>
 
+      <Link
+        href="/game/pet"
+        className="block bg-white p-4 rounded-xl border hover:bg-gray-50 transition"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-gray-800">🐾 マイペット</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              相棒ペットの餌やり・着せ替え
+            </p>
+          </div>
+          <span className="text-gray-400">→</span>
+        </div>
+      </Link>
+
       <LineLinkCard />
 
       <button

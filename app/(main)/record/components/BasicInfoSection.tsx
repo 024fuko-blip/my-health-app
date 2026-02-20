@@ -81,7 +81,7 @@ function PeriodButtons({
             const next = periodStatus === '生理中' ? 'なし' : '生理中';
             handleClick(next);
           }}
-          className={btnClass(periodStatus === '生理中' && !isStartDay)}
+          className={`${btnClass(periodStatus === '生理中' && !isStartDay)} relative z-10`}
         >
           <span className="text-lg">💧</span>
           <span>生理中</span>
