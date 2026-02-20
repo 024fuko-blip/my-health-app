@@ -133,6 +133,8 @@ interface BasicInfoSectionProps {
   onPeriodEnd?: (startDate: string, duration: number) => Promise<void>;
   /** 生理ボタン選択をその日の記録に即時保存（保持用） */
   onPeriodStatusSave?: (date: string, status: string) => Promise<void>;
+  /** 薬チェックをその日の記録に即時保存（リマインダースキップ用） */
+  onMedicationStatusSave?: (medKey: string, taken: boolean) => Promise<void>;
   lastPeriodDate?: string;
   /** 選択中の日付（即時保存時に使用） */
   selectedDate?: string;
@@ -158,6 +160,7 @@ export function BasicInfoSection({
   onPeriodStart,
   onPeriodEnd,
   onPeriodStatusSave,
+  onMedicationStatusSave,
   lastPeriodDate,
   selectedDate,
   onUserEdit,
@@ -206,7 +209,7 @@ export function BasicInfoSection({
               type="number"
               step="0.1"
               value={weight}
-              onChange={(e) => setWeight(e.target.value)}
+              onChange={(e) => { onUserEdit?.(); setWeight(e.target.value); }}
               placeholder="60.0"
               className="w-full min-w-0 p-2 border border-neutral-200 rounded-lg text-sm text-center"
             />
@@ -243,6 +246,7 @@ export function BasicInfoSection({
               <div className="grid grid-cols-4 gap-1">
                 {med.timings.map((timing) => {
                   const key = `${med.id}_${timing}`;
+                  const nextTaken = !medicationTaken[key];
                   return (
                     <button
                       key={key}
@@ -252,8 +256,9 @@ export function BasicInfoSection({
                         onUserEdit?.();
                         setMedicationTaken((prev) => ({
                           ...prev,
-                          [key]: !prev[key],
+                          [key]: nextTaken,
                         }));
+                        onMedicationStatusSave?.(key, nextTaken);
                       }}
                       className={`py-1.5 rounded-lg border-2 font-bold text-xs transition record-btn touch-manipulation active:scale-95 ${
                         medicationTaken[key]

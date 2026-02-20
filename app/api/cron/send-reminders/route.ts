@@ -11,6 +11,7 @@ import { sendLinePush } from '@/lib/line';
 import { getServerEnv } from '@/lib/env';
 import { getTodayJST } from '@/lib/date-utils';
 import { buildMedicationSchedule } from '@/lib/medication-schedule';
+import { safeParseJson } from '@/lib/json-utils';
 
 /** 現在時刻を JST で "HH:00" ～ "HH:45" の15分単位に丸める */
 function getCurrentTimeSlotJST(): string {
@@ -73,12 +74,31 @@ export async function POST(req: Request) {
 
       const medsAtSlot = medicationSchedule.find((m) => m.time === timeSlot);
       if (medsAtSlot && medsAtSlot.medications.length > 0) {
-        let body = `${medsAtSlot.medications.join('、')} の時間です`;
+        const todayLog = await prisma.healthLog.findUnique({
+          where: { userId_date: { userId, date: today } },
+          select: { medicationTakenDetail: true, aiComment: true },
+        });
+        const detail = safeParseJson<Record<string, boolean>>(
+          todayLog?.medicationTakenDetail ?? null,
+          {}
+        );
+        const medKeys = medsAtSlot.medKeys ?? [];
+        const untakenNames: string[] = [];
+        if (medKeys.length > 0) {
+          medsAtSlot.medications.forEach((name, i) => {
+            const key = medKeys[i];
+            if (key == null || detail[key] !== true) {
+              untakenNames.push(name);
+            }
+          });
+        } else {
+          untakenNames.push(...medsAtSlot.medications);
+        }
+        if (untakenNames.length === 0) continue;
+
+        let body = `${untakenNames.join('、')} の時間です`;
         const latestLog = await prisma.healthLog.findFirst({
-          where: {
-            userId,
-            aiComment: { not: null },
-          },
+          where: { userId, aiComment: { not: null } },
           orderBy: { date: 'desc' },
           select: { aiComment: true },
         });

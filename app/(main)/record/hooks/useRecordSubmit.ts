@@ -158,6 +158,7 @@ export function useRecordSubmit({ router, getSnapshot, onSaveSuccess }: UseRecor
         selectedEmotion: snap.selectedEmotion,
         sleepQuality: snap.sleepQuality,
         allMedicationTaken,
+        medicationTakenDetail: snap.medicationTaken,
         totalMl,
         drinkTypes,
         aiComment,

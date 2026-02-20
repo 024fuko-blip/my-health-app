@@ -123,6 +123,7 @@ export default function RecordPage() {
           onPeriodStart={form.handlePeriodStart}
           onPeriodEnd={form.handlePeriodEnd}
           onPeriodStatusSave={form.savePeriodStatusToLog}
+          onMedicationStatusSave={form.saveMedicationStatusToLog}
           lastPeriodDate={form.periodSettings.lastPeriodDate}
           selectedDate={form.date}
           onUserEdit={form.markUserEdit}
@@ -158,6 +159,7 @@ export default function RecordPage() {
           <DietSection
             weight={form.weight}
             setWeight={form.setWeight}
+            onUserEdit={form.markUserEdit}
             bodyFat={form.bodyFat}
             setBodyFat={form.setBodyFat}
             calories={form.calories}

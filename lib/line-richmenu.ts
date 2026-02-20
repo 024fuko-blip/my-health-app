@@ -35,11 +35,11 @@ export function buildRichMenuObject(baseUrl: string): {
     size: RICHMENU_SIZE,
     selected: false,
     name: '健康相棒メニュー',
-    chatBarText: 'タップして開く',
+    chatBarText: 'メニューを開く',
     areas: [
       {
         bounds: { x: 0, y: 0, width: hw, height: hh },
-        action: { type: 'uri', label: '今日の記録', uri: `${base}/record` },
+        action: { type: 'uri', label: '記録', uri: `${base}/record` },
       },
       {
         bounds: { x: hw, y: 0, width: hw, height: hh },
@@ -51,7 +51,7 @@ export function buildRichMenuObject(baseUrl: string): {
       },
       {
         bounds: { x: hw, y: hh, width: hw, height: hh },
-        action: { type: 'message', label: '相談する', text: '相談したいことがあります' },
+        action: { type: 'message', label: '相談', text: '相談したいことがあります' },
       },
     ],
   };

@@ -197,8 +197,9 @@ model HealthLog {
   userId          String   @map("user_id")
   date            String
   memo            String?
-  medicationTaken Boolean  @default(false) @map("medication_taken")
-  generalMood     Int?     @map("general_mood")
+  medicationTaken      Boolean  @default(false) @map("medication_taken")
+  medicationTakenDetail String?  @map("medication_taken_detail")
+  generalMood          Int?     @map("general_mood")
   mealDescription String?  @map("meal_description")
   periodStatus    String?  @map("period_status")
   aiComment       String?  @map("ai_comment")

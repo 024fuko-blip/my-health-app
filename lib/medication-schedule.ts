@@ -11,9 +11,12 @@ export interface MedicationScheduleItem {
   time: string;
   label?: string;
   medications: string[];
+  /** リマインダースキップ判定用: "${med.id}_${timing}" */
+  medKeys?: string[];
 }
 
 interface MedicationItem {
+  id?: number;
   name: string;
   timings: string[];
 }
@@ -42,18 +45,28 @@ export function buildMedicationSchedule(
     : [];
 
   const timeToMeds: Record<string, string[]> = {};
+  const timeToKeys: Record<string, string[]> = {};
   for (const med of medications) {
+    const medId = med.id ?? 0;
     for (const t of med.timings) {
       const time = times[t] ?? t;
-      if (!timeToMeds[time]) timeToMeds[time] = [];
+      if (!timeToMeds[time]) {
+        timeToMeds[time] = [];
+        timeToKeys[time] = [];
+      }
       timeToMeds[time].push(med.name);
+      timeToKeys[time].push(`${medId}_${t}`);
     }
   }
 
   return Object.entries(timeToMeds)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([time, meds]) => {
-      const item: MedicationScheduleItem = { time, medications: meds };
+      const item: MedicationScheduleItem = {
+        time,
+        medications: meds,
+        medKeys: timeToKeys[time],
+      };
       if (options?.includeLabel) item.label = time;
       return item;
     });

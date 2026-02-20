@@ -14,6 +14,7 @@ function toApiShape(log: HealthLog) {
     date: log.date,
     memo: log.memo,
     medication_taken: log.medicationTaken,
+    medication_taken_detail: log.medicationTakenDetail,
     general_mood: log.generalMood,
     meal_description: log.mealDescription,
     period_status: log.periodStatus,
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
       date,
       memo,
       medication_taken,
+      medication_taken_detail,
       general_mood,
       meal_description,
       period_status,
@@ -121,6 +123,10 @@ export async function POST(req: Request) {
       date: String(date),
       memo: toStringOrNull(memo),
       medicationTaken: Boolean(medication_taken ?? false),
+      medicationTakenDetail:
+        medication_taken_detail != null && typeof medication_taken_detail === 'string'
+          ? medication_taken_detail
+          : null,
       generalMood: toNumOrNull(general_mood),
       mealDescription: toStringOrNull(meal_description),
       periodStatus: toStringOrNull(period_status),

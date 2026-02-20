@@ -1,5 +1,6 @@
 import { parseAlcoholTypeToAddedDrinks, type AddedDrink } from '@/lib/alcohol-calc';
 import { EMOTIONS } from '@/lib/record-constants';
+import { safeParseJson } from '@/lib/json-utils';
 import type { HealthLogRow } from './record-form-types';
 
 export interface ApplyLogSetters {
@@ -96,10 +97,12 @@ export function applyLogToForm(
   }
 
   setMemo(typeof log.memo === 'string' ? log.memo.replace(/\n【飲酒理由】.*$/, '').trim() : '');
+  const detail = safeParseJson<Record<string, boolean>>(log.medication_taken_detail ?? null, {});
   const medState: Record<string, boolean> = {};
   medications.forEach((med) => {
     med.timings.forEach((t) => {
-      medState[`${med.id}_${t}`] = !!log.medication_taken;
+      const key = `${med.id}_${t}`;
+      medState[key] = key in detail ? !!detail[key] : !!log.medication_taken;
     });
   });
   setMedicationTaken(medState);

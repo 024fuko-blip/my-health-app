@@ -22,6 +22,7 @@ export interface RecordPayloadParams {
   selectedEmotion: string;
   sleepQuality: string;
   allMedicationTaken: boolean;
+  medicationTakenDetail: Record<string, boolean>;
   totalMl: number;
   drinkTypes: string;
   aiComment: string;
@@ -34,6 +35,10 @@ export function buildRecordPayload(params: RecordPayloadParams): Record<string, 
     date: params.date,
     memo: combinedMemo,
     medication_taken: params.allMedicationTaken,
+    medication_taken_detail:
+      Object.keys(params.medicationTakenDetail).length > 0
+        ? JSON.stringify(params.medicationTakenDetail)
+        : null,
     general_mood: params.generalMood,
     meal_description: params.mealDescription,
     period_status: params.gender === 'female' ? params.periodStatus : null,

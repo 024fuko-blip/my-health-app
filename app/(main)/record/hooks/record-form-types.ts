@@ -15,6 +15,7 @@ export interface HealthLogApiResponse {
   date: string;
   memo?: string | null;
   medication_taken?: boolean | null;
+  medication_taken_detail?: string | null;
   general_mood?: number | null;
   meal_description?: string | null;
   period_status?: string | null;
@@ -50,6 +51,7 @@ export interface HealthLogRow {
   id: string;
   memo?: string | null;
   medication_taken?: boolean | null;
+  medication_taken_detail?: string | null;
   general_mood?: number | null;
   period_status?: string | null;
   meal_description?: string | null;

@@ -72,6 +72,23 @@ export function useRecordForm() {
 
   const period = usePeriodHandlers({ setPeriodSettings, lastUserEditRef });
 
+  const saveMedicationStatusToLog = useCallback(
+    async (medKey: string, taken: boolean) => {
+      lastUserEditRef.current = Date.now();
+      try {
+        await fetch('/api/health-logs/medication-status', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date, med_key: medKey, taken }),
+          credentials: 'include',
+        });
+      } catch (e) {
+        console.error('Medication status save error:', e);
+      }
+    },
+    [date]
+  );
+
   const getSnapshot = useCallback(
     (): SubmitFormSnapshot => ({
       date, memo, mentalDiary, gender, skinCondition, periodStatus,
@@ -181,6 +198,7 @@ export function useRecordForm() {
     generalMood, setGeneralMood,
     periodStatus, setPeriodStatus,
     savePeriodStatusToLog: period.savePeriodStatusToLog,
+    saveMedicationStatusToLog,
     handlePeriodStart: period.handlePeriodStart,
     handlePeriodEnd: period.handlePeriodEnd,
     mealDescription, setMealDescription,

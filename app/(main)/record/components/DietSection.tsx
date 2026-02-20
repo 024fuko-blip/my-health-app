@@ -1,6 +1,7 @@
 interface DietSectionProps {
   weight: string;
   setWeight: (v: string) => void;
+  onUserEdit?: () => void;
   bodyFat: string;
   setBodyFat: (v: string) => void;
   calories: string;
@@ -14,6 +15,7 @@ interface DietSectionProps {
 export function DietSection({
   weight,
   setWeight,
+  onUserEdit,
   bodyFat,
   setBodyFat,
   calories,
@@ -33,7 +35,7 @@ export function DietSection({
             type="number"
             step="0.1"
             value={weight}
-            onChange={(e) => setWeight(e.target.value)}
+            onChange={(e) => { onUserEdit?.(); setWeight(e.target.value); }}
             className="w-full p-2 border rounded"
           />
         </div>
