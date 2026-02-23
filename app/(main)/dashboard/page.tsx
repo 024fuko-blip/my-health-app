@@ -29,6 +29,17 @@ interface InsightRow {
   metadata: Record<string, unknown> | null;
 }
 
+interface MedicationWithNdb {
+  id: number;
+  name: string;
+  timings: string[];
+  ndb?: { drugCode: string; categoryName: string; price: number | null; isGeneric: boolean };
+}
+
+function buildPmdaUrl(drugName: string): string {
+  return `https://www.pmda.go.jp/PmdaSearch/iyakuSearch/?${new URLSearchParams({ keyword: drugName }).toString()}`;
+}
+
 // 色を簡素化: メイン2色（スレート系＋アクセント）
 const CHART_COLOR_PRIMARY = '#475569'; // slate-600
 const CHART_COLOR_ACCENT = '#7c3aed'; // violet-600
@@ -75,6 +86,7 @@ export default function DashboardPage() {
 
   // ユーザーの設定モード
   const [modes, setModes] = useState<UserSettingsMode>({});
+  const [medications, setMedications] = useState<MedicationWithNdb[]>([]);
   // 表示する項目の選択状態
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set(['体調']));
 
@@ -93,6 +105,12 @@ export default function DashboardPage() {
           mode_mental: Boolean(settings.mode_mental),
           mode_diet: Boolean(settings.mode_diet),
         });
+        try {
+          const medData = JSON.parse(settings.current_medications || '{}') as { medications?: MedicationWithNdb[] };
+          setMedications(medData.medications ?? []);
+        } catch {
+          setMedications([]);
+        }
       }
 
       if (insightTab !== 'daily') {
@@ -353,6 +371,28 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+      {/* 服薬中の薬（PMDAリンク付き） */}
+      {medications.length > 0 && (
+        <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+          <h2 className="font-bold text-green-800 mb-2">💊 服薬中の薬</h2>
+          <div className="space-y-2">
+            {medications.map((med) => (
+              <div key={med.id} className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-green-800">{med.name}</span>
+                <a
+                  href={buildPmdaUrl(med.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-bold hover:bg-green-700"
+                >
+                  PMDAで副作用を確認する
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 今日の体調カード（最上部・認知負荷軽減） */}
       <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4">
         <h2 className="font-bold text-slate-800 mb-3 flex items-center gap-2">

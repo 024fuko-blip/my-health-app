@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { getCharaPrompt } from '@/lib/chara-settings';
+import { formatMedicationsFromSettings } from '@/lib/medication-prompt';
 
 const DAILY_REPORT_LEVEL_PREFIX = 'daily_report_';
 
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
       });
       const aiPersonality = userSettings?.aiPersonality ?? 'tsundere';
       const charaSetting = getCharaPrompt(aiPersonality, 'advice');
+      const medicationsFormatted = formatMedicationsFromSettings(userSettings?.currentMedications);
 
       // 同一期間・同一人格のキャッシュを確認
       const cacheLevel = `${DAILY_REPORT_LEVEL_PREFIX}${period}_${aiPersonality}`;
@@ -53,7 +55,7 @@ export async function POST(req: Request) {
     const settings = userSettings
       ? {
           medical_history: userSettings.medicalHistory ?? 'なし',
-          current_medications: userSettings.currentMedications ?? 'なし',
+          current_medications: medicationsFormatted,
           mode_ibd: userSettings.modeIbd,
           mode_diet: userSettings.modeDiet,
           mode_alcohol: userSettings.modeAlcohol,
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
         }
       : {
           medical_history: 'なし',
-          current_medications: 'なし',
+          current_medications: medicationsFormatted || 'なし',
           mode_ibd: false,
           mode_diet: false,
           mode_alcohol: false,

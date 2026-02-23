@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { getCharaPrompt } from '@/lib/chara-settings';
+import { formatMedicationsFromSettings } from '@/lib/medication-prompt';
 
 const RECORD_LABELS: Record<string, string> = {
   meal_description: '食事メモ',
@@ -155,10 +156,11 @@ export async function POST(req: Request) {
     });
 
     const aiPersonality = userSettings?.aiPersonality ?? 'tsundere';
+    const medicationsFormatted = formatMedicationsFromSettings(userSettings?.currentMedications);
     const settings = userSettings
       ? {
           medical_history: userSettings.medicalHistory ?? 'なし',
-          current_medications: userSettings.currentMedications ?? 'なし',
+          current_medications: medicationsFormatted,
           gender: userSettings.gender ?? '不明',
           mode_ibd: userSettings.modeIbd,
           mode_diet: userSettings.modeDiet,
@@ -167,7 +169,7 @@ export async function POST(req: Request) {
         }
       : {
           medical_history: 'なし',
-          current_medications: 'なし',
+          current_medications: medicationsFormatted || 'なし',
           gender: '不明',
           mode_ibd: false,
           mode_diet: false,

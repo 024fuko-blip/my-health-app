@@ -18,6 +18,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/reminders') ||
     pathname.startsWith('/api/insights') ||
     pathname.startsWith('/api/correlation-stats') ||
+    pathname.startsWith('/api/drugs') ||
     pathname.startsWith('/api/pet') ||
     pathname.startsWith('/api/push-subscribe') ||
     (pathname.startsWith('/api/line') && !pathname.startsWith('/api/line/webhook'));

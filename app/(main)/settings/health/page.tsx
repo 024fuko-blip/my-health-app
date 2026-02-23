@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const MEDICATION_TIMINGS = ["朝", "昼", "晩", "眠前"];
@@ -11,10 +11,18 @@ const DEFAULT_REMINDER_TIMES: Record<string, string> = {
   眠前: "22:00",
 };
 
+export interface MedicationNdb {
+  drugCode: string;
+  categoryName: string;
+  price: number | null;
+  isGeneric: boolean;
+}
+
 interface Medication {
   id: number;
   name: string;
   timings: string[];
+  ndb?: MedicationNdb;
 }
 
 export default function SettingsHealthPage() {
@@ -28,7 +36,49 @@ export default function SettingsHealthPage() {
   const [lastPeriodDate, setLastPeriodDate] = useState("");
   const [medications, setMedications] = useState<Medication[]>([]);
   const [newMedName, setNewMedName] = useState("");
+  const [drugCandidates, setDrugCandidates] = useState<Array<{ name: string; code: string; categoryName: string; price: number | null; isGeneric: boolean }>>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [reminderTimes, setReminderTimes] = useState<Record<string, string>>(DEFAULT_REMINDER_TIMES);
+
+  const addMedication = useCallback((name: string, ndb?: MedicationNdb) => {
+    setMedications((prev) => [...prev, { id: Date.now(), name, timings: [], ndb }]);
+    setNewMedName("");
+    setDrugCandidates([]);
+    setShowDropdown(false);
+  }, []);
+
+  useEffect(() => {
+    const q = newMedName.trim();
+    if (!q) {
+      setDrugCandidates([]);
+      setShowDropdown(false);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/drugs/search?q=${encodeURIComponent(q)}&limit=15`, { credentials: "include" });
+        if (res.ok) {
+          const { drugs } = await res.json();
+          setDrugCandidates(drugs);
+          setShowDropdown(true);
+        } else {
+          setDrugCandidates([]);
+        }
+      } catch {
+        setDrugCandidates([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [newMedName]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -68,7 +118,12 @@ export default function SettingsHealthPage() {
         try {
           const medData = JSON.parse(data.current_medications || "{}");
           if (medData.medications && Array.isArray(medData.medications)) {
-            meds = medData.medications;
+            meds = medData.medications.map((m: { id?: number; name: string; timings?: string[]; ndb?: MedicationNdb }) => ({
+              id: m.id ?? Date.now(),
+              name: m.name,
+              timings: m.timings ?? [],
+              ndb: m.ndb,
+            }));
           } else if (medData.name) {
             meds = [{ id: Date.now(), name: medData.name, timings: medData.timings || [] }];
           }
@@ -214,29 +269,87 @@ export default function SettingsHealthPage() {
 
       <div className="bg-green-50 p-4 rounded-xl border border-green-200 space-y-4">
         <h3 className="font-bold text-green-800">💊 服薬中の薬</h3>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newMedName}
-            onChange={(e) => setNewMedName(e.target.value)}
-            placeholder="薬の名前を入力"
-            className="flex-1 p-2 border rounded text-sm"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              if (newMedName.trim()) {
-                setMedications((prev) => [
-                  ...prev,
-                  { id: Date.now(), name: newMedName.trim(), timings: [] },
-                ]);
-                setNewMedName("");
-              }
-            }}
-            className="px-4 py-2 bg-green-600 text-white rounded font-bold text-sm hover:bg-green-700"
-          >
-            追加
-          </button>
+        <div className="relative">
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={newMedName}
+              onChange={(e) => setNewMedName(e.target.value)}
+              onFocus={() => drugCandidates.length > 0 && setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (drugCandidates.length > 0) {
+                    const first = drugCandidates[0];
+                    addMedication(first.name, {
+                      drugCode: first.code,
+                      categoryName: first.categoryName,
+                      price: first.price,
+                      isGeneric: first.isGeneric,
+                    });
+                  } else if (newMedName.trim()) {
+                    addMedication(newMedName.trim());
+                  }
+                }
+              }}
+              placeholder="薬の名前を入力（候補から選択 or 手動追加）"
+              className="flex-1 p-2 border rounded text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (newMedName.trim()) {
+                  if (drugCandidates.length > 0) {
+                    const first = drugCandidates[0];
+                    addMedication(first.name, {
+                      drugCode: first.code,
+                      categoryName: first.categoryName,
+                      price: first.price,
+                      isGeneric: first.isGeneric,
+                    });
+                  } else {
+                    addMedication(newMedName.trim());
+                  }
+                }
+              }}
+              disabled={searching}
+              className="px-4 py-2 bg-green-600 text-white rounded font-bold text-sm hover:bg-green-700 disabled:opacity-50"
+            >
+              {searching ? "検索中..." : "追加"}
+            </button>
+          </div>
+          {showDropdown && drugCandidates.length > 0 && (
+            <ul className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-green-200 rounded shadow-lg">
+              {drugCandidates.map((d) => (
+                <li key={`${d.code}-${d.name}`}>
+                  <button
+                    type="button"
+                    className="w-full text-left px-3 py-2 hover:bg-green-50 text-sm"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      addMedication(d.name, {
+                        drugCode: d.code,
+                        categoryName: d.categoryName,
+                        price: d.price,
+                        isGeneric: d.isGeneric,
+                      });
+                    }}
+                  >
+                    <span className="font-medium text-green-800">{d.name}</span>
+                    {(d.categoryName || d.price != null) && (
+                      <span className="ml-2 text-gray-500 text-xs">
+                        {d.categoryName}
+                        {d.price != null && `／${d.price}円`}
+                        {d.isGeneric && "（後発品）"}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         {medications.length > 0 ? (
           <div className="space-y-3">
