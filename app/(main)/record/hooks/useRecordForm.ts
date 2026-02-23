@@ -26,6 +26,7 @@ export function useRecordForm() {
     lastPeriodDate: '',
     periodCycle: 28,
     periodDuration: 5,
+    showPeriodOnCalendar: true,
   });
 
   /* ---------- フォーム state ---------- */

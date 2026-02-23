@@ -7,6 +7,8 @@ export interface PeriodSettings {
   lastPeriodDate: string;
   periodCycle: number;
   periodDuration: number;
+  /** カレンダー・記録画面に生理周期を表示するか（デフォルト true） */
+  showPeriodOnCalendar: boolean;
 }
 
 export interface Medication {
@@ -56,10 +58,11 @@ export function useRecordInit(router: RouterLike) {
         let meds: Medication[] = [];
         let defaultTemperature = '';
         let defaultWeight = '';
-        let periodSettings: PeriodSettings = {
+        let         periodSettings: PeriodSettings = {
           lastPeriodDate: '',
           periodCycle: 28,
           periodDuration: 5,
+          showPeriodOnCalendar: true,
         };
 
         if (settings) {
@@ -93,6 +96,7 @@ export function useRecordInit(router: RouterLike) {
               lastPeriodDate: medHistory.lastPeriodDate || '',
               periodCycle: medHistory.periodCycle || 28,
               periodDuration: medHistory.periodDuration || 5,
+              showPeriodOnCalendar: medHistory.showPeriodOnCalendar !== false,
             };
           } catch {
             /* keep defaults */

@@ -143,30 +143,40 @@ export default function GamePage() {
       )}
 
       {/* ぽっちセクション */}
-      <Link
-        href="/game/pet"
-        className="block bg-gradient-to-r from-amber-50 to-violet-50 border-2 border-amber-200 rounded-xl p-4 hover:border-amber-300 transition"
-      >
-        <div className="flex items-center gap-4">
-          <div className="text-5xl">
-            {pet?.current_outfit_emoji && (
-              <span className="mr-0.5">{pet.current_outfit_emoji}</span>
-            )}
-            <span>{pet?.species_emoji ?? "🐱"}</span>
+      <div className="space-y-2">
+        <Link
+          href="/game/pet"
+          className="block bg-gradient-to-r from-amber-50 to-violet-50 border-2 border-amber-200 p-4 hover:border-amber-300 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="text-5xl">
+              {pet?.current_outfit_emoji && (
+                <span className="mr-0.5">{pet.current_outfit_emoji}</span>
+              )}
+              <span>{pet?.species_emoji ?? "🐱"}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-gray-800">
+                {pet ? pet.pet_name : "ぽっち"}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {pet
+                  ? `幸福度 ${pet.happiness} · 餌・着替・部屋・ミニゲームで育てよう`
+                  : "タップしてぽっちを迎えよう"}
+              </p>
+            </div>
+            <span className="text-gray-400">→</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-gray-800">
-              {pet ? pet.pet_name : "ぽっち"}
-            </h2>
-            <p className="text-sm text-gray-600">
-              {pet
-                ? `幸福度 ${pet.happiness} · 餌や着せ替えで育てよう`
-                : "タップしてぽっちを迎えよう"}
-            </p>
-          </div>
-          <span className="text-gray-400">→</span>
-        </div>
-      </Link>
+        </Link>
+        {pet && (
+          <Link
+            href="/game/pet?tab=play"
+            className="block py-2 px-4 bg-violet-100 border border-violet-200 text-violet-800 text-sm font-bold text-center"
+          >
+            🎮 ミニゲームで遊ぶ
+          </Link>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-center">

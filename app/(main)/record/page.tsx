@@ -157,9 +157,9 @@ export default function RecordPage() {
         )}
       </div>
 
-      {form.gender === 'female' && form.periodSettings.lastPeriodDate && cyclePhase && (
+      {form.gender === 'female' && form.periodSettings.showPeriodOnCalendar && form.periodSettings.lastPeriodDate && cyclePhase && (
         <div className="relative">
-          <div className="p-4 rounded-2xl border border-slate-200 shadow-sm relative bg-slate-50">
+          <div className="p-4 border border-[var(--color-border)] shadow-kirei-card relative bg-[var(--color-card)]">
             <div className="flex items-start gap-3">
               <div className="text-4xl flex-shrink-0">
                 {cyclePhase.phase === 'period' && '😣'}
@@ -173,7 +173,7 @@ export default function RecordPage() {
                   <span className="font-bold text-sm text-slate-700">
                     今日のあなたへ
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full text-slate-600 bg-slate-200/80">
+                  <span className="text-xs px-2 py-0.5 text-[var(--color-text-muted)] bg-[var(--color-border)]/80">
                     周期 {cyclePhase.dayInCycle}日目
                   </span>
                 </div>
@@ -182,17 +182,17 @@ export default function RecordPage() {
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {cyclePhase.daysUntilPeriod > 0 && (
-                    <span className="text-xs px-2 py-1 rounded-full border bg-white/80 border-slate-200">
+                    <span className="text-xs px-2 py-1 border bg-white/80 border-[var(--color-border)]">
                       🩸 生理まで {cyclePhase.daysUntilPeriod}日
                     </span>
                   )}
                   {cyclePhase.daysUntilOvulation > 0 && cyclePhase.phase !== 'pms' && (
-                    <span className="text-xs px-2 py-1 rounded-full border bg-white/80 border-slate-200">
+                    <span className="text-xs px-2 py-1 border bg-white/80 border-[var(--color-border)]">
                       🥚 排卵まで {cyclePhase.daysUntilOvulation}日
                     </span>
                   )}
                   {cyclePhase.isOvulationWindow && (
-                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full border border-red-200 font-bold">
+                    <span className="text-xs bg-[var(--color-accent-pink)] text-[var(--color-text)] px-2 py-1 border border-[var(--color-border)] font-bold">
                       ⚠️ 妊娠しやすい時期
                     </span>
                   )}

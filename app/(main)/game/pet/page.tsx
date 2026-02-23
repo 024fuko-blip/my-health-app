@@ -4,11 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PET_SPECIES } from "@/lib/pet-shop";
+import { CatchGame } from "./components/CatchGame";
+import { PetGame } from "./components/PetGame";
+import { QuizGame } from "./components/QuizGame";
 
 interface PetState {
   pet_name: string;
   pet_species: string;
   species_emoji: string;
+  stage?: "baby" | "junior" | "adult";
   happiness: number;
   last_fed_at: string | null;
   current_outfit_id: string | null;
@@ -47,19 +51,33 @@ interface OutfitItem {
   equipped: boolean;
 }
 
+interface RoomItem {
+  id: string;
+  name: string;
+  cost: number;
+  emoji: string;
+  owned: boolean | number;
+  equipped?: boolean;
+}
+
 interface PetData {
   pet: PetState | null;
   points: number;
   inventory: Record<string, number>;
   foods: FoodItem[];
   outfits: OutfitItem[];
+  rooms?: RoomItem[];
+  furniture?: Array<{ id: string; name: string; cost: number; emoji: string; owned: number }>;
+  current_room_id?: string | null;
+  placed_furniture?: Array<{ itemId: string; position: string }>;
 }
 
 export default function GamePetPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PetData | null>(null);
-  const [tab, setTab] = useState<"feed" | "outfit">("feed");
+  const [tab, setTab] = useState<"feed" | "outfit" | "room" | "play">("feed");
+  const [minigame, setMinigame] = useState<"catch" | "pet" | "quiz" | null>(null);
   const [petName, setPetName] = useState("");
   const [petSpecies, setPetSpecies] = useState("cat");
   const [saving, setSaving] = useState(false);
@@ -71,6 +89,10 @@ export default function GamePetPage() {
     inventory: {},
     foods: [],
     outfits: [],
+    rooms: [],
+    furniture: [],
+    current_room_id: null,
+    placed_furniture: [],
   };
 
   const fetchPet = async () => {
@@ -110,6 +132,11 @@ export default function GamePetPage() {
   useEffect(() => {
     fetchPet();
   }, [router]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "play") setTab("play");
+  }, []);
 
   const handleCreatePet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +198,55 @@ export default function GamePetPage() {
       setMessage("購入した！");
       await fetchPet();
     } else setMessage(j.error ?? "購入に失敗しました");
+  };
+
+  const submitMinigame = async (
+    gameType: "catch" | "pet" | "quiz",
+    payload: { score?: number; count?: number; correct?: boolean }
+  ) => {
+    setMessage(null);
+    const res = await fetch("/api/pet/minigame", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        game_type: gameType,
+        ...payload,
+      }),
+      credentials: "include",
+    });
+    const j = await res.json();
+    if (res.ok) {
+      setMessage(
+        `+${j.points_earned}pt！幸福度+${j.happiness_gain}`
+      );
+      await fetchPet();
+    } else {
+      setMessage(j.error ?? "失敗しました");
+    }
+    setMinigame(null);
+  };
+
+  const handleRoomUpdate = async (
+    roomId?: string | null,
+    placed?: Array<{ itemId: string; position: string }>
+  ) => {
+    setMessage(null);
+    const res = await fetch("/api/pet/room", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        current_room_id: roomId ?? data?.current_room_id ?? null,
+        placed_furniture: placed ?? data?.placed_furniture ?? [],
+      }),
+      credentials: "include",
+    });
+    if (res.ok) {
+      setMessage("部屋を更新した！");
+      await fetchPet();
+    } else {
+      const j = await res.json();
+      setMessage(j.error ?? "失敗しました");
+    }
   };
 
   const handleEquip = async (outfitId: string | null) => {
@@ -281,8 +357,24 @@ export default function GamePetPage() {
         </div>
       ) : (
         <>
-          <div className="bg-white border-2 border-amber-200 rounded-2xl p-6 text-center shadow-sm">
-            <div className="text-6xl mb-2 relative inline-block">
+          <div
+            className={`border-2 border-amber-200 p-6 text-center shadow-sm min-h-[200px] ${
+              (dataToUse.current_room_id ?? "room_default") === "room_forest"
+                ? "bg-green-50"
+                : (dataToUse.current_room_id ?? "room_default") === "room_ocean"
+                  ? "bg-blue-50"
+                  : (dataToUse.current_room_id ?? "room_default") === "room_night"
+                    ? "bg-slate-800 text-white"
+                    : "bg-amber-50"
+            }`}
+          >
+            <div className={`text-6xl mb-2 relative inline-block touch-manipulation ${
+              dataToUse.pet?.stage === "baby"
+                ? "pet-anim-baby"
+                : dataToUse.pet?.stage === "junior"
+                  ? "pet-anim-junior"
+                  : "pet-anim-adult"
+            }`}>
               {dataToUse.pet?.current_outfit_emoji && (
                 <span className="mr-1">{dataToUse.pet.current_outfit_emoji}</span>
               )}
@@ -303,7 +395,14 @@ export default function GamePetPage() {
               )}
             </div>
             <p className="font-bold text-gray-800 text-lg mt-2">{dataToUse.pet?.pet_name}</p>
-            <span className="text-xs text-amber-600 font-medium">Lv.{dataToUse.pet?.level ?? 1}</span>
+            <div className="flex items-center justify-center gap-2 mt-0.5">
+              <span className="text-xs text-amber-600 font-medium">Lv.{dataToUse.pet?.level ?? 1}</span>
+              {dataToUse.pet?.stage && (
+                <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800">
+                  {dataToUse.pet.stage === "baby" ? "ベビー" : dataToUse.pet.stage === "junior" ? "ジュニア" : "アダルト"}
+                </span>
+              )}
+            </div>
             {(dataToUse.pet?.mood_comment || dataToUse.pet?.sleepy || dataToUse.pet?.worried) && (
               <div className="mt-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100">
                 <span className="text-2xl mr-1" aria-hidden>
@@ -428,7 +527,7 @@ export default function GamePetPage() {
             <button
               type="button"
               onClick={() => setTab("feed")}
-              className={`flex-1 py-2 rounded-lg font-bold text-sm ${
+              className={`flex-1 py-2 font-bold text-sm ${
                 tab === "feed"
                   ? "bg-amber-500 text-white"
                   : "bg-gray-100 text-gray-600"
@@ -439,13 +538,35 @@ export default function GamePetPage() {
             <button
               type="button"
               onClick={() => setTab("outfit")}
-              className={`flex-1 py-2 rounded-lg font-bold text-sm ${
+              className={`flex-1 py-2 font-bold text-sm ${
                 tab === "outfit"
                   ? "bg-amber-500 text-white"
                   : "bg-gray-100 text-gray-600"
               }`}
             >
-              👗 着せ替え
+              👗 着替
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("room")}
+              className={`flex-1 py-2 font-bold text-sm ${
+                tab === "room"
+                  ? "bg-amber-500 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              🏠 部屋
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("play")}
+              className={`flex-1 py-2 font-bold text-sm ${
+                tab === "play"
+                  ? "bg-amber-500 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              🎮 遊ぶ
             </button>
           </div>
 
@@ -510,6 +631,156 @@ export default function GamePetPage() {
                 ))}
               </div>
             </div>
+          )}
+
+          {tab === "room" && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-800">部屋の背景</h3>
+              <div className="flex flex-wrap gap-2">
+                {(dataToUse.rooms ?? []).map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() =>
+                      r.owned ? handleRoomUpdate(r.id) : undefined
+                    }
+                    disabled={!r.owned}
+                    className={`flex items-center gap-2 px-3 py-2 border-2 ${
+                      ((dataToUse.current_room_id ?? null) || "room_default") === r.id
+                        ? "border-amber-500 bg-amber-50"
+                        : "border-gray-200"
+                    } disabled:opacity-50`}
+                  >
+                    <span className="text-xl">{r.emoji}</span>
+                    <span>{r.name}</span>
+                    {!r.owned && r.cost > 0 && (
+                      <span className="text-xs text-gray-500">{r.cost}pt</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <h3 className="font-bold text-gray-800 pt-2">家具の配置</h3>
+              <p className="text-xs text-gray-500">
+                所持している家具を最大8個まで部屋に飾れます。
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(dataToUse.furniture ?? []).map((f) => (
+                  <div
+                    key={f.id}
+                    className="flex items-center justify-between p-3 bg-white border"
+                  >
+                    <span className="text-xl">{f.emoji}</span>
+                    <div className="flex-1 mx-2 text-left">
+                      <p className="font-bold text-sm">{f.name}</p>
+                      <p className="text-xs text-gray-500">所持: {f.owned}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleBuy(f.id, f.cost)}
+                      disabled={(dataToUse.points ?? 0) < f.cost}
+                      className="px-2 py-1 bg-amber-500 text-white text-xs font-bold disabled:opacity-50"
+                    >
+                      購入
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <h3 className="font-bold text-gray-800 pt-2">部屋・家具ショップ</h3>
+              <div className="space-y-2">
+                {(dataToUse.rooms ?? [])
+                  .filter((r) => r.cost > 0 && !r.owned)
+                  .map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between p-3 bg-white border"
+                    >
+                      <span className="text-2xl">{r.emoji}</span>
+                      <div className="flex-1 mx-2 text-left">
+                        <p className="font-bold">{r.name}</p>
+                        <p className="text-xs text-gray-500">{r.cost} pt</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleBuy(r.id, r.cost)}
+                        disabled={(dataToUse.points ?? 0) < r.cost}
+                        className="px-3 py-1 bg-violet-500 text-white text-sm font-bold disabled:opacity-50"
+                      >
+                        購入
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {tab === "play" && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-800">ミニゲーム</h3>
+              <p className="text-sm text-gray-500">
+                遊んでポイントと幸福度をゲット！
+              </p>
+              <div className="grid gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMinigame("catch")}
+                  className="flex items-center gap-3 p-4 bg-amber-100 border-2 border-amber-300 text-left"
+                >
+                  <span className="text-3xl">🍖</span>
+                  <div>
+                    <p className="font-bold">おやつキャッチ</p>
+                    <p className="text-xs text-gray-600">
+                      落ちてくるおやつをタップ！30秒・1日3回
+                    </p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMinigame("pet")}
+                  className="flex items-center gap-3 p-4 bg-pink-100 border-2 border-pink-300 text-left"
+                >
+                  <span className="text-3xl">💕</span>
+                  <div>
+                    <p className="font-bold">なでなでタイム</p>
+                    <p className="text-xs text-gray-600">
+                      ペットをタップしてなでなで！60秒・1日1回
+                    </p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMinigame("quiz")}
+                  className="flex items-center gap-3 p-4 bg-violet-100 border-2 border-violet-300 text-left"
+                >
+                  <span className="text-3xl">📝</span>
+                  <div>
+                    <p className="font-bold">健康クイズ</p>
+                    <p className="text-xs text-gray-600">
+                      あなたの記録に基づいたクイズ！1日1回
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {minigame === "catch" && (
+            <CatchGame
+              onFinish={(s) => submitMinigame("catch", { score: s })}
+              onClose={() => setMinigame(null)}
+            />
+          )}
+          {minigame === "pet" && dataToUse.pet && (
+            <PetGame
+              petEmoji={dataToUse.pet.species_emoji}
+              onFinish={(c) => submitMinigame("pet", { count: c })}
+              onClose={() => setMinigame(null)}
+            />
+          )}
+          {minigame === "quiz" && (
+            <QuizGame
+              onFinish={(c) => submitMinigame("quiz", { correct: c })}
+              onClose={() => setMinigame(null)}
+            />
           )}
 
           {tab === "outfit" && (

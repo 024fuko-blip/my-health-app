@@ -4,11 +4,14 @@ import { parseJsonBody, withSession } from "@/lib/api-utils";
 import {
   PET_FOODS,
   PET_OUTFITS,
+  PET_ROOMS,
+  PET_FURNITURE,
   PET_SPECIES,
   MAX_HAPPINESS,
   getMoodFromHappiness,
   getLevelFromExp,
   getExpToNextLevel,
+  getEvolutionStage,
 } from "@/lib/pet-shop";
 import { fetchWeather } from "@/lib/weather";
 import { getCoordsFromPrefecture } from "@/lib/prefectures";
@@ -90,6 +93,7 @@ export async function GET() {
     const mood = getMoodFromHappiness(happiness);
     const expToNext = getExpToNextLevel(expPoints);
     const level = getLevelFromExp(expPoints);
+    const stage = getEvolutionStage(level);
 
     return NextResponse.json({
       pet: pet
@@ -97,6 +101,7 @@ export async function GET() {
             pet_name: pet.petName,
             pet_species: pet.petSpecies,
             species_emoji: speciesInfo.emoji,
+            stage,
             happiness,
             last_fed_at: pet.lastFedAt?.toISOString() ?? null,
             current_outfit_id: pet.currentOutfitId,
@@ -133,6 +138,24 @@ export async function GET() {
           equipped: pet?.currentOutfitId === o.id,
         })
       ),
+      rooms: PET_ROOMS.map((r) => ({
+        id: r.id,
+        name: r.name,
+        cost: r.cost,
+        emoji: r.emoji,
+        owned: r.cost === 0 || (inventory[r.id] ?? 0) > 0,
+        equipped:
+          ((pet as { currentRoomId?: string | null })?.currentRoomId ?? "room_default") === r.id,
+      })),
+      furniture: PET_FURNITURE.map((f) => ({
+        id: f.id,
+        name: f.name,
+        cost: f.cost,
+        emoji: f.emoji,
+        owned: inventory[f.id] ?? 0,
+      })),
+      current_room_id: (pet as { currentRoomId?: string | null })?.currentRoomId ?? null,
+      placed_furniture: ((pet as { placedFurniture?: unknown })?.placedFurniture ?? []) as Array<{ itemId: string; position: string }>,
     });
     } catch (error) {
       console.error("pet GET error:", error);
@@ -156,6 +179,23 @@ export async function GET() {
         owned: false,
         equipped: false,
       })),
+      rooms: PET_ROOMS.map((r) => ({
+        id: r.id,
+        name: r.name,
+        cost: r.cost,
+        emoji: r.emoji,
+        owned: r.cost === 0,
+        equipped: false,
+      })),
+      furniture: PET_FURNITURE.map((f) => ({
+        id: f.id,
+        name: f.name,
+        cost: f.cost,
+        emoji: f.emoji,
+        owned: 0,
+      })),
+      current_room_id: null,
+      placed_furniture: [],
     });
     }
   });

@@ -19,6 +19,28 @@ export const PET_OUTFITS = [
 export type PetFoodId = (typeof PET_FOODS)[number]["id"];
 export type PetOutfitId = (typeof PET_OUTFITS)[number]["id"];
 
+/** 部屋背景：id, 名前, ポイント, 絵文字 */
+export const PET_ROOMS = [
+  { id: "room_default", name: "デフォルト", cost: 0, emoji: "🏠" },
+  { id: "room_forest", name: "森", cost: 200, emoji: "🌲" },
+  { id: "room_ocean", name: "海", cost: 300, emoji: "🌊" },
+  { id: "room_night", name: "夜空", cost: 500, emoji: "🌙" },
+] as const;
+
+/** 家具：id, 名前, ポイント, 絵文字 */
+export const PET_FURNITURE = [
+  { id: "furniture_plant", name: "観葉植物", cost: 50, emoji: "🪴" },
+  { id: "furniture_lamp", name: "ランプ", cost: 80, emoji: "💡" },
+  { id: "furniture_rug", name: "ラグ", cost: 100, emoji: "🟫" },
+  { id: "furniture_bookshelf", name: "本棚", cost: 150, emoji: "📚" },
+  { id: "furniture_sofa", name: "ソファ", cost: 200, emoji: "🛋️" },
+  { id: "furniture_aquarium", name: "水槽", cost: 250, emoji: "🐠" },
+  { id: "furniture_plushie", name: "ぬいぐるみ", cost: 120, emoji: "🧸" },
+  { id: "furniture_clock", name: "時計", cost: 100, emoji: "🕐" },
+  { id: "furniture_cushion", name: "クッション", cost: 60, emoji: "🟤" },
+  { id: "furniture_picture", name: "絵画", cost: 80, emoji: "🖼️" },
+] as const;
+
 export const PET_SPECIES = [
   { id: "cat", name: "ねこ", emoji: "🐱" },
   { id: "dog", name: "いぬ", emoji: "🐶" },
@@ -43,6 +65,15 @@ export function getLevelFromExp(exp: number): number {
     if (exp >= (EXP_PER_LEVEL[l] ?? 0)) return l;
   }
   return 1;
+}
+
+/** 進化ステージ: Baby(Lv1-4), Junior(Lv5-7), Adult(Lv8-10) */
+export type EvolutionStage = "baby" | "junior" | "adult";
+
+export function getEvolutionStage(level: number): EvolutionStage {
+  if (level <= 4) return "baby";
+  if (level <= 7) return "junior";
+  return "adult";
 }
 
 /** 現在のレベルの次のレベルまでに必要なEXP（レベルアップに必要な残り） */

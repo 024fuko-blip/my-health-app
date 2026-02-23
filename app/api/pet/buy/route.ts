@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { parseJsonBody, withSession } from "@/lib/api-utils";
-import { PET_FOODS, PET_OUTFITS } from "@/lib/pet-shop";
+import { PET_FOODS, PET_OUTFITS, PET_ROOMS, PET_FURNITURE } from "@/lib/pet-shop";
 
-/** POST: ポイントで餌 or 着せ替えを購入 */
+/** POST: ポイントで餌 / 着せ替え / 部屋 / 家具を購入 */
 export async function POST(req: Request) {
   return withSession(async (session) => {
     try {
@@ -21,13 +21,23 @@ export async function POST(req: Request) {
     const outfit = PET_OUTFITS.find(
       (o) => o.id === itemId && o.id !== "outfit_none"
     );
+    const room = PET_ROOMS.find((r) => r.id === itemId && r.cost > 0);
+    const furniture = PET_FURNITURE.find((f) => f.id === itemId);
 
-    if (!food && !outfit) {
+    if (!food && !outfit && !room && !furniture) {
       return new NextResponse("Bad Request: invalid itemId", { status: 400 });
     }
 
-    const cost = food ? food.cost * quantity : (outfit?.cost ?? 0);
-    if (cost <= 0) {
+    const cost = food
+      ? food.cost * quantity
+      : outfit
+        ? outfit.cost
+        : room
+          ? room.cost
+          : furniture
+            ? furniture.cost * quantity
+            : 0;
+    if (cost <= 0 && (room || furniture)) {
       return new NextResponse("Bad Request: cannot buy this item", {
         status: 400,
       });
@@ -45,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     const newPoints = points - cost;
-    const addQty = outfit ? 1 : quantity;
+    const addQty = outfit || room ? 1 : quantity;
 
     await prisma.$transaction([
       prisma.userGameStats.upsert({

@@ -34,6 +34,7 @@ export default function SettingsHealthPage() {
   const [periodCycle, setPeriodCycle] = useState(28);
   const [periodDuration, setPeriodDuration] = useState(5);
   const [lastPeriodDate, setLastPeriodDate] = useState("");
+  const [showPeriodOnCalendar, setShowPeriodOnCalendar] = useState(true);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [newMedName, setNewMedName] = useState("");
   const [drugCandidates, setDrugCandidates] = useState<Array<{ name: string; code: string; categoryName: string; price: number | null; isGeneric: boolean }>>([]);
@@ -107,6 +108,7 @@ export default function SettingsHealthPage() {
           pCycle = historyData.periodCycle ?? 28;
           pDuration = historyData.periodDuration ?? 5;
           lastPeriod = historyData.lastPeriodDate ?? "";
+          setShowPeriodOnCalendar(historyData.showPeriodOnCalendar !== false);
         } catch {
           // ignore
         }
@@ -160,6 +162,7 @@ export default function SettingsHealthPage() {
         periodCycle,
         periodDuration,
         lastPeriodDate: lastPeriodDate || undefined,
+        showPeriodOnCalendar,
       });
     } catch {
       medicalData = JSON.stringify({
@@ -167,6 +170,7 @@ export default function SettingsHealthPage() {
         periodCycle,
         periodDuration,
         lastPeriodDate: lastPeriodDate || undefined,
+        showPeriodOnCalendar,
       });
     }
     const medicationData = JSON.stringify({ medications });
@@ -206,8 +210,17 @@ export default function SettingsHealthPage() {
   return (
     <div className="space-y-6">
       {gender === "female" && (
-        <div className="bg-pink-50 p-4 rounded-xl border border-pink-200 space-y-4">
-          <h3 className="font-bold text-pink-800">🩸 生理周期</h3>
+        <div className="bg-[var(--color-accent-pink)]/20 p-4 border border-[var(--color-border)] space-y-4">
+          <h3 className="font-bold text-[var(--color-text)]">🩸 生理周期</h3>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showPeriodOnCalendar}
+              onChange={(e) => setShowPeriodOnCalendar(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="text-sm">カレンダー・記録画面に生理周期を表示する</span>
+          </label>
           <div>
             <label className="block text-xs font-bold mb-1">最後の生理開始日</label>
             <input

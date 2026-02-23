@@ -85,6 +85,7 @@ export default function CalendarPage() {
     periodCycle: 28,
     periodDuration: 5,
     gender: 'unspecified',
+    showPeriodOnCalendar: true,
   });
 
   const year = currentDate.getFullYear();
@@ -113,6 +114,7 @@ export default function CalendarPage() {
           periodCycle: medHistory.periodCycle || 28,
           periodDuration: medHistory.periodDuration || 5,
           gender: settingsData.gender || 'unspecified',
+          showPeriodOnCalendar: medHistory.showPeriodOnCalendar !== false,
         });
       } catch {
         // パースエラー時はデフォルト値を維持
@@ -238,8 +240,8 @@ export default function CalendarPage() {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const log = logs.find(l => l.date === dateStr);
       
-      // 生理周期の状態を取得（女性のみ）
-      const periodStatus = periodSettings.gender === 'female'
+      // 生理周期の状態を取得（女性のみ・表示ON時のみ）
+      const periodStatus = periodSettings.showPeriodOnCalendar && periodSettings.gender === 'female'
         ? getPeriodStatus(dateStr, periodSettings.lastPeriodDate, periodSettings.periodCycle, periodSettings.periodDuration)
         : { type: null };
       
@@ -247,19 +249,19 @@ export default function CalendarPage() {
       let bgColor = "bg-white";
       let borderColor = "border-gray-100";
       
-      // 生理周期による色分け（ベース）
+      // 生理周期による色分け（薄くシンプル）
       if (periodStatus.type === 'period') {
-        bgColor = "bg-pink-100";
-        borderColor = "border-pink-200";
+        bgColor = "bg-pink-50/70";
+        borderColor = "border-pink-100";
       } else if (periodStatus.type === 'ovulation') {
-        bgColor = "bg-purple-100";
-        borderColor = "border-purple-300";
+        bgColor = "bg-purple-50/50";
+        borderColor = "border-purple-100";
       } else if (periodStatus.type === 'fertile') {
-        bgColor = "bg-purple-50";
-        borderColor = "border-purple-200";
+        bgColor = "bg-purple-50/40";
+        borderColor = "border-purple-100";
       } else if (periodStatus.type === 'pms') {
-        bgColor = "bg-yellow-50";
-        borderColor = "border-yellow-200";
+        bgColor = "bg-amber-50/50";
+        borderColor = "border-amber-100";
       }
       
       // 記録がある場合は体調で上書き（生理周期情報がない場合のみ）
@@ -281,12 +283,12 @@ export default function CalendarPage() {
         >
           <div className="flex items-center justify-between">
             <span className={`text-xs font-bold ${log ? 'text-gray-800' : 'text-gray-400'}`}>{day}</span>
-            {/* 生理周期アイコン */}
+            {/* 生理周期アイコン（表示ON時のみ） */}
             <div className="flex gap-0.5">
-              {periodStatus.type === 'period' && <span className="text-xs" title="生理予測">🩸</span>}
-              {periodStatus.type === 'ovulation' && <span className="text-xs" title="排卵日">🥚</span>}
-              {periodStatus.type === 'fertile' && <span className="text-xs" title="妊娠しやすい">💜</span>}
-              {periodStatus.type === 'pms' && <span className="text-xs" title="PMS期間">⚠️</span>}
+              {periodStatus.type === 'period' && <span className="text-xs opacity-80" title="生理予測">🩸</span>}
+              {periodStatus.type === 'ovulation' && <span className="text-xs opacity-80" title="排卵日">🥚</span>}
+              {periodStatus.type === 'fertile' && <span className="text-xs opacity-80" title="妊娠しやすい">💜</span>}
+              {periodStatus.type === 'pms' && <span className="text-xs opacity-80" title="PMS期間">⚠️</span>}
             </div>
           </div>
           {log && (
@@ -322,29 +324,29 @@ export default function CalendarPage() {
         <div className="grid grid-cols-7">{renderCalendarCells()}</div>
       </div>
       
-      {/* 凡例 */}
-      {periodSettings.gender === 'female' && periodSettings.lastPeriodDate && (
-        <div className="mt-4 bg-white p-3 rounded-xl shadow-sm">
-          <h3 className="text-xs font-bold text-gray-600 mb-2">📅 カレンダーの見方</h3>
+      {/* 凡例（生理周期表示ON時のみ） */}
+      {periodSettings.showPeriodOnCalendar && periodSettings.gender === 'female' && periodSettings.lastPeriodDate && (
+        <div className="mt-4 bg-white p-3 shadow-kirei-card border border-[var(--color-border)]">
+          <h3 className="text-xs font-bold text-[var(--color-text-muted)] mb-2">📅 カレンダーの見方</h3>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-pink-100 border border-pink-200 rounded"></span>
-              <span>🩸 生理予測</span>
+              <span className="w-4 h-4 bg-pink-50/70 border border-pink-100"></span>
+              <span className="text-[var(--color-text-muted)]">🩸 生理予測</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-purple-100 border border-purple-300 rounded"></span>
-              <span>🥚 排卵日</span>
+              <span className="w-4 h-4 bg-purple-50/50 border border-purple-100"></span>
+              <span className="text-[var(--color-text-muted)]">🥚 排卵日</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-purple-50 border border-purple-200 rounded"></span>
-              <span>💜 妊娠しやすい</span>
+              <span className="w-4 h-4 bg-purple-50/40 border border-purple-100"></span>
+              <span className="text-[var(--color-text-muted)]">💜 妊娠しやすい</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-yellow-50 border border-yellow-200 rounded"></span>
-              <span>⚠️ PMS/肌荒れ期</span>
+              <span className="w-4 h-4 bg-amber-50/50 border border-amber-100"></span>
+              <span className="text-[var(--color-text-muted)]">⚠️ PMS/肌荒れ期</span>
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">💧 = 生理中、✓ = 生理終了（記録）</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-2">💧 = 生理中、✓ = 生理終了（記録）</p>
         </div>
       )}
 

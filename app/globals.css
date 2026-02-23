@@ -83,3 +83,35 @@ body {
 .border-kirei {
   border-color: var(--color-border);
 }
+
+/* ペット進化アニメーション */
+@keyframes pet-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.02); }
+}
+@keyframes pet-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes pet-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.pet-anim-baby {
+  animation: pet-bounce 2s ease-in-out infinite;
+}
+.pet-anim-junior {
+  animation: pet-sway 3s ease-in-out infinite;
+}
+.pet-anim-adult {
+  animation: pet-breathe 4s ease-in-out infinite;
+}
+
+@keyframes fall {
+  from { transform: translateY(-20px); }
+  to { transform: translateY(100vh); }
+}
+.animate-fall {
+  animation: fall 3s linear forwards;
+  cursor: pointer;
+}
