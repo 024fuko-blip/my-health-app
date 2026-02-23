@@ -14,6 +14,8 @@ import {
 } from 'recharts';
 
 import type { HealthLogApiResponse, UserSettingsMode } from '@/app/(main)/record/hooks/record-form-types';
+import { buildPmdaUrl } from '@/lib/medication-prompt';
+import { computeMindScore, computeBodyScore, buildChartData } from '@/lib/dashboard-utils';
 
 type PeriodDays = 7 | 30;
 type HealthLogRow = HealthLogApiResponse;
@@ -34,10 +36,6 @@ interface MedicationWithNdb {
   name: string;
   timings: string[];
   ndb?: { drugCode: string; categoryName: string; price: number | null; isGeneric: boolean };
-}
-
-function buildPmdaUrl(drugName: string): string {
-  return `https://www.pmda.go.jp/PmdaSearch/iyakuSearch/?${new URLSearchParams({ keyword: drugName }).toString()}`;
 }
 
 // 色を簡素化: メイン2色（スレート系＋アクセント）
@@ -266,42 +264,9 @@ export default function DashboardPage() {
     });
   };
 
-  const mindScore = (() => {
-    const withStress = logs.filter((r) => r.stress_level != null).map((r) => (10 - (r.stress_level ?? 0)) / 5);
-    const withSleep = logs.filter((r) => r.sleep_quality).map((r) => {
-      const s = r.sleep_quality ?? '';
-      if (s.includes('良')) return 5;
-      if (s.includes('普')) return 3;
-      return 1;
-    });
-    const vals = [...withStress, ...withSleep];
-    if (vals.length === 0) return null;
-    return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
-  })();
-  const bodyScore = (() => {
-    const withMood = logs.filter((r) => r.general_mood != null).map((r) => (r.general_mood ?? 0));
-    const withPain = logs.filter((r) => r.pain_level != null).map((r) => 6 - (r.pain_level ?? 0));
-    const vals = [...withMood, ...withPain];
-    if (vals.length === 0) return null;
-    return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
-  })();
-
-  const chartData = logs.map((row) => {
-    // stool_typeからトイレ回数を抽出
-    const toiletMatch = (row.stool_type || '').match(/トイレ(\d+)回/);
-    const toiletCount = toiletMatch ? parseInt(toiletMatch[1]) : null;
-    
-    return {
-      date: row.date.slice(5),
-      fullDate: row.date,
-      体調: row.general_mood ?? null,
-      腹痛: row.pain_level ?? null,
-      気分: row.stress_level ?? null,
-      体重: row.weight ?? null,
-      トイレ: toiletCount,
-      アルコール: row.alcohol_amount ? Math.round(row.alcohol_amount / 100) : null, // 100ml単位
-    };
-  });
+  const mindScore = computeMindScore(logs);
+  const bodyScore = computeBodyScore(logs);
+  const chartData = buildChartData(logs);
 
   const insightLabels: Record<Exclude<InsightTab, 'daily'>, string> = {
     weekly: '週次',

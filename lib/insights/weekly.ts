@@ -2,10 +2,10 @@
  * 週次インサイト生成: 7日分の health_logs → 要約 + metadata
  */
 
-import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
-import { getServerEnv } from '@/lib/env';
 import { getCharaPrompt } from '@/lib/chara-settings';
+import { chatCompletion } from '@/lib/openai-client';
+import { healthLogToPromptShape } from '@/lib/health-log-prompt';
 import { buildWeeklySystemPrompt } from './prompts';
 import { buildUserContext } from './user-context';
 import type { GenerateResult, WeeklyMetadata } from './types';
@@ -24,45 +24,17 @@ export async function generateWeeklyInsight(
   ]);
 
   const metadata = computeWeeklyMetadata(logs);
-  const logsForPrompt = logs.map((l) => ({
-    date: l.date,
-    memo: l.memo,
-    medication_taken: l.medicationTaken,
-    general_mood: l.generalMood,
-    meal_description: l.mealDescription,
-    period_status: l.periodStatus,
-    pain_level: l.painLevel,
-    stool_type: l.stoolType,
-    alcohol_amount: l.alcoholAmount,
-    stress_level: l.stressLevel,
-    sleep_quality: l.sleepQuality,
-    weight: l.weight,
-    steps: l.steps,
-    ai_comment: l.aiComment,
-  }));
-
-  const env = getServerEnv();
-  if (!env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY が未設定です');
-  }
+  const logsForPrompt = logs.map(healthLogToPromptShape);
 
   const chara = getCharaPrompt(userContext.aiPersonality, 'advice');
   const systemPrompt = buildWeeklySystemPrompt(chara, userContext);
   const userPrompt = `これが${startDate}〜${endDate}の記録よ！因果関係を暴いてちょうだい！\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
 
-  const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    temperature: 0.7,
+  const summary = await chatCompletion({
+    systemPrompt,
+    userContent: userPrompt,
+    fallbackMessage: '今週の分析結果を出せなかったわ。もう少し記録が溜まったら試してね。',
   });
-
-  const summary =
-    completion.choices[0]?.message?.content?.trim() ??
-    '今週の分析結果を出せなかったわ。もう少し記録が溜まったら試してね。';
 
   return {
     startDate,

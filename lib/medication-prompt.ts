@@ -15,7 +15,7 @@ export interface MedicationForPrompt {
   };
 }
 
-function buildPmdaUrl(drugName: string): string {
+export function buildPmdaUrl(drugName: string): string {
   const params = new URLSearchParams({ keyword: drugName });
   return `${PMDA_SEARCH_URL}?${params.toString()}`;
 }
@@ -67,6 +67,14 @@ export function formatMedicationsForPrompt(medications: MedicationForPrompt[]): 
     })
     .join('\n');
 }
+
+/** AI が薬について言及する際のルール（advice/report/insights のプロンプトで使用） */
+export const MEDICATION_AI_CAUTION_RULE = `
+## 薬について言及する場合のルール
+- 薬効分類（各薬の「分類:」に記載）に基づき、一般的な注意喚起を1行で添えること。
+- 具体的な副作用名は列挙しないこと。
+- 詳細は必ず各薬のPMDAリンク（※以下に記載のURL）を案内すること。
+`;
 
 /**
  * DB の current_medications 文字列を AI プロンプト用のリッチテキストに変換する。

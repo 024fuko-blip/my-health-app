@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-import prisma from '@/lib/prisma';
+import type { ChatCompletionContentPart } from 'openai/resources/chat/completions';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { getCharaPrompt } from '@/lib/chara-settings';
-import { formatMedicationsFromSettings } from '@/lib/medication-prompt';
+import { MEDICATION_AI_CAUTION_RULE } from '@/lib/medication-prompt';
+import { chatCompletion } from '@/lib/openai-client';
+import { buildUserContext, getActiveModesText } from '@/lib/insights/user-context';
 
 const RECORD_LABELS: Record<string, string> = {
   meal_description: '食事メモ',
@@ -70,20 +71,6 @@ function buildTodayRecordText(dailyInput: Record<string, unknown>): string {
   return lines.length > 0 ? lines.join('\n') : '（記録なし）';
 }
 
-function getActiveModesText(settings: {
-  modeIbd: boolean;
-  modeDiet: boolean;
-  modeAlcohol: boolean;
-  modeMental: boolean;
-}): string {
-  const modes: string[] = [];
-  if (settings.modeIbd) modes.push('IBD（腸の症状・便・腹痛）');
-  if (settings.modeDiet) modes.push('ボディメイク・食事・運動');
-  if (settings.modeAlcohol) modes.push('アルコール');
-  if (settings.modeMental) modes.push('メンタル・睡眠・ストレス');
-  return modes.length > 0 ? modes.join('、') : '特になし';
-}
-
 function buildAdviceSystemPrompt(params: {
   charaSetting: string;
   settings: { medical_history: string; current_medications: string };
@@ -105,6 +92,8 @@ function buildAdviceSystemPrompt(params: {
 - 薬: ${settings.current_medications}
 - 関心分野: ${activeModesText}
 
+${MEDICATION_AI_CAUTION_RULE}
+
 ${PRIORITY_RULES}
 分析結果は250文字以内でまとめなさい。
 `;
@@ -119,115 +108,77 @@ ${imageInstruction}
 - 薬: ${settings.current_medications}（飲み忘れがないか確認すること）
 - 関心分野（ユーザーが特に関心を持っていること）: ${activeModesText}
 
+${MEDICATION_AI_CAUTION_RULE}
+
 ${PRIORITY_RULES}
 150文字以内で、上記優先順位に従ってコメントしなさい。
 `;
-}
-
-async function callOpenAIForAdvice(
-  systemPrompt: string,
-  userContent: OpenAI.Chat.Completions.ChatCompletionContentPart[],
-  userPrompt: string,
-  model: string
-): Promise<string> {
-  const openai = new OpenAI({ apiKey: getServerEnv().OPENAI_API_KEY! });
-  const completion = await openai.chat.completions.create({
-    model,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userContent.length === 1 ? userPrompt : userContent },
-    ],
-    temperature: 0.7,
-  });
-  return completion.choices[0]?.message?.content ?? 'あら、返事が出せなかったわ。もう一度送ってちょうだい！';
 }
 
 export async function POST(req: Request) {
   return withSession(async (session) => {
     try {
       const parsed = await parseJsonBody<Record<string, unknown>>(req);
-    if (!parsed.ok) return parsed.error;
-    const body = parsed.data;
-    const { mode, logs, meal_image_base64: mealImageBase64, ...dailyInput } = body;
+      if (!parsed.ok) return parsed.error;
+      const body = parsed.data;
+      const { mode, logs, meal_image_base64: mealImageBase64, ...dailyInput } = body;
 
-    // DBから設定取得（Prisma）
-    const userSettings = await prisma.userSettings.findUnique({
-      where: { userId: session.userId },
-    });
+      const userContext = await buildUserContext(session.userId);
+      const charaSetting = getCharaPrompt(userContext.aiPersonality, 'advice');
+      const activeModesText = getActiveModesText(userContext);
+      const todayRecordText = buildTodayRecordText(dailyInput as Record<string, unknown>);
 
-    const aiPersonality = userSettings?.aiPersonality ?? 'tsundere';
-    const medicationsFormatted = formatMedicationsFromSettings(userSettings?.currentMedications);
-    const settings = userSettings
-      ? {
-          medical_history: userSettings.medicalHistory ?? 'なし',
-          current_medications: medicationsFormatted,
-          gender: userSettings.gender ?? '不明',
-          mode_ibd: userSettings.modeIbd,
-          mode_diet: userSettings.modeDiet,
-          mode_alcohol: userSettings.modeAlcohol,
-          mode_mental: userSettings.modeMental,
-        }
-      : {
-          medical_history: 'なし',
-          current_medications: medicationsFormatted || 'なし',
-          gender: '不明',
-          mode_ibd: false,
-          mode_diet: false,
-          mode_alcohol: false,
-          mode_mental: false,
-        };
+      const MAX_IMAGE_BASE64 = 3 * 1024 * 1024;
+      const hasImage =
+        typeof mealImageBase64 === 'string' &&
+        mealImageBase64.startsWith('data:image') &&
+        mealImageBase64.length <= MAX_IMAGE_BASE64;
 
-    const charaSetting = getCharaPrompt(aiPersonality, 'advice');
-    const activeModesText = getActiveModesText({
-      modeIbd: settings.mode_ibd,
-      modeDiet: settings.mode_diet,
-      modeAlcohol: settings.mode_alcohol,
-      modeMental: settings.mode_mental,
-    });
-    const todayRecordText = buildTodayRecordText(dailyInput as Record<string, unknown>);
-    const MAX_IMAGE_BASE64 = 3 * 1024 * 1024; // 3MB（DoS防止）
-    const hasImage =
-      typeof mealImageBase64 === 'string' &&
-      mealImageBase64.startsWith('data:image') &&
-      mealImageBase64.length <= MAX_IMAGE_BASE64;
+      const systemPrompt = buildAdviceSystemPrompt({
+        charaSetting,
+        settings: {
+          medical_history: userContext.medicalHistory,
+          current_medications: userContext.currentMedications,
+        },
+        activeModesText,
+        mode: String(mode ?? 'daily'),
+        hasImage,
+      });
 
-    const systemPrompt = buildAdviceSystemPrompt({
-      charaSetting,
-      settings: { medical_history: settings.medical_history, current_medications: settings.current_medications },
-      activeModesText,
-      mode: String(mode ?? 'daily'),
-      hasImage,
-    });
+      const userPrompt =
+        mode === 'weekly'
+          ? `これが1週間分の記録よ！ 総合的に分析してちょうだい！\n${JSON.stringify(logs)}`
+          : `今日の記録よ。全部見てコメントしなさい！\n\n${todayRecordText}`;
 
-    const userPrompt =
-      mode === 'weekly'
-        ? `これが1週間分の記録よ！ 総合的に分析してちょうだい！\n${JSON.stringify(logs)}`
-        : `今日の記録よ。全部見てコメントしなさい！\n\n${todayRecordText}`;
+      const env = getServerEnv();
+      if (!env.OPENAI_API_KEY) {
+        return NextResponse.json(
+          { advice: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
+          { status: 503 },
+        );
+      }
 
-    const env = getServerEnv();
-    if (!env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { advice: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
-        { status: 503 }
-      );
-    }
+      const isDailyWithImage = mode === 'daily' && hasImage;
+      const model = isDailyWithImage ? 'gpt-4o' : 'gpt-4o-mini';
+      const userContent: string | ChatCompletionContentPart[] = isDailyWithImage
+        ? [
+            { type: 'text', text: userPrompt },
+            { type: 'image_url', image_url: { url: mealImageBase64 as string } },
+          ]
+        : userPrompt;
 
-    const isDailyWithImage = mode === 'daily' && hasImage;
-    const model = isDailyWithImage ? 'gpt-4o' : 'gpt-4o-mini';
-    const userContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] = isDailyWithImage
-      ? [
-          { type: 'text', text: userPrompt },
-          { type: 'image_url', image_url: { url: mealImageBase64 as string } },
-        ]
-      : [{ type: 'text', text: userPrompt }];
-
-    const advice = await callOpenAIForAdvice(systemPrompt, userContent, userPrompt, model);
+      const advice = await chatCompletion({
+        systemPrompt,
+        userContent,
+        model,
+        fallbackMessage: 'あら、返事が出せなかったわ。もう一度送ってちょうだい！',
+      });
       return NextResponse.json({ advice });
     } catch (error) {
       console.error('API Error:', error);
       return NextResponse.json(
-        { advice: "あらヤダ、サーバーのエラーよ！システム管理者を呼んできて！", error: String(error) },
-        { status: 500 }
+        { advice: 'あらヤダ、サーバーのエラーよ！システム管理者を呼んできて！', error: String(error) },
+        { status: 500 },
       );
     }
   });

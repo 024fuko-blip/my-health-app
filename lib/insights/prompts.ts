@@ -3,6 +3,8 @@
  * getCharaPrompt(aiPersonality, 'advice') の結果を charaSetting として受け取り組み立てる。
  */
 
+import { MEDICATION_AI_CAUTION_RULE } from '@/lib/medication-prompt';
+
 export interface UserContext {
   medicalHistory: string;
   currentMedications: string;
@@ -33,6 +35,8 @@ ${charaSetting}
 - 既往歴: ${userContext.medicalHistory}
 - 薬: ${userContext.currentMedications}
 - 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
+
+${MEDICATION_AI_CAUTION_RULE}
 `;
 }
 
@@ -58,6 +62,8 @@ ${charaSetting}
 - 既往歴: ${userContext.medicalHistory}
 - 薬: ${userContext.currentMedications}
 - 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
+
+${MEDICATION_AI_CAUTION_RULE}
 `;
 }
 
@@ -83,5 +89,7 @@ ${charaSetting}
 - 既往歴: ${userContext.medicalHistory}
 - 薬: ${userContext.currentMedications}
 - 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
+
+${MEDICATION_AI_CAUTION_RULE}
 `;
 }
