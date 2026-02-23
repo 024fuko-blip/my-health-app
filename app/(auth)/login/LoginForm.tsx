@@ -40,7 +40,7 @@ export default function LoginForm() {
 
   if (status === "loading" || checkingConsent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--color-card)] p-4">
         <div className="text-gray-500">読み込み中...</div>
       </div>
     );
@@ -48,7 +48,7 @@ export default function LoginForm() {
 
   if (!hasConsent) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 flex items-center justify-center">
+        <div className="min-h-screen bg-[var(--color-card)] px-4 flex items-center justify-center">
         <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
           <h1 className="text-2xl font-bold text-gray-900">同意画面</h1>
           <p className="text-sm text-gray-700">
@@ -64,7 +64,7 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => router.push("/consent")}
-            className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold"
+            className="w-full bg-[var(--color-sage)] text-white p-3 font-bold"
           >
             同意画面へ
           </button>
@@ -74,9 +74,9 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-card)] p-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-6 text-center text-blue-600">
+        <h1 className="text-2xl font-bold mb-6 text-center text-[var(--color-sage)]">
           IBD Log App
         </h1>
         <p className="text-center text-gray-600 mb-6">

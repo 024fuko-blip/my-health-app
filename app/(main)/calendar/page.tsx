@@ -359,7 +359,7 @@ export default function CalendarPage() {
               <div className="flex gap-2">
                 {!isEditing ? (
                   <>
-                    <button onClick={() => setIsEditing(true)} className="text-blue-600 bg-blue-50 px-3 py-1 rounded text-sm font-bold">✏️ 編集</button>
+                    <button onClick={() => setIsEditing(true)} className="text-[var(--color-sage)] bg-[var(--color-accent-pink)]/30 px-3 py-1 text-sm font-bold">✏️ 編集</button>
                     {/* ▼▼▼ ここを修正しました ▼▼▼ */}
                     <button onClick={handleDelete} className="text-red-600 bg-red-50 px-3 py-1 rounded text-sm font-bold">🗑️ 削除</button>
                     {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
@@ -403,7 +403,7 @@ export default function CalendarPage() {
                   <div><label className="text-xs font-bold">タンパク質(g)</label><input type="number" step="0.1" value={editForm.protein ?? ''} onChange={e => setEditForm({...editForm, protein: e.target.value})} className="w-full border p-2 rounded" /></div>
                 </div>
                 <div><label className="text-xs font-bold text-gray-500">メモ</label><textarea value={editForm.memo || ''} onChange={e => setEditForm({...editForm, memo: e.target.value})} className="w-full border p-2 rounded h-16" /></div>
-                <button onClick={handleUpdate} className="w-full bg-blue-600 text-white p-3 rounded font-bold">保存する</button>
+                <button onClick={handleUpdate} className="w-full bg-[var(--color-sage)] text-white p-3 font-bold">保存する</button>
               </div>
             ) : (
               // 👀 閲覧モード

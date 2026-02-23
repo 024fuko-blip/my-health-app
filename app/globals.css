@@ -3,6 +3,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* きれいめ・シンプル・四角デザイン用トークン */
+  --color-mint: #8ecae6;
+  --color-sage: #a7c4bc;
+  --color-text: #2d3436;
+  --color-text-muted: #7f8c8d;
+  --color-border: #e8ecef;
+  --color-card: #fafbfc;
+  --color-accent-pink: #fce4ec;
+  --color-accent-yellow: #fff8e1;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-nav: 0 -1px 4px rgba(0, 0, 0, 0.03);
 }
 
 @theme inline {
@@ -10,6 +21,11 @@
   --color-foreground: var(--foreground);
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+}
+
+/* 全要素の角丸を統一的に排除（四角デザイン） */
+*, *::before, *::after {
+  border-radius: 0 !important;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -55,4 +71,15 @@ body {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   min-height: 44px;
+}
+
+/* きれいめデザイン：カード・シャドウ */
+.shadow-kirei-card {
+  box-shadow: var(--shadow-card);
+}
+.shadow-kirei-nav {
+  box-shadow: var(--shadow-nav);
+}
+.border-kirei {
+  border-color: var(--color-border);
 }

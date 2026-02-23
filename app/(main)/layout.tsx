@@ -1,56 +1,49 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { BarChart3, Calendar, PenSquare, Gamepad2, Settings } from 'lucide-react';
 import FooterLink from '../components/FooterLink';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  // アクティブなタブの色を変える関数
-  const isActive = (path: string) => pathname === path ? "text-slate-700 font-bold" : "text-slate-400";
+  const isActive = (path: string) => pathname === path ? "text-[var(--color-text)] font-bold" : "text-[var(--color-text-muted)]";
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 pb-24 overflow-x-hidden">
-      <main className="flex-1 w-full max-w-md mx-auto p-4 bg-white shadow-sm min-h-screen min-w-0 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-[var(--color-card)] pb-24 overflow-x-hidden">
+      <main className="flex-1 w-full max-w-md mx-auto p-5 bg-white shadow-kirei-card min-h-screen min-w-0 overflow-x-hidden">
         {children}
       </main>
       <div className="w-full max-w-md mx-auto px-4 pb-24">
         <FooterLink />
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around py-2 pb-6 z-50 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-        
-        {/* 分析 (Dashboard) */}
-        <Link href="/dashboard" className={`flex flex-col items-center text-[10px] w-16 py-1 ${isActive('/dashboard')}`}>
-          <span className="text-2xl mb-0.5">📊</span>
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--color-border)] flex justify-around py-2 pb-6 z-50 shadow-kirei-nav">
+        <Link href="/dashboard" className={`flex flex-col items-center gap-1 text-[10px] w-16 py-1 ${isActive('/dashboard')}`}>
+          <BarChart3 className="w-6 h-6" strokeWidth={2} />
           <span>分析</span>
         </Link>
 
-        {/* カレンダー (Calendar) */}
-        <Link href="/calendar" className={`flex flex-col items-center text-[10px] w-14 py-1 ${isActive('/calendar')}`}>
-          <span className="text-xl mb-0.5">📅</span>
+        <Link href="/calendar" className={`flex flex-col items-center gap-1 text-[10px] w-14 py-1 ${isActive('/calendar')}`}>
+          <Calendar className="w-6 h-6" strokeWidth={2} />
           <span>履歴</span>
         </Link>
 
-        {/* 記録 (Record) - 真ん中で強調 */}
         <Link href="/record" className="flex flex-col items-center text-[10px] w-16 relative">
-          <div className="bg-slate-600 rounded-full w-14 h-14 -mt-6 shadow-lg border-4 border-white flex items-center justify-center transform transition active:scale-95">
-             <span className="text-2xl text-white">✏️</span>
+          <div className="bg-[var(--color-sage)] w-14 h-14 -mt-6 shadow-kirei-card border-4 border-white flex items-center justify-center transform transition active:scale-95">
+            <PenSquare className="w-7 h-7 text-white" strokeWidth={2} />
           </div>
-          <span className={`mt-1 font-bold ${pathname === '/record' ? 'text-slate-700' : 'text-slate-400'}`}>記録</span>
+          <span className={`mt-1 font-bold ${pathname === '/record' ? 'text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}>記録</span>
         </Link>
 
-        {/* ゲーム */}
-        <Link href="/game" className={`flex flex-col items-center text-[10px] w-14 py-1 ${isActive('/game')}`}>
-          <span className="text-xl mb-0.5">🎮</span>
+        <Link href="/game" className={`flex flex-col items-center gap-1 text-[10px] w-14 py-1 ${isActive('/game')}`}>
+          <Gamepad2 className="w-6 h-6" strokeWidth={2} />
           <span>ゲーム</span>
         </Link>
 
-        {/* 設定 (Settings) */}
-        <Link href="/settings" className={`flex flex-col items-center text-[10px] w-14 py-1 ${pathname.startsWith('/settings') ? 'text-slate-700 font-bold' : 'text-slate-400'}`}>
-          <span className="text-xl mb-0.5">⚙️</span>
+        <Link href="/settings" className={`flex flex-col items-center gap-1 text-[10px] w-14 py-1 ${pathname.startsWith('/settings') ? 'text-[var(--color-text)] font-bold' : 'text-[var(--color-text-muted)]'}`}>
+          <Settings className="w-6 h-6" strokeWidth={2} />
           <span>設定</span>
         </Link>
-
       </nav>
     </div>
   );

@@ -205,7 +205,7 @@ export default function RemindersPage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full py-2 bg-blue-600 text-white rounded font-bold text-sm disabled:opacity-50"
+              className="w-full py-2 bg-[var(--color-sage)] text-white font-bold text-sm disabled:opacity-50 hover:opacity-90"
             >
               {saving ? "保存中..." : "追加する"}
             </button>

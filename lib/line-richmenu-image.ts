@@ -10,10 +10,10 @@ const HW = Math.floor(W / 2);
 const HH = Math.floor(H / 2);
 
 const AREAS = [
-  { x: 0, y: 0, w: HW, h: HH, label: '📝 記録', bg: '#22c55e', text: '#ffffff' },
-  { x: HW, y: 0, w: HW, h: HH, label: '🔮 今日の体調予想', bg: '#3b82f6', text: '#ffffff' },
-  { x: 0, y: HH, w: HW, h: HH, label: '🐾 ペット', bg: '#f97316', text: '#ffffff' },
-  { x: HW, y: HH, w: HW, h: HH, label: '📊 分析', bg: '#8b5cf6', text: '#ffffff' },
+  { x: 0, y: 0, w: HW, h: HH, label: '記録', bg: '#fafbfc', text: '#2d3436', border: '#e8ecef' },
+  { x: HW, y: 0, w: HW, h: HH, label: '今日の体調予想', bg: '#fafbfc', text: '#2d3436', border: '#e8ecef' },
+  { x: 0, y: HH, w: HW, h: HH, label: 'ペット', bg: '#fafbfc', text: '#2d3436', border: '#e8ecef' },
+  { x: HW, y: HH, w: HW, h: HH, label: '分析', bg: '#fafbfc', text: '#2d3436', border: '#e8ecef' },
 ];
 
 /** 各エリアを色付き・ポップなデザインで生成 */
@@ -23,8 +23,9 @@ export async function generateRichMenuImage(): Promise<Buffer> {
   for (const a of AREAS) {
     const cx = a.x + a.w / 2;
     const cy = a.y + a.h / 2;
+    const stroke = a.border;
     svgParts.push(`
-      <rect x="${a.x + 8}" y="${a.y + 8}" width="${a.w - 16}" height="${a.h - 16}" rx="24" fill="${a.bg}" stroke="rgba(255,255,255,0.5)" stroke-width="4"/>
+      <rect x="${a.x + 1}" y="${a.y + 1}" width="${a.w - 2}" height="${a.h - 2}" rx="0" fill="${a.bg}" stroke="${stroke}" stroke-width="1"/>
       <text x="${cx}" y="${cy}" font-size="88" fill="${a.text}" text-anchor="middle" dominant-baseline="central" font-family="IPAGothic, IPAゴシック, Hiragino Sans, sans-serif" font-weight="bold">${a.label}</text>
     `);
   }

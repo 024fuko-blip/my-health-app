@@ -286,7 +286,7 @@ export default function SettingsProfilePage() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold disabled:opacity-50"
+        className="w-full bg-[var(--color-sage)] text-white p-3 font-bold disabled:opacity-50 hover:opacity-90"
       >
         {saving ? "保存中..." : "保存する"}
       </button>

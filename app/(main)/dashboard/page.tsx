@@ -285,7 +285,7 @@ export default function DashboardPage() {
               type="button"
               onClick={() => setInsightTab(tab)}
               className={`flex-1 py-2.5 px-2 rounded-lg font-bold text-sm transition ${
-                insightTab === tab ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                insightTab === tab ? 'bg-white text-[var(--color-text)] shadow-kirei-card' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
               }`}
             >
               {tab === 'daily' ? '日次' : insightLabels[tab]}
@@ -309,7 +309,7 @@ export default function DashboardPage() {
               type="button"
               onClick={handleRegenerateInsight}
               disabled={insightGenerating}
-              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium disabled:opacity-50 hover:bg-purple-700"
+              className="px-4 py-2 bg-[var(--color-sage)] text-white text-sm font-medium disabled:opacity-50 hover:opacity-90"
             >
               {insightGenerating ? '生成中...' : '再生成'}
             </button>
@@ -338,17 +338,17 @@ export default function DashboardPage() {
         <>
       {/* 服薬中の薬（PMDAリンク付き） */}
       {medications.length > 0 && (
-        <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
-          <h2 className="font-bold text-green-800 mb-2">💊 服薬中の薬</h2>
+        <div className="bg-[var(--color-accent-pink)]/30 border-2 border-[var(--color-border)] p-4">
+          <h2 className="font-bold text-[var(--color-text)] mb-2">💊 服薬中の薬</h2>
           <div className="space-y-2">
             {medications.map((med) => (
               <div key={med.id} className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-green-800">{med.name}</span>
+                <span className="text-sm font-medium text-[var(--color-text)]">{med.name}</span>
                 <a
                   href={buildPmdaUrl(med.name)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-bold hover:bg-green-700"
+                  className="shrink-0 px-3 py-1.5 bg-[var(--color-sage)] text-white text-xs font-bold hover:opacity-90"
                 >
                   PMDAで副作用を確認する
                 </a>
@@ -359,7 +359,7 @@ export default function DashboardPage() {
       )}
 
       {/* 今日の体調カード（最上部・認知負荷軽減） */}
-      <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4">
+      <div className="bg-[var(--color-card)] border-2 border-[var(--color-border)] p-4">
         <h2 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
           <span>📋</span> 今日の体調
         </h2>

@@ -16,71 +16,71 @@ export default function SettingsLayout({
       <div className="flex items-center gap-3 min-w-0">
         <Link
           href="/dashboard"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+          className="flex h-10 w-10 shrink-0 items-center justify-center bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] transition"
           aria-label="アプリに戻る"
         >
           ←
         </Link>
-        <h2 className="text-xl font-bold flex-1">⚙️ 設定</h2>
+        <h2 className="text-xl font-bold flex-1">設定</h2>
       </div>
 
       <nav className="flex gap-2 overflow-x-auto overflow-y-hidden pb-1 -mx-1 px-1 min-w-0 w-full scrollbar-hide">
         <Link
           href="/settings"
-          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             pathname === "/settings"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "bg-[var(--color-sage)] text-white"
+              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           メニュー
         </Link>
         <Link
           href="/settings/basic"
-          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             isActive("/settings/basic")
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "bg-[var(--color-sage)] text-white"
+              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           基本設定
         </Link>
         <Link
           href="/settings/profile"
-          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             isActive("/settings/profile")
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "bg-[var(--color-sage)] text-white"
+              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           プロフィール
         </Link>
         <Link
           href="/settings/health"
-          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             isActive("/settings/health")
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "bg-[var(--color-sage)] text-white"
+              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           健康管理
         </Link>
         <Link
           href="/reminders"
-          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             pathname === "/reminders"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "bg-[var(--color-sage)] text-white"
+              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           リマインダー
         </Link>
         <Link
           href="/game/pet"
-          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             pathname === "/game/pet"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "bg-[var(--color-sage)] text-white"
+              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           マイペット

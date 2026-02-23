@@ -24,7 +24,7 @@ export function ResultModal({ msg, aiPersonality, onClose }: ResultModalProps) {
         </div>
         <button
           onClick={onClose}
-          className="mt-6 w-full bg-slate-700 text-white py-3 rounded-xl font-medium hover:bg-slate-600 transition"
+          className="mt-6 w-full bg-[var(--color-sage)] text-white py-3 font-medium hover:opacity-90 transition"
         >
           閉じる
         </button>

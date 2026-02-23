@@ -94,7 +94,7 @@ export default function RecordPage() {
   })();
 
   return (
-    <div className="space-y-6 pb-24 relative bg-slate-50/30">
+    <div className="space-y-6 pb-24 relative bg-[var(--color-card)]">
       <div className="p-4 rounded-xl shadow-sm bg-white border border-slate-100">
         <div className="flex items-center justify-between">
           <div>
@@ -328,7 +328,7 @@ export default function RecordPage() {
         <button
           type="submit"
           disabled={form.isSubmitting}
-          className="w-full bg-slate-600 hover:bg-slate-700 text-white p-4 rounded-xl font-medium shadow-sm disabled:bg-gray-400 transition"
+          className="w-full bg-[var(--color-sage)] hover:opacity-90 text-white p-4 font-medium shadow-kirei-card disabled:opacity-50 transition"
         >
           {form.isSubmitting ? '分析中...' : '記録して相棒に報告'}
         </button>

@@ -10,7 +10,7 @@ export default async function GuidePage({ searchParams }: Props) {
   const showLoginButton = params.from === "consent";
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
+    <div className="min-h-screen bg-[var(--color-card)] py-8 px-4">
       <div className="mx-auto w-full max-w-2xl space-y-5">
         {/* ヘッダー: 戻るボタン（左・設定へ） + タイトル */}
         <div className="flex items-center gap-3 pb-2">
@@ -229,7 +229,7 @@ export default async function GuidePage({ searchParams }: Props) {
           <div className="pt-2">
             <a
               href="/login"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-600 px-4 py-4 text-sm font-bold text-white hover:bg-slate-700 transition"
+              className="inline-flex w-full items-center justify-center gap-2 bg-[var(--color-sage)] px-4 py-4 text-sm font-bold text-white hover:opacity-90 transition"
             >
               <span>ログインへ進む</span>
               <span aria-hidden>→</span>
