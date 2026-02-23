@@ -9,8 +9,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isActive = (path: string) => pathname === path ? "text-slate-700 font-bold" : "text-slate-400";
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 pb-24">
-      <main className="flex-1 w-full max-w-md mx-auto p-4 bg-white shadow-sm min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50 pb-24 overflow-x-hidden">
+      <main className="flex-1 w-full max-w-md mx-auto p-4 bg-white shadow-sm min-h-screen min-w-0 overflow-x-hidden">
         {children}
       </main>
       <div className="w-full max-w-md mx-auto px-4 pb-24">

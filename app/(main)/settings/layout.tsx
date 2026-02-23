@@ -12,8 +12,8 @@ export default function SettingsLayout({
   const isActive = (path: string) => pathname === path;
 
   return (
-    <div className="space-y-4 pb-20">
-      <div className="flex items-center gap-3">
+    <div className="space-y-4 pb-20 overflow-x-hidden min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         <Link
           href="/dashboard"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
@@ -24,7 +24,7 @@ export default function SettingsLayout({
         <h2 className="text-xl font-bold flex-1">⚙️ 設定</h2>
       </div>
 
-      <nav className="flex gap-2 overflow-x-auto pb-1">
+      <nav className="flex gap-2 overflow-x-auto overflow-y-hidden pb-1 -mx-1 px-1 min-w-0 w-full scrollbar-hide">
         <Link
           href="/settings"
           className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition ${

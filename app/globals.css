@@ -25,12 +25,30 @@ body {
   font-family: var(--font-sans);
 }
 
+/* モバイル: 入力フォーカス時の自動ズーム防止（16px 未満だと iOS Safari がズームする） */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* スマホでボタンタップの反応を即座にする */
 .touch-manipulation {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
+/* スクロール可能だがスクロールバーを非表示（タブナビ等） */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* 記録画面ボタン：タップ時の見た目を即時反映 */
 .record-btn {
   touch-action: manipulation;

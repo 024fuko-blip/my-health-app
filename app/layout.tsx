@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -7,6 +7,13 @@ export const metadata: Metadata = {
   description: "ツンデレオネエの鬼コーチ",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, title: "健康管理" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -19,7 +26,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/next.svg" />
       </head>
-      <body className="antialiased">
+      <body className="antialiased overflow-x-hidden">
         <Providers>{children}</Providers>
       </body>
     </html>
