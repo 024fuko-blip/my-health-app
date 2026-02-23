@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
+import { safeNumber, safeLongString } from '@/lib/json-utils';
 
 const MAX_STRING_LENGTH = 10000;
 
@@ -24,20 +25,6 @@ const DEFAULT_USER_SETTINGS = {
   latitude: null as number | null,
   longitude: null as number | null,
 };
-
-function safeNumber(val: unknown, min: number, max: number): number | null {
-  if (val == null || val === '') return null;
-  const n = Number(val);
-  if (Number.isNaN(n)) return null;
-  if (n < min || n > max) return null;
-  return n;
-}
-
-function safeLongString(val: unknown, maxLen: number): string | null {
-  if (val == null || val === '') return null;
-  const s = String(val);
-  return s.slice(0, maxLen);
-}
 
 /** Prisma UserSettings をフロント期待の snake_case 形式に変換 */
 function toApiShape(row: {
@@ -126,9 +113,11 @@ export async function PUT(req: Request) {
         longitude,
       } = body;
 
-      const personality = (['tsundere', 'kibishime', 'amayama'] as const).includes(ai_personality as 'tsundere' | 'kibishime' | 'amayama')
-        ? (ai_personality as 'tsundere' | 'kibishime' | 'amayama')
-        : 'tsundere';
+      const PERSONALITIES: readonly string[] = ['tsundere', 'kibishime', 'amayama', 'naruse'];
+      const personality =
+        typeof ai_personality === 'string' && PERSONALITIES.includes(ai_personality)
+          ? (ai_personality as 'tsundere' | 'kibishime' | 'amayama' | 'naruse')
+          : 'tsundere';
 
       const genderStr = typeof gender === 'string' ? gender : 'unspecified';
 
@@ -139,12 +128,12 @@ export async function PUT(req: Request) {
         modeDiet: Boolean(mode_diet ?? false),
         medicalHistory: safeLongString(medical_history, MAX_STRING_LENGTH),
         currentMedications: safeLongString(current_medications, MAX_STRING_LENGTH),
-        medicationReminderTimes: medication_reminder_times != null && medication_reminder_times !== '' ? String(medication_reminder_times).slice(0, 2000) : null,
+        medicationReminderTimes: safeLongString(medication_reminder_times, 2000),
         gender: genderStr,
         aiPersonality: personality,
-        profileName: profile_name != null && profile_name !== '' ? String(profile_name).slice(0, 100) : null,
-        birthDate: birth_date != null && birth_date !== '' ? String(birth_date).slice(0, 20) : null,
-        prefecture: prefecture != null && prefecture !== '' ? String(prefecture).slice(0, 50) : null,
+        profileName: safeLongString(profile_name, 100),
+        birthDate: safeLongString(birth_date, 20),
+        prefecture: safeLongString(prefecture, 50),
         height: safeNumber(height, 0, 300),
         weight: safeNumber(weight, 0, 500),
         normalTemperature: safeNumber(normal_temperature, 34, 42),
@@ -160,8 +149,12 @@ export async function PUT(req: Request) {
 
       return NextResponse.json({ ok: true });
     } catch (error) {
-      console.error('user-settings PUT error:', error);
-      return new NextResponse('Internal Server Error', { status: 500 });
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('user-settings PUT error:', msg, error);
+      return NextResponse.json(
+        { error: '保存に失敗しました', detail: msg },
+        { status: 500 }
+      );
     }
   });
 }

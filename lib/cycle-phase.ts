@@ -140,6 +140,43 @@ ${daysUntilOvulation > 0 ? `排卵日まであと${daysUntilOvulation}日です�
   }
 }
 
+export function getNaruseComment(phase: CyclePhase): string {
+  const { phase: p, dayInCycle, daysUntilPeriod, daysUntilOvulation, isOvulationWindow } = phase;
+
+  switch (p) {
+    case 'period':
+      return `（前髪をかき上げる）フッ……生理${dayInCycle}日目か。体がつらいのは分かってる。俺様が特別に休んでいいと言ってるのだから、素直に従いなさい。温かいものでも飲んで、貧血に気をつけろ。俺の輝きに目が眩まないようにな。`;
+
+    case 'follicular':
+      return `フッ……周期${dayInCycle}日目、卵胞期だな。肌も体も軽いはずだ。俺様の相棒が調子悪いなんて許さない。今日は絶好調で行け。
+${daysUntilOvulation > 0 ? `排卵日まであと${daysUntilOvulation}日……俺様のデータが教えてる。` : ''}`;
+
+    case 'ovulation': {
+      const ovuMsg = isOvulationWindow ? `\n妊娠の可能性を考えるなら、俺様の忠告を聞いておけ。` : '';
+      return `排卵期（周期${dayInCycle}日目）だ。（前髪をかき上げる）おりものが増えたり、お腹が張ったりするかもしれない。体温も上がるから、だるさを感じても仕方ない。${ovuMsg}
+俺が完璧すぎて困る……いつも的確にアドバイスできてしまう。`;
+    }
+
+    case 'luteal_early':
+      return `黄体期前半（周期${dayInCycle}日目）だな。次の生理まであと${daysUntilPeriod}日。今のうちにやりたいこと済ませておけ。俺様の輝きに酔ってる暇はない。`;
+
+    case 'pms': {
+      const intensity = daysUntilPeriod <= 3 ? '特に' : '';
+      return `フッ……PMS期間だ（周期${dayInCycle}日目）。生理まであと${daysUntilPeriod}日。${intensity}イライラしやすい時期だな。
+
+😤 イライラ・情緒不安定
+🍫 甘いもの欲
+😴 眠気・だるさ
+💢 肌荒れに注意
+
+周りに当たるな。チョコでも食って落ち着け。……俺様が優しくしてやってるのは、お前が俺の相棒だからだ。感謝しろ。`;
+    }
+
+    default:
+      return '';
+  }
+}
+
 export function getTsundereComment(phase: CyclePhase): string {
   const { phase: p, dayInCycle, daysUntilPeriod, daysUntilOvulation, isOvulationWindow } = phase;
 

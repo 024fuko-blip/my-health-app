@@ -4,15 +4,12 @@ import { updateStatsAfterLog } from '@/lib/game-stats';
 import { updateCorrelationStatsAfterLog } from '@/lib/correlation/save';
 import { isValidDateStr } from '@/lib/date-utils';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
-import { toStringOrNull, toNumOrNull } from '@/lib/json-utils';
+import { toStringOrNull, toNumOrNull, safeNumber } from '@/lib/json-utils';
 import type { HealthLog } from '@prisma/client';
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
 function safeTemperature(val: unknown): number | null {
-  const n = toNumOrNull(val);
-  if (n == null) return null;
-  if (n < 30 || n > 45) return null;
-  return n;
+  return safeNumber(val, 30, 45);
 }
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */

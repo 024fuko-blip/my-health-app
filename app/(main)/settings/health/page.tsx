@@ -135,7 +135,14 @@ export default function SettingsHealthPage() {
     } else if (res.status === 401) {
       router.push("/login");
     } else {
-      alert("保存に失敗しました");
+      let msg = "保存に失敗しました";
+      try {
+        const err = await res.json();
+        if (err?.detail) msg += ` (${err.detail})`;
+      } catch {
+        /* ignore */
+      }
+      alert(msg);
     }
   };
 

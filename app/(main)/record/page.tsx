@@ -1,7 +1,7 @@
 "use client";
 
 import type React from 'react';
-import { getCyclePhase, getTsundereComment, getAmayamaComment, getKibishimeComment } from '@/lib/cycle-phase';
+import { getCyclePhase, getTsundereComment, getAmayamaComment, getKibishimeComment, getNaruseComment } from '@/lib/cycle-phase';
 import { ResultModal } from './components/ResultModal';
 import { MentalSection } from './components/MentalSection';
 import { IbdSection } from './components/IbdSection';
@@ -58,7 +58,9 @@ export default function RecordPage() {
         ? getAmayamaComment(cyclePhase)
         : form.aiPersonality === 'kibishime'
           ? getKibishimeComment(cyclePhase)
-          : getTsundereComment(cyclePhase)
+          : form.aiPersonality === 'naruse'
+            ? getNaruseComment(cyclePhase)
+            : getTsundereComment(cyclePhase)
       : '';
 
   const dateObj = new Date(form.date);

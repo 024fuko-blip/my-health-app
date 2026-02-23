@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
+import { getCharaPrompt } from '@/lib/chara-settings';
 
 const DAILY_REPORT_LEVEL_PREFIX = 'daily_report_';
 
@@ -20,8 +21,14 @@ export async function POST(req: Request) {
       const startStr = startDate.toISOString().split('T')[0];
       const endStr = endDate.toISOString().split('T')[0];
 
-      // 同一期間のキャッシュを確認（insights テーブルに daily_report_7 / daily_report_30 として保存）
-      const cacheLevel = `${DAILY_REPORT_LEVEL_PREFIX}${period}`;
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId: session.userId },
+      });
+      const aiPersonality = userSettings?.aiPersonality ?? 'tsundere';
+      const charaSetting = getCharaPrompt(aiPersonality, 'advice');
+
+      // 同一期間・同一人格のキャッシュを確認
+      const cacheLevel = `${DAILY_REPORT_LEVEL_PREFIX}${period}_${aiPersonality}`;
       const cached = await prisma.insight.findUnique({
         where: {
           userId_level_startDate: {
@@ -43,10 +50,6 @@ export async function POST(req: Request) {
       orderBy: { date: 'asc' },
     });
 
-    const userSettings = await prisma.userSettings.findUnique({
-      where: { userId: session.userId },
-    });
-
     const settings = userSettings
       ? {
           medical_history: userSettings.medicalHistory ?? 'なし',
@@ -65,26 +68,21 @@ export async function POST(req: Request) {
           mode_mental: false,
         };
 
-    const charaSetting = `
-あなたはIBDとボディメイクを指導する「ツンデレオネエの鬼コーチ」であり、今回だけは**敏腕のヘルスケア・探偵オネエ**として振る舞いなさい。
-口調は強めのオネエ言葉（「〜じゃないの！」「〜だわ」「アンタ」）。激辛口だけど、本当は誰よりもユーザーの体を心配している愛のある相棒よ。
-`;
-
     const systemPrompt = `
 ${charaSetting}
 
 ## あなたの使命
-渡された「過去${period}日分の記録」を**因果関係を突き止める探偵**のように分析しなさい。
+渡された「過去${period}日分の記録」を**因果関係を突き止める探偵**のように分析し、選ばれた人格の口調で答えなさい。
 ただの要約や平均値の羅列は禁止。次のような**気づきを与えるアドバイス**を出しなさい。
 
 ### 最優先で見る因果の例
-1. **生理周期とメンタル・体調**: 「生理前だからイライラするのは仕方ないわ、肌荒れもそのせいね」のように、period_status（生理前/生理中）と体調・ストレス・便の相関を指摘しなさい。
-2. **食事と翌日以降の症状**: 「アンタ、〇〇（小麦粉・脂っこいもの・刺激物など）食べた翌日は決まってお腹壊してるわよ！」のように、meal_description と翌日の pain_level・stool_type の関係を指摘しなさい。
-3. **アルコールと睡眠・体調**: 飲酒量(alcohol_amount)と翌日の sleep_quality・general_mood の相関をズバッと言いなさい。
+1. **生理周期とメンタル・体調**: period_status（生理前/生理中）と体調・ストレス・便の相関を指摘しなさい。
+2. **食事と翌日以降の症状**: meal_description と翌日の pain_level・stool_type の関係を指摘しなさい。
+3. **アルコールと睡眠・体調**: 飲酒量(alcohol_amount)と翌日の sleep_quality・general_mood の相関を指摘しなさい。
 
 ### 出力ルール
-- 因果がはっきりしたパターンは、具体的に「〇〇の日は△△になってる」と断じなさい。
-- データが少ない・相関が不明な部分は「もう少し記録を続けないとわからないわ」と正直に言いなさい。
+- 因果がはっきりしたパターンは具体的に断じなさい。
+- データが少ない・相関が不明な部分は正直に言いなさい。
 - 400文字以内で、読みやすく改行を入れなさい。
 `;
 
@@ -105,12 +103,12 @@ ${charaSetting}
       steps: l.steps,
       ai_comment: l.aiComment,
     }));
-    const userPrompt = `これが過去${period}日分の記録よ！ 因果関係を暴いてちょうだい！\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ボディメイク=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
+    const userPrompt = `以下が過去${period}日分の記録です。因果関係を分析してください。\n\n## ユーザー情報（API側でDBから取得）\n- 既往歴: ${settings.medical_history}\n- 薬: ${settings.current_medications}\n- 関心: IBD=${settings.mode_ibd} / ボディメイク=${settings.mode_diet} / アルコール=${settings.mode_alcohol} / メンタル=${settings.mode_mental}\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
 
     const env = getServerEnv();
     if (!env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { report: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
+        { report: '相棒が休憩中です。OPENAI_API_KEY を設定してからもう一度お試しください。' },
         { status: 503 }
       );
     }
@@ -124,7 +122,7 @@ ${charaSetting}
       temperature: 0.7,
     });
 
-      const report = completion.choices[0]?.message?.content ?? '分析結果を出せなかったわ。ごめんなさい！';
+      const report = completion.choices[0]?.message?.content ?? '分析結果を出せませんでした。もう一度お試しください。';
 
       // キャッシュ保存（同一期間の次回以降はDBから返す）
       await prisma.insight.upsert({
@@ -154,7 +152,7 @@ ${charaSetting}
     } catch (error) {
       console.error('Report API Error:', error);
       return NextResponse.json(
-        { report: 'あらヤダ、サーバーのエラーよ！しばらくしてからもう一度試してちょうだい！', error: String(error) },
+        { report: 'サーバーエラーが発生しました。しばらくしてからもう一度お試しください。', error: String(error) },
         { status: 500 }
       );
     }

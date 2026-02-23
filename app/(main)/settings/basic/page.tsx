@@ -12,7 +12,7 @@ export default function SettingsBasicPage() {
     mode_alcohol: false,
     mode_mental: false,
     mode_diet: false,
-    ai_personality: "tsundere" as "tsundere" | "kibishime" | "amayama",
+    ai_personality: "tsundere" as "tsundere" | "kibishime" | "amayama" | "naruse",
   });
   const [fullSettings, setFullSettings] = useState<Record<string, unknown>>({});
 
@@ -39,7 +39,7 @@ export default function SettingsBasicPage() {
           mode_mental: data.mode_mental ?? false,
           mode_diet: data.mode_diet ?? false,
           ai_personality:
-            ["tsundere", "kibishime", "amayama"].includes(data.ai_personality)
+            ["tsundere", "kibishime", "amayama", "naruse"].includes(data.ai_personality)
               ? data.ai_personality
               : "tsundere",
         });
@@ -76,7 +76,14 @@ export default function SettingsBasicPage() {
     } else if (res.status === 401) {
       router.push("/login");
     } else {
-      alert("保存に失敗しました");
+      let msg = "保存に失敗しました";
+      try {
+        const err = await res.json();
+        if (err?.detail) msg += ` (${err.detail})`;
+      } catch {
+        /* ignore */
+      }
+      alert(msg);
     }
   };
 
@@ -115,6 +122,7 @@ export default function SettingsBasicPage() {
             { value: "tsundere" as const, label: "ツンデレ" },
             { value: "kibishime" as const, label: "厳しめ" },
             { value: "amayama" as const, label: "あまあま" },
+            { value: "naruse" as const, label: "成瀬（勘違いイケメン風）" },
           ].map(({ value, label }) => (
             <button
               key={value}

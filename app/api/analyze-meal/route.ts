@@ -4,6 +4,8 @@ import { getServerEnv } from '@/lib/env';
 import { sanitizeForPrompt } from '@/lib/prompt-utils';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 
+const MAX_IMAGE_BASE64 = 3 * 1024 * 1024; // 3MB（DoS防止）
+
 const NUTRITION_JSON_PROMPT = `
 あなたは食事から栄養成分を推定する専門家です。
 以下の形式でJSON形式のみを返してください。推定が難しい場合は null としてください。
@@ -44,6 +46,13 @@ export async function POST(req: Request) {
     if (!hasImage && !hasText) {
       return NextResponse.json(
         { error: '画像データまたは食事の文字説明が必要です' },
+        { status: 400 }
+      );
+    }
+
+    if (hasImage && typeof imageBase64 === 'string' && imageBase64.length > MAX_IMAGE_BASE64) {
+      return NextResponse.json(
+        { error: '画像サイズは3MBまでです' },
         { status: 400 }
       );
     }

@@ -188,11 +188,11 @@ export default function DashboardPage() {
             return;
           }
           console.error('Report API error:', res.status, data);
-          setReport(data.report ?? '分析に失敗したわ。もう一度試してちょうだい！');
+          setReport(data.report ?? '分析に失敗しました。もう一度お試しください。');
         }
       } catch (err) {
         console.error('Report fetch error:', err);
-        setReport('オネエが忙しいみたいだわ... 通信エラーよ。しばらくしてからもう一度試してちょうだい！');
+        setReport('通信エラーです。しばらくしてからもう一度お試しください。');
       } finally {
         setAnalyzing(false);
       }
@@ -603,19 +603,19 @@ export default function DashboardPage() {
         <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-slate-800 bg-slate-50 hover:bg-slate-100">
           <span className="flex items-center gap-2">
             <span>💋</span>
-            オネエの期間総評（因果関係分析）
+            相棒の期間総評（因果関係分析）
           </span>
           <span className="text-xs font-normal text-gray-400">{sectionOpen.report ? '閉じる' : '開く'}</span>
         </summary>
         <div className="p-4 bg-white border-t border-slate-100">
           <div className="bg-slate-50 p-4 rounded-lg text-gray-800 font-medium leading-relaxed min-h-[120px] whitespace-pre-wrap">
             {analyzing ? (
-              <span className="text-slate-600">分析中... 因果関係を暴いてるわよ、ちょっと待ちなさい！</span>
+              <span className="text-slate-600">分析中...</span>
             ) : report ? (
               report
             ) : (
               <span className="text-gray-400 text-sm">
-                記録がたまると、ここに「〇〇食べた翌日はお腹壊してる」「生理前だからイライラするのね」みたいな気づきを出してくれるわよ。
+                記録がたまると、ここに因果関係に基づく気づきを表示します。
               </span>
             )}
           </div>
