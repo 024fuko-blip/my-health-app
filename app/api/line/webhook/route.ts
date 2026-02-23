@@ -8,11 +8,7 @@ import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { getLineConfig, replyLineMessages } from '@/lib/line';
 import { getTodayJST } from '@/lib/date-utils';
-import {
-  buildWelcomeMessage,
-  buildWelcomeButtons,
-  buildQuickReplyItems,
-} from '@/lib/line-messages';
+import { buildWelcomeMessage, buildWelcomeButtons } from '@/lib/line-messages';
 import {
   replyAsCompanion,
   buildChatContextFromSettings,
@@ -119,8 +115,7 @@ export async function POST(req: Request) {
               await replyLineMessages(config.accessToken, replyToken, [
                 {
                   type: 'text',
-                  text: '連携完了！服薬リマインダーと記録がLINEで受け取れるようになったわ。相談もできるようになったから、何でも聞いてね。',
-                  quickReply: { items: buildQuickReplyItems() },
+                  text: '連携完了！服薬リマインダーと記録がLINEで受け取れるようになったわ。相談もできるようになったから、何でも聞いてね。下のメニューからアプリを開けるわよ。',
                 },
                 buildWelcomeButtons(),
               ]);
@@ -152,11 +147,7 @@ export async function POST(req: Request) {
             });
             if (replyToken && config.accessToken) {
               await replyLineMessages(config.accessToken, replyToken, [
-                {
-                  type: 'text',
-                  text: prediction,
-                  quickReply: { items: buildQuickReplyItems() },
-                },
+                { type: 'text', text: prediction },
               ]);
             }
           }
@@ -206,11 +197,7 @@ export async function POST(req: Request) {
             }
             if (replyToken && config.accessToken) {
               await replyLineMessages(config.accessToken, replyToken, [
-                {
-                  type: 'text',
-                  text: '記録しておいたわ。',
-                  quickReply: { items: buildQuickReplyItems() },
-                },
+                { type: 'text', text: '記録しておいたわ。' },
               ]);
             }
             continue;
@@ -229,11 +216,7 @@ export async function POST(req: Request) {
           const aiReply = await replyAsCompanion(text, context);
           if (replyToken && config.accessToken) {
             await replyLineMessages(config.accessToken, replyToken, [
-              {
-                type: 'text',
-                text: aiReply,
-                quickReply: { items: buildQuickReplyItems() },
-              },
+              { type: 'text', text: aiReply },
             ]);
           }
         }
@@ -244,7 +227,7 @@ export async function POST(req: Request) {
         const data = event.postback.data;
         if (data === 'record' || data === 'pet') {
           await replyLineMessages(config.accessToken, replyToken, [
-            { type: 'text', text: 'アプリを開いてね。', quickReply: { items: buildQuickReplyItems() } },
+            { type: 'text', text: 'アプリを開いてね。下のメニューから選んでちょうだい。' },
           ]);
         }
       }
