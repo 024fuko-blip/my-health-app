@@ -55,7 +55,7 @@ export function MentalSection({
             <button
               key={q}
               type="button"
-              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setSleepQuality(q); }}
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setSleepQuality(sleepQuality === q ? '普通' : q); }}
               className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition record-btn record-btn touch-manipulation active:scale-95 ${
                 sleepQuality === q
                   ? 'border-green-500 bg-green-100 text-green-800'

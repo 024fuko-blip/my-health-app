@@ -19,6 +19,7 @@ const DEFAULT_USER_SETTINGS = {
   birthDate: null as string | null,
   height: null as number | null,
   weight: null as number | null,
+  normalTemperature: null as number | null,
   prefecture: null as string | null,
   latitude: null as number | null,
   longitude: null as number | null,
@@ -53,6 +54,7 @@ function toApiShape(row: {
   birthDate: string | null;
   height: number | null;
   weight: number | null;
+  normalTemperature: number | null;
   prefecture: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -71,6 +73,7 @@ function toApiShape(row: {
     birth_date: row.birthDate ?? '',
     height: row.height ?? null,
     weight: row.weight ?? null,
+    normal_temperature: row.normalTemperature ?? null,
     prefecture: row.prefecture ?? null,
     latitude: row.latitude ?? null,
     longitude: row.longitude ?? null,
@@ -117,6 +120,7 @@ export async function PUT(req: Request) {
         birth_date,
         height,
         weight,
+        normal_temperature,
         prefecture,
         latitude,
         longitude,
@@ -143,6 +147,7 @@ export async function PUT(req: Request) {
         prefecture: prefecture != null && prefecture !== '' ? String(prefecture).slice(0, 50) : null,
         height: safeNumber(height, 0, 300),
         weight: safeNumber(weight, 0, 500),
+        normalTemperature: safeNumber(normal_temperature, 34, 42),
         latitude: safeNumber(latitude, -90, 90),
         longitude: safeNumber(longitude, -180, 180),
       };

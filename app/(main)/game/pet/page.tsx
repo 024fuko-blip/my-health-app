@@ -282,16 +282,27 @@ export default function GamePetPage() {
       ) : (
         <>
           <div className="bg-white border-2 border-amber-200 rounded-2xl p-6 text-center shadow-sm">
-            <div className="text-6xl mb-2">
+            <div className="text-6xl mb-2 relative inline-block">
               {dataToUse.pet?.current_outfit_emoji && (
                 <span className="mr-1">{dataToUse.pet.current_outfit_emoji}</span>
               )}
               <span>{dataToUse.pet?.species_emoji}</span>
+            </div>
+            <div className="flex justify-center gap-1 mt-1 flex-wrap">
+              {dataToUse.pet?.sleepy && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">😴 眠そう</span>
+              )}
               {dataToUse.pet?.wearing_mask && (
-                <span className="ml-1 text-4xl align-middle" title="花粉シーズンでマスクしてる">😷</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">😷 花粉対策中</span>
+              )}
+              {dataToUse.pet?.worried && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">😟 心配そう</span>
+              )}
+              {dataToUse.pet?.low_mood && !dataToUse.pet?.worried && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">😢 元気ない</span>
               )}
             </div>
-            <p className="font-bold text-gray-800 text-lg">{dataToUse.pet?.pet_name}</p>
+            <p className="font-bold text-gray-800 text-lg mt-2">{dataToUse.pet?.pet_name}</p>
             <span className="text-xs text-amber-600 font-medium">Lv.{dataToUse.pet?.level ?? 1}</span>
             {(dataToUse.pet?.mood_comment || dataToUse.pet?.sleepy || dataToUse.pet?.worried) && (
               <div className="mt-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100">

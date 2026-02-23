@@ -12,6 +12,7 @@ export interface RecordPayloadParams {
   modes: UserSettingsMode;
   painLevel: number;
   toiletCount: number;
+  temperature: string;
   weight: string;
   bodyFat: string;
   calories: string;
@@ -40,6 +41,7 @@ export function buildRecordPayload(params: RecordPayloadParams): Record<string, 
         ? JSON.stringify(params.medicationTakenDetail)
         : null,
     general_mood: params.generalMood,
+    temperature: params.temperature ? parseFloat(params.temperature) : null,
     meal_description: params.mealDescription,
     period_status: params.gender === 'female' ? params.periodStatus : null,
     ai_comment: params.aiComment,

@@ -1,5 +1,6 @@
 "use client";
 
+import type React from 'react';
 import { getCyclePhase, getTsundereComment, getAmayamaComment, getKibishimeComment } from '@/lib/cycle-phase';
 import { ResultModal } from './components/ResultModal';
 import { MentalSection } from './components/MentalSection';
@@ -9,6 +10,33 @@ import { AlcoholSection } from './components/AlcoholSection';
 import { MealSection } from './components/MealSection';
 import { BasicInfoSection } from './components/BasicInfoSection';
 import { useRecordForm } from './hooks/useRecordForm';
+
+function CollapsibleSection({
+  title,
+  icon,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  icon: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} className="group">
+      <summary className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm border border-slate-100 cursor-pointer list-none">
+        <span className="font-bold text-slate-700 flex items-center gap-2">
+          <span>{icon}</span>
+          {title}
+        </span>
+        <span className="text-xs text-gray-400 group-open:rotate-180 transition-transform">
+          &#9660;
+        </span>
+      </summary>
+      <div className="mt-2">{children}</div>
+    </details>
+  );
+}
 
 export default function RecordPage() {
   const form = useRecordForm();
@@ -71,12 +99,38 @@ export default function RecordPage() {
             <p className="text-3xl font-bold text-slate-800">{formattedDate}</p>
             {isToday && <span className="text-sm font-medium text-slate-600">📅 今日</span>}
           </div>
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => form.setDate(e.target.value)}
-            className="text-sm border border-slate-200 p-2 rounded w-auto text-slate-600"
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const d = new Date(form.date);
+                d.setDate(d.getDate() - 1);
+                form.setDate(d.toISOString().split('T')[0]);
+              }}
+              className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+              aria-label="前日"
+            >
+              &#8249;
+            </button>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => form.setDate(e.target.value)}
+              className="text-sm border border-slate-200 p-2 rounded w-auto text-slate-600"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const d = new Date(form.date);
+                d.setDate(d.getDate() + 1);
+                form.setDate(d.toISOString().split('T')[0]);
+              }}
+              className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+              aria-label="翌日"
+            >
+              &#8250;
+            </button>
+          </div>
         </div>
         {progress && progress.total > 0 && (
           <div className="mt-3 pt-3 border-t border-slate-100">
@@ -170,82 +224,94 @@ export default function RecordPage() {
           lastPeriodDate={form.periodSettings.lastPeriodDate}
           selectedDate={form.date}
           onUserEdit={form.markUserEdit}
+          defaultTemperature={form.defaultTemperature}
+          defaultWeight={form.defaultWeight}
         />
 
-        <MealSection
-          mealDescription={form.mealDescription}
-          setMealDescription={form.setMealDescription}
-          handleEstimateFromText={form.handleEstimateFromText}
-          isAnalyzing={form.isAnalyzing}
-          isDragging={form.isDragging}
-          handleDragOver={form.handleDragOver}
-          handleDragLeave={form.handleDragLeave}
-          handleDrop={form.handleDrop}
-          handleMealImageChange={form.handleMealImageChange}
-          mealImageBase64={form.mealImageBase64}
-          clearMealImage={form.clearMealImage}
-          nutritionData={form.nutritionData}
-          setNutritionData={form.setNutritionData}
-        />
+        <CollapsibleSection title="食事" icon="🍽️" defaultOpen>
+          <MealSection
+            mealDescription={form.mealDescription}
+            setMealDescription={form.setMealDescription}
+            handleEstimateFromText={form.handleEstimateFromText}
+            isAnalyzing={form.isAnalyzing}
+            isDragging={form.isDragging}
+            handleDragOver={form.handleDragOver}
+            handleDragLeave={form.handleDragLeave}
+            handleDrop={form.handleDrop}
+            handleMealImageChange={form.handleMealImageChange}
+            mealImageBase64={form.mealImageBase64}
+            clearMealImage={form.clearMealImage}
+            nutritionData={form.nutritionData}
+            setNutritionData={form.setNutritionData}
+          />
+        </CollapsibleSection>
 
         {form.modes.mode_ibd && (
-          <IbdSection
-            onUserEdit={form.markUserEdit}
-            toiletCount={form.toiletCount}
-            setToiletCount={form.setToiletCount}
-            painLevel={form.painLevel}
-            setPainLevel={form.setPainLevel}
-          />
+          <CollapsibleSection title="IBDチェック" icon="🏥">
+            <IbdSection
+              onUserEdit={form.markUserEdit}
+              toiletCount={form.toiletCount}
+              setToiletCount={form.setToiletCount}
+              painLevel={form.painLevel}
+              setPainLevel={form.setPainLevel}
+            />
+          </CollapsibleSection>
         )}
 
         {form.modes.mode_diet && (
-          <DietSection
-            weight={form.weight}
-            onUserEdit={form.markUserEdit}
-            bodyFat={form.bodyFat}
-            setBodyFat={form.setBodyFat}
-            calories={form.calories}
-            setCalories={form.setCalories}
-            protein={form.protein}
-            setProtein={form.setProtein}
-            steps={form.steps}
-            setSteps={form.setSteps}
-          />
+          <CollapsibleSection title="ボディメイク" icon="💪">
+            <DietSection
+              weight={form.weight}
+              onUserEdit={form.markUserEdit}
+              bodyFat={form.bodyFat}
+              setBodyFat={form.setBodyFat}
+              calories={form.calories}
+              setCalories={form.setCalories}
+              protein={form.protein}
+              setProtein={form.setProtein}
+              steps={form.steps}
+              setSteps={form.setSteps}
+            />
+          </CollapsibleSection>
         )}
 
         {form.modes.mode_alcohol && (
-          <AlcoholSection
-            onUserEdit={form.markUserEdit}
-            addedDrinks={form.addedDrinks}
-            selectedDrinkKey={form.selectedDrinkKey}
-            setSelectedDrinkKey={form.setSelectedDrinkKey}
-            drinkCount={form.drinkCount}
-            setDrinkCount={form.setDrinkCount}
-            handleAddDrink={form.handleAddDrink}
-            handleRemoveDrink={form.handleRemoveDrink}
-            drinkStartTime={form.drinkStartTime}
-            setDrinkStartTime={form.setDrinkStartTime}
-            drinkEndTime={form.drinkEndTime}
-            setDrinkEndTime={form.setDrinkEndTime}
-            currentTotalPureAlcohol={form.currentTotalPureAlcohol}
-            currentTotalMl={form.currentTotalMl}
-            previousAlcoholSummary={form.previousAlcoholSummary}
-            decompositionHours={form.decompositionHours}
-            soberTime={form.soberTime}
-            effectiveWeight={form.effectiveWeight}
-          />
+          <CollapsibleSection title="アルコール" icon="🍺">
+            <AlcoholSection
+              onUserEdit={form.markUserEdit}
+              addedDrinks={form.addedDrinks}
+              selectedDrinkKey={form.selectedDrinkKey}
+              setSelectedDrinkKey={form.setSelectedDrinkKey}
+              drinkCount={form.drinkCount}
+              setDrinkCount={form.setDrinkCount}
+              handleAddDrink={form.handleAddDrink}
+              handleRemoveDrink={form.handleRemoveDrink}
+              drinkStartTime={form.drinkStartTime}
+              setDrinkStartTime={form.setDrinkStartTime}
+              drinkEndTime={form.drinkEndTime}
+              setDrinkEndTime={form.setDrinkEndTime}
+              currentTotalPureAlcohol={form.currentTotalPureAlcohol}
+              currentTotalMl={form.currentTotalMl}
+              previousAlcoholSummary={form.previousAlcoholSummary}
+              decompositionHours={form.decompositionHours}
+              soberTime={form.soberTime}
+              effectiveWeight={form.effectiveWeight}
+            />
+          </CollapsibleSection>
         )}
 
         {form.modes.mode_mental && (
-          <MentalSection
-            onUserEdit={form.markUserEdit}
-            selectedEmotion={form.selectedEmotion}
-            setSelectedEmotion={form.setSelectedEmotion}
-            sleepQuality={form.sleepQuality}
-            setSleepQuality={form.setSleepQuality}
-            mentalDiary={form.mentalDiary}
-            setMentalDiary={form.setMentalDiary}
-          />
+          <CollapsibleSection title="メンタル" icon="🌿">
+            <MentalSection
+              onUserEdit={form.markUserEdit}
+              selectedEmotion={form.selectedEmotion}
+              setSelectedEmotion={form.setSelectedEmotion}
+              sleepQuality={form.sleepQuality}
+              setSleepQuality={form.setSleepQuality}
+              mentalDiary={form.mentalDiary}
+              setMentalDiary={form.setMentalDiary}
+            />
+          </CollapsibleSection>
         )}
 
         <div>

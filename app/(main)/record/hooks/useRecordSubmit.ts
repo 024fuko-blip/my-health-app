@@ -78,6 +78,7 @@ export interface SubmitFormSnapshot {
   painLevel: number;
   stoolType: string;
   toiletCount: number;
+  temperature: string;
   weight: string;
   bodyFat: string;
   calories: string;
@@ -148,6 +149,7 @@ export function useRecordSubmit({ router, getSnapshot, onSaveSuccess }: UseRecor
         modes: snap.modes,
         painLevel: snap.painLevel,
         toiletCount: snap.toiletCount,
+        temperature: snap.temperature,
         weight: snap.weight,
         bodyFat: snap.bodyFat,
         calories: snap.calories,

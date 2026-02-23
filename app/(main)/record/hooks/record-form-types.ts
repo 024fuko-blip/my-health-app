@@ -17,6 +17,7 @@ export interface HealthLogApiResponse {
   medication_taken?: boolean | null;
   medication_taken_detail?: string | null;
   general_mood?: number | null;
+  temperature?: number | null;
   meal_description?: string | null;
   period_status?: string | null;
   ai_comment?: string | null;
@@ -40,6 +41,7 @@ export interface HealthLogApiResponse {
 export interface CalendarEditForm {
   id?: string;
   general_mood?: number | null;
+  temperature?: number | null;
   pain_level?: number | null;
   meal_description?: string | null;
   memo?: string | null;
@@ -61,6 +63,7 @@ export interface HealthLogRow {
   medication_taken?: boolean | null;
   medication_taken_detail?: string | null;
   general_mood?: number | null;
+  temperature?: number | null;
   period_status?: string | null;
   meal_description?: string | null;
   pain_level?: number | null;

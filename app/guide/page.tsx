@@ -46,7 +46,7 @@ export default async function GuidePage({ searchParams }: Props) {
             <h2 className="text-lg font-bold text-gray-800">2. 記録をつける</h2>
           </div>
           <p className="text-sm text-gray-600 pl-12">
-            「記録」画面で体調・食事・睡眠などを入力して保存します。
+            「記録」画面で体調・食事・睡眠などを入力して保存します。体温・体重は大きな入力欄で記録しやすく、プロフィールで平熱・体重を設定しているとデフォルト値が自動で入ります。
           </p>
           <p className="text-sm text-gray-600 pl-12 mt-2">
             <strong>今日の記録プログレス</strong> … 今日を選択しているとき「今日の記録 2/6 項目」のように記入済みが表示されます。未記入は点線枠で示され、次に何をすべきか分かりやすくなっています。
@@ -192,7 +192,7 @@ export default async function GuidePage({ searchParams }: Props) {
             <p>「設定」はメニューから3つのページに分かれています。</p>
             <ul className="list-disc pl-4 space-y-1">
               <li><strong>基本設定</strong> … AIの口調（ツンデレ・厳しめ・あまあま）と、使用する健康管理モード（IBD・アルコール・メンタル・ボディメイク）のON/OFF。</li>
-              <li><strong>プロフィール</strong> … 名前・生年月日・性別・身長・体重・既往歴。AIのアドバイスや生理予測に使われます。</li>
+              <li><strong>プロフィール</strong> … 名前・生年月日・性別・身長・体重・平熱・既往歴。平熱と体重を設定すると、記録画面の体温・体重欄にデフォルト値が表示され入力が楽になります。AIのアドバイスや生理予測に使われます。</li>
               <li><strong>健康管理</strong> … 生理周期（最後の生理開始日・周期・期間）と、服薬中の薬と服用タイミング（朝・昼・晩・眠前）。服薬リマインダーで使う表示時刻もここで設定できます。</li>
               <li><strong>リマインダー</strong> … 今日の服薬スケジュールと、検診・通院予定（病院名・日時・メモ）。前日と当日にLINE・ウェブでリマインドされます。</li>
             </ul>

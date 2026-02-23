@@ -47,7 +47,7 @@ export function IbdSection({
             <button
               key={level}
               type="button"
-              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setPainLevel(level); }}
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setPainLevel(painLevel === level ? 1 : level); }}
               className={`py-3 rounded-lg border-2 font-bold transition record-btn touch-manipulation active:scale-95 ${
                 painLevel === level
                   ? level <= 2

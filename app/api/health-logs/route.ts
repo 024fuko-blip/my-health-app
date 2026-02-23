@@ -8,6 +8,14 @@ import { toStringOrNull, toNumOrNull } from '@/lib/json-utils';
 import type { HealthLog } from '@prisma/client';
 
 /** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
+function safeTemperature(val: unknown): number | null {
+  const n = toNumOrNull(val);
+  if (n == null) return null;
+  if (n < 30 || n > 45) return null;
+  return n;
+}
+
+/** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
 function toApiShape(log: HealthLog) {
   return {
     id: log.id,
@@ -17,6 +25,7 @@ function toApiShape(log: HealthLog) {
     medication_taken: log.medicationTaken,
     medication_taken_detail: log.medicationTakenDetail,
     general_mood: log.generalMood,
+    temperature: log.temperature,
     meal_description: log.mealDescription,
     period_status: log.periodStatus,
     ai_comment: log.aiComment,
@@ -93,6 +102,7 @@ export async function POST(req: Request) {
       medication_taken,
       medication_taken_detail,
       general_mood,
+      temperature,
       meal_description,
       period_status,
       ai_comment,
@@ -129,6 +139,7 @@ export async function POST(req: Request) {
           ? medication_taken_detail
           : null,
       generalMood: toNumOrNull(general_mood),
+      temperature: safeTemperature(temperature),
       mealDescription: toStringOrNull(meal_description),
       periodStatus: toStringOrNull(period_status),
       aiComment: toStringOrNull(ai_comment),
@@ -206,6 +217,7 @@ export async function PATCH(req: Request) {
     const data: Partial<{
       memo: string;
       generalMood: number;
+      temperature: number | null;
       mealDescription: string;
       painLevel: number;
       stoolType: string;
@@ -221,6 +233,7 @@ export async function PATCH(req: Request) {
     }> = {};
     if (updates.memo !== undefined) data.memo = toStringOrNull(updates.memo) ?? '';
     if (updates.general_mood !== undefined) data.generalMood = toNumOrNull(updates.general_mood) ?? 0;
+    if (updates.temperature !== undefined) data.temperature = safeTemperature(updates.temperature);
     if (updates.meal_description !== undefined) data.mealDescription = toStringOrNull(updates.meal_description) ?? '';
     if (updates.pain_level !== undefined) data.painLevel = toNumOrNull(updates.pain_level) ?? 0;
     if (updates.stool_type !== undefined) data.stoolType = toStringOrNull(updates.stool_type) ?? '';

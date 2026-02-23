@@ -81,8 +81,9 @@ function PeriodButtons({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            handleClick('生理終了', async () => {
-              if (onPeriodEnd && lastPeriodDate) {
+            const next = periodStatus === '生理終了' ? 'なし' : '生理終了';
+            handleClick(next, async () => {
+              if (next === '生理終了' && onPeriodEnd && lastPeriodDate) {
                 const start = new Date(lastPeriodDate);
                 const end = new Date(dateStr + 'T12:00:00');
                 const diff = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
@@ -130,6 +131,15 @@ interface BasicInfoSectionProps {
   selectedDate?: string;
   /** ユーザー編集時（loadLog による上書きを防ぐ） */
   onUserEdit?: () => void;
+  /** プロフィールから取得したデフォルト値（placeholder に使用） */
+  defaultTemperature?: string;
+  defaultWeight?: string;
+}
+
+function stepValue(current: string, fallback: string, step: number): string {
+  const base = current !== '' ? parseFloat(current) : parseFloat(fallback || '0');
+  if (Number.isNaN(base)) return fallback || '0';
+  return (base + step).toFixed(1);
 }
 
 export function BasicInfoSection({
@@ -154,6 +164,8 @@ export function BasicInfoSection({
   lastPeriodDate,
   selectedDate,
   onUserEdit,
+  defaultTemperature,
+  defaultWeight,
 }: BasicInfoSectionProps) {
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
@@ -164,7 +176,7 @@ export function BasicInfoSection({
             <button
               key={level}
               type="button"
-              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setGeneralMood(level); }}
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setGeneralMood(generalMood === level ? 3 : level); }}
               className={`flex-1 py-2 rounded-lg border-2 font-bold transition record-btn touch-manipulation active:scale-95 ${
                 generalMood === level
                   ? 'border-slate-500 bg-slate-100 text-slate-800'
@@ -180,30 +192,62 @@ export function BasicInfoSection({
       <div className="flex flex-wrap gap-4">
         <div>
           <label className="text-xs font-bold text-neutral-600 block mb-1">体温</label>
-          <div className="flex items-center gap-2 max-w-[100px]">
+          <div className="flex items-center gap-2 max-w-[180px]">
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setTemperature(stepValue(temperature, defaultTemperature || '36.5', -0.1)); }}
+              className="w-10 h-10 rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 flex items-center justify-center font-bold text-lg record-btn touch-manipulation"
+              aria-label="体温を下げる"
+            >
+              −
+            </button>
             <input
               type="number"
               step="0.1"
               value={temperature}
-              onChange={(e) => setTemperature(e.target.value)}
-              placeholder="36.5"
-              className="w-full min-w-0 p-2 border border-neutral-200 rounded-lg text-sm text-center"
+              onChange={(e) => { onUserEdit?.(); setTemperature(e.target.value); }}
+              placeholder={defaultTemperature || "36.5"}
+              className="w-full min-w-0 p-3 border border-neutral-200 rounded-lg text-lg font-bold text-center"
             />
-            <span className="text-sm text-neutral-400">℃</span>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setTemperature(stepValue(temperature, defaultTemperature || '36.5', 0.1)); }}
+              className="w-10 h-10 rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 flex items-center justify-center font-bold text-lg record-btn touch-manipulation"
+              aria-label="体温を上げる"
+            >
+              +
+            </button>
+            <span className="text-lg font-bold text-neutral-500">℃</span>
           </div>
         </div>
         <div>
           <label className="text-xs font-bold text-neutral-600 block mb-1">体重</label>
-          <div className="flex items-center gap-2 max-w-[100px]">
+          <div className="flex items-center gap-2 max-w-[180px]">
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setWeight(stepValue(weight, defaultWeight || '60.0', -0.1)); }}
+              className="w-10 h-10 rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 flex items-center justify-center font-bold text-lg record-btn touch-manipulation"
+              aria-label="体重を下げる"
+            >
+              −
+            </button>
             <input
               type="number"
               step="0.1"
               value={weight}
               onChange={(e) => { onUserEdit?.(); setWeight(e.target.value); }}
-              placeholder="60.0"
-              className="w-full min-w-0 p-2 border border-neutral-200 rounded-lg text-sm text-center"
+              placeholder={defaultWeight || "60.0"}
+              className="w-full min-w-0 p-3 border border-neutral-200 rounded-lg text-lg font-bold text-center"
             />
-            <span className="text-sm text-neutral-400">kg</span>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onUserEdit?.(); setWeight(stepValue(weight, defaultWeight || '60.0', 0.1)); }}
+              className="w-10 h-10 rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 flex items-center justify-center font-bold text-lg record-btn touch-manipulation"
+              aria-label="体重を上げる"
+            >
+              +
+            </button>
+            <span className="text-lg font-bold text-neutral-500">kg</span>
           </div>
         </div>
       </div>
@@ -288,7 +332,7 @@ export function BasicInfoSection({
               <button
                 key={level}
                 type="button"
-                onClick={(e) => { e.preventDefault(); onUserEdit?.(); setSkinCondition(level); }}
+                onClick={(e) => { e.preventDefault(); onUserEdit?.(); setSkinCondition(skinCondition === level ? 3 : level); }}
                 className={`py-2 rounded-lg border-2 font-bold transition record-btn touch-manipulation active:scale-95 ${
                   skinCondition === level
                     ? level >= 4

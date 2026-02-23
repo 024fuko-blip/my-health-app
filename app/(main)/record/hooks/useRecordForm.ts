@@ -93,14 +93,14 @@ export function useRecordForm() {
     (): SubmitFormSnapshot => ({
       date, memo, mentalDiary, gender, skinCondition, periodStatus,
       mealDescription, mealImageBase64, modes, painLevel, stoolType,
-      toiletCount, weight, bodyFat, calories, protein, steps,
+      toiletCount, temperature, weight, bodyFat, calories, protein, steps,
       exerciseMinutes, generalMood, selectedEmotion, sleepQuality,
       medications, medicationTaken, addedDrinks,
     }),
     [
       date, memo, mentalDiary, gender, skinCondition, periodStatus,
       mealDescription, mealImageBase64, modes, painLevel, stoolType,
-      toiletCount, weight, bodyFat, calories, protein, steps,
+      toiletCount, temperature, weight, bodyFat, calories, protein, steps,
       exerciseMinutes, generalMood, selectedEmotion, sleepQuality,
       medications, medicationTaken, addedDrinks,
     ]
@@ -146,13 +146,30 @@ export function useRecordForm() {
     const edit = lastUserEditRef.current;
     const recentEditSameDay = edit.date === today && Date.now() - edit.time < 5000;
     if (!recentEditSameDay) {
-      applyLogToForm(initData.todayLog, initData.medications, formSetters());
+      const defaults = {
+        temperature: initData.defaultTemperature,
+        weight: initData.defaultWeight,
+      };
+      applyLogToForm(initData.todayLog, initData.medications, formSetters(), defaults);
     }
   }, [initData, formSetters]);
 
   /* ---------- 日付変更時のログ読み込み ---------- */
+  const defaultsRef = useRef<{ temperature: string; weight: string }>({
+    temperature: '',
+    weight: '',
+  });
+  useEffect(() => {
+    if (initData) {
+      defaultsRef.current = {
+        temperature: initData.defaultTemperature,
+        weight: initData.defaultWeight,
+      };
+    }
+  }, [initData]);
   const applyLog = useCallback(
-    (log: HealthLogRow | null) => applyLogToForm(log, medications, formSetters()),
+    (log: HealthLogRow | null) =>
+      applyLogToForm(log, medications, formSetters(), defaultsRef.current),
     [medications, formSetters]
   );
 
@@ -208,6 +225,8 @@ export function useRecordForm() {
   /* ---------- 公開 API ---------- */
   return {
     loading, modes, aiPersonality, gender, periodSettings,
+    defaultTemperature: initData?.defaultTemperature ?? '',
+    defaultWeight: initData?.defaultWeight ?? '',
     date, setDate, markUserEdit,
     memo, setMemo,
     medicationTaken, setMedicationTaken, medications,

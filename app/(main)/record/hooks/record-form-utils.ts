@@ -33,7 +33,8 @@ export interface ApplyLogSetters {
 export function applyLogToForm(
   log: HealthLogRow | null,
   medications: { id: number; name: string; timings: string[] }[],
-  setters: ApplyLogSetters
+  setters: ApplyLogSetters,
+  defaults?: { temperature: string; weight: string }
 ) {
   const {
     setPreviousAlcoholSummary,
@@ -79,7 +80,7 @@ export function applyLogToForm(
     setPainLevel(1);
     setStoolType('普通');
     setToiletCount(0);
-    setTemperature('');
+    setTemperature(defaults?.temperature ?? '');
     setSkinCondition(3);
     setAddedDrinks([]);
     setDrinkStartTime('19:00');
@@ -87,7 +88,7 @@ export function applyLogToForm(
     setSelectedEmotion('');
     setSleepQuality('普通');
     setMentalDiary('');
-    setWeight('');
+    setWeight(defaults?.weight ?? '');
     setBodyFat('');
     setCalories('');
     setProtein('');
@@ -113,7 +114,9 @@ export function applyLogToForm(
   setStoolType(log.stool_type || '普通');
   const toiletMatch = (log.stool_type || '').match(/トイレ(\d+)回/);
   setToiletCount(toiletMatch ? parseInt(toiletMatch[1]) : 0);
-  setTemperature('');
+  setTemperature(
+    log.temperature != null ? String(log.temperature) : (defaults?.temperature ?? '')
+  );
   const skinMatch = (log.memo || '').match(/【肌】(\d)/);
   setSkinCondition(skinMatch ? parseInt(skinMatch[1]) : 3);
   setDrinkStartTime('19:00');
@@ -123,7 +126,7 @@ export function applyLogToForm(
   setSelectedEmotion(emotion ? emotion.label : '');
   setSleepQuality(log.sleep_quality || '普通');
   setMentalDiary('');
-  setWeight(log.weight != null ? String(log.weight) : '');
+  setWeight(log.weight != null ? String(log.weight) : (defaults?.weight ?? ''));
   setBodyFat(log.body_fat != null ? String(log.body_fat) : '');
   setCalories(log.calories != null ? String(log.calories) : '');
   setProtein(log.protein != null ? String(log.protein) : '');

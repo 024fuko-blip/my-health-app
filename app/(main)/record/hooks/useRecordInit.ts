@@ -22,6 +22,8 @@ export interface InitData {
   periodSettings: PeriodSettings;
   medications: Medication[];
   todayLog: HealthLogRow | null;
+  defaultTemperature: string;
+  defaultWeight: string;
 }
 
 /**
@@ -52,6 +54,8 @@ export function useRecordInit(router: RouterLike) {
         let aiPersonality = 'tsundere';
         let gender = 'unspecified';
         let meds: Medication[] = [];
+        let defaultTemperature = '';
+        let defaultWeight = '';
         let periodSettings: PeriodSettings = {
           lastPeriodDate: '',
           periodCycle: 28,
@@ -93,6 +97,10 @@ export function useRecordInit(router: RouterLike) {
           } catch {
             /* keep defaults */
           }
+
+          if (settings.normal_temperature != null)
+            defaultTemperature = String(settings.normal_temperature);
+          if (settings.weight != null) defaultWeight = String(settings.weight);
         }
 
         const today = new Date().toISOString().split('T')[0];
@@ -110,6 +118,8 @@ export function useRecordInit(router: RouterLike) {
           periodSettings,
           medications: meds,
           todayLog: (log as HealthLogRow) ?? null,
+          defaultTemperature,
+          defaultWeight,
         });
       } catch (err) {
         console.error('Record init error:', err);

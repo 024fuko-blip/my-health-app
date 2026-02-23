@@ -14,6 +14,7 @@ export default function SettingsProfilePage() {
     gender: "unspecified",
     height: "",
     weight: "",
+    normal_temperature: "",
     medical_history_text: "",
     prefecture: "",
     latitude: null as number | null,
@@ -52,6 +53,7 @@ export default function SettingsProfilePage() {
           gender: data.gender ?? "unspecified",
           height: data.height != null ? String(data.height) : "",
           weight: data.weight != null ? String(data.weight) : "",
+          normal_temperature: data.normal_temperature != null ? String(data.normal_temperature) : "",
           medical_history_text: medText,
           prefecture: data.prefecture ?? "",
           latitude: data.latitude ?? null,
@@ -82,6 +84,7 @@ export default function SettingsProfilePage() {
       gender: profile.gender,
       height: profile.height ? profile.height : null,
       weight: profile.weight ? profile.weight : null,
+      normal_temperature: profile.normal_temperature ? profile.normal_temperature : null,
       medical_history: medicalData,
       prefecture: profile.prefecture || null,
       latitude: profile.latitude,
@@ -141,7 +144,7 @@ export default function SettingsProfilePage() {
             <option value="female">女性</option>
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">身長 (cm)</label>
             <input
@@ -164,6 +167,19 @@ export default function SettingsProfilePage() {
               onChange={(e) => setProfile((p) => ({ ...p, weight: e.target.value }))}
               className="w-full p-2 border rounded"
               placeholder="60"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">平熱 (℃)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="34"
+              max="42"
+              value={profile.normal_temperature}
+              onChange={(e) => setProfile((p) => ({ ...p, normal_temperature: e.target.value }))}
+              className="w-full p-2 border rounded"
+              placeholder="36.5"
             />
           </div>
         </div>
