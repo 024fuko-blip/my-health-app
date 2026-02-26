@@ -96,13 +96,13 @@ export async function GET() {
         : null;
 
       const happiness = pet ? Math.min(MAX_HAPPINESS, pet.happiness ?? 50) : 0;
-      const expPoints = pet ? (pet as { expPoints?: number }).expPoints ?? 0 : 0;
+      const expPoints = pet?.expPoints ?? 0;
       const mood = getMoodFromHappiness(happiness);
       const expToNext = getExpToNextLevel(expPoints);
       const level = getLevelFromExp(expPoints);
       const stage = getEvolutionStage(level);
 
-      const currentRoomId = (pet as { currentRoomId?: string | null } | null)?.currentRoomId ?? null;
+      const currentRoomId = pet?.currentRoomId ?? null;
       const catalog = buildShopCatalog(inventory, pet?.currentOutfitId ?? null, currentRoomId);
 
       return NextResponse.json({

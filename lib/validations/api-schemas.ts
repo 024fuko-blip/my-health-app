@@ -229,9 +229,17 @@ export const periodStatusPutSchema = z.object({
 });
 
 /** health-logs/medication-status PUT ボディ */
+const RESERVED_MED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 export const medicationStatusPutSchema = z.object({
   date: dateStrSchema,
-  med_key: z.string().min(1).refine((v) => v.includes('_'), { message: 'med_key must contain _ separator' }),
+  med_key: z
+    .string()
+    .min(1)
+    .max(64)
+    .refine((v) => v.includes('_'), { message: 'med_key must contain _ separator' })
+    .refine((v) => !RESERVED_MED_KEYS.has(v.toLowerCase()), {
+      message: 'med_key contains reserved identifier',
+    }),
   taken: z.boolean(),
 });
 

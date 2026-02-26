@@ -16,16 +16,21 @@ import {
   getYearRangeFromDate,
 } from '@/lib/date-utils';
 
+const INSIGHT_LEVELS = ['weekly', 'monthly', 'yearly'] as const;
+
 export async function GET(req: NextRequest) {
   return withSession(async (session) => {
     const { searchParams } = new URL(req.url);
-    const level = searchParams.get('level') as InsightLevel | null;
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10) || 20, 100);
+    const rawLevel = searchParams.get('level');
+    const level: InsightLevel | null =
+      rawLevel && INSIGHT_LEVELS.includes(rawLevel as InsightLevel) ? (rawLevel as InsightLevel) : null;
+    const limit = Math.min(
+      Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10) || 20),
+      100
+    );
 
     const where: { userId: string; level?: string } = { userId: session.userId };
-    if (level && ['weekly', 'monthly', 'yearly'].includes(level)) {
-      where.level = level;
-    }
+    if (level) where.level = level;
 
     const insights = await prisma.insight.findMany({
       where,

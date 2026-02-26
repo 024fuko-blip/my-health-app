@@ -35,6 +35,7 @@ export async function GET() {
       });
     } catch (error) {
       console.error('Correlation stats GET error:', error);
+      // ダッシュボード表示のため、エラー時は空データを200で返す（グレースフルデグラデーション）
       return NextResponse.json(
         { correlations: {}, triggers: [] },
         { status: 200 }

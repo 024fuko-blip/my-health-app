@@ -151,7 +151,7 @@ export async function PATCH(req: Request) {
       return errorResponse('Not Found', HTTP_STATUS.NOT_FOUND);
     }
 
-    const data: Partial<{
+    type PatchData = Partial<{
       memo: string;
       generalMood: number;
       temperature: number | null;
@@ -167,22 +167,35 @@ export async function PATCH(req: Request) {
       bodyFat: number | null;
       calories: number | null;
       protein: number | null;
-    }> = {};
-    if (updates.memo !== undefined) data.memo = toStringOrNull(updates.memo) ?? '';
-    if (updates.general_mood !== undefined) data.generalMood = toNumOrNull(updates.general_mood) ?? 0;
-    if (updates.temperature !== undefined) data.temperature = safeTemperature(updates.temperature);
-    if (updates.meal_description !== undefined) data.mealDescription = toStringOrNull(updates.meal_description) ?? '';
-    if (updates.pain_level !== undefined) data.painLevel = toNumOrNull(updates.pain_level) ?? 0;
-    if (updates.stool_type !== undefined) data.stoolType = toStringOrNull(updates.stool_type) ?? '';
-    if (updates.weight !== undefined) data.weight = toNumOrNull(updates.weight);
-    if (updates.steps !== undefined) data.steps = toNumOrNull(updates.steps);
-    if (updates.period_status !== undefined) data.periodStatus = toStringOrNull(updates.period_status);
-    if (updates.alcohol_amount !== undefined) data.alcoholAmount = Number(updates.alcohol_amount) || 0;
-    if (updates.stress_level !== undefined) data.stressLevel = toNumOrNull(updates.stress_level);
-    if (updates.sleep_quality !== undefined) data.sleepQuality = toStringOrNull(updates.sleep_quality);
-    if (updates.body_fat !== undefined) data.bodyFat = toNumOrNull(updates.body_fat);
-    if (updates.calories !== undefined) data.calories = toNumOrNull(updates.calories);
-    if (updates.protein !== undefined) data.protein = toNumOrNull(updates.protein);
+    }>;
+    const PATCH_MAP: Array<{
+      bodyKey: keyof typeof updates;
+      dbKey: keyof PatchData;
+      transform: (v: unknown) => unknown;
+    }> = [
+      { bodyKey: 'memo', dbKey: 'memo', transform: (v) => toStringOrNull(v) ?? '' },
+      { bodyKey: 'general_mood', dbKey: 'generalMood', transform: (v) => toNumOrNull(v) ?? 0 },
+      { bodyKey: 'temperature', dbKey: 'temperature', transform: (v) => safeTemperature(v) },
+      { bodyKey: 'meal_description', dbKey: 'mealDescription', transform: (v) => toStringOrNull(v) ?? '' },
+      { bodyKey: 'pain_level', dbKey: 'painLevel', transform: (v) => toNumOrNull(v) ?? 0 },
+      { bodyKey: 'stool_type', dbKey: 'stoolType', transform: (v) => toStringOrNull(v) ?? '' },
+      { bodyKey: 'weight', dbKey: 'weight', transform: (v) => toNumOrNull(v) },
+      { bodyKey: 'steps', dbKey: 'steps', transform: (v) => toNumOrNull(v) },
+      { bodyKey: 'period_status', dbKey: 'periodStatus', transform: (v) => toStringOrNull(v) },
+      { bodyKey: 'alcohol_amount', dbKey: 'alcoholAmount', transform: (v) => Number(v) || 0 },
+      { bodyKey: 'stress_level', dbKey: 'stressLevel', transform: (v) => toNumOrNull(v) },
+      { bodyKey: 'sleep_quality', dbKey: 'sleepQuality', transform: (v) => toStringOrNull(v) },
+      { bodyKey: 'body_fat', dbKey: 'bodyFat', transform: (v) => toNumOrNull(v) },
+      { bodyKey: 'calories', dbKey: 'calories', transform: (v) => toNumOrNull(v) },
+      { bodyKey: 'protein', dbKey: 'protein', transform: (v) => toNumOrNull(v) },
+    ];
+
+    const data: PatchData = {};
+    for (const { bodyKey, dbKey, transform } of PATCH_MAP) {
+      if (updates[bodyKey] !== undefined) {
+        (data as Record<string, unknown>)[dbKey] = transform(updates[bodyKey]);
+      }
+    }
 
     const log = await prisma.healthLog.update({
       where: { id: String(id), userId: session.userId },
