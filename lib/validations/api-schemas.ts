@@ -94,7 +94,7 @@ export const userSettingsPutSchema = z.object({
 export type UserSettingsPutBody = z.infer<typeof userSettingsPutSchema>;
 
 /** advice POST ボディ（daily/weekly 共通、ログは weekly のみ） */
-const logEntrySchema = z.record(z.unknown());
+const logEntrySchema = z.record(z.string(), z.unknown());
 
 export const advicePostSchema = z.object({
   mode: z.enum(['daily', 'weekly']).optional(),

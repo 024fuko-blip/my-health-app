@@ -39,7 +39,7 @@ export async function parseJsonBody<T = Record<string, unknown>>(
       const parsed = schema.safeParse(raw);
       if (!parsed.success) {
         const msg =
-          parsed.error.errors
+          parsed.error.issues
             .map((e) => `${e.path.join('.')}: ${e.message}`)
             .join('; ') || 'Validation failed';
         return {

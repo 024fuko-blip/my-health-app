@@ -68,11 +68,12 @@ export default function LineLinkCard() {
     setRichMenuMsg(null);
     try {
       const result = await apiPost<{ ok?: boolean; error?: string }>("/api/line/setup-richmenu", {});
-      const data = result.ok ? result.data : { error: result.error };
-      if (result.ok && data.ok) {
+      if (result.ok && result.data.ok) {
         setRichMenuMsg("✓ Rich Menu を設定しました");
       } else {
-        setRichMenuMsg(data.error || `エラー (${result.status})`);
+        const errorMsg = result.ok ? result.data.error : result.error;
+        const statusCode = !result.ok ? result.status : undefined;
+        setRichMenuMsg(errorMsg || `エラー${statusCode ? ` (${statusCode})` : ""}`);
       }
     } catch {
       setRichMenuMsg("通信エラー");
