@@ -78,8 +78,8 @@ export function HealthChart({
           ))}
         </div>
 
-        <div className="h-72 w-full">
-          {chartData.length > 0 && selectedItems.size > 0 ? (
+        <div className="h-72 w-full min-h-[180px]">
+          {chartData.length > 0 && selectedItems.size > 0 && sectionOpen.chart ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -117,11 +117,11 @@ export function HealthChart({
             </ResponsiveContainer>
           ) : chartData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-gray-600 text-sm">
-              この期間の記録がまだないわ。記録画面で入力してから出直しなさい！
+              この期間の記録がまだない。記録画面で入力してから確認してね。
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-600 text-sm">
-              表示する項目を選択してちょうだい！
+              表示する項目を選択してね
             </div>
           )}
         </div>

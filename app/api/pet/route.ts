@@ -119,8 +119,8 @@ export async function GET() {
               level,
               exp_points: pet.expPoints,
               exp_to_next: expToNext,
-              adopted_at: (pet as { adoptedAt?: Date }).adoptedAt?.toISOString() ?? null,
-              feed_count: (pet as { feedCount?: number }).feedCount ?? 0,
+              adopted_at: pet.adoptedAt?.toISOString() ?? null,
+              feed_count: pet.feedCount ?? 0,
               mood_face: mood.face,
               mood_label: mood.label,
               mood_comment: mood.comment,
@@ -132,7 +132,7 @@ export async function GET() {
         inventory,
         ...catalog,
         current_room_id: currentRoomId,
-        placed_furniture: ((pet as { placedFurniture?: unknown } | null)?.placedFurniture ?? []) as Array<{ itemId: string; position: string }>,
+        placed_furniture: (pet?.placedFurniture as Array<{ itemId: string; position: string }> | null) ?? [],
       });
     } catch (error) {
       console.error('pet GET error:', error);

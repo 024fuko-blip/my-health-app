@@ -20,6 +20,10 @@ vi.mock('@/lib/game-stats', () => ({
   updateStatsAfterLog: vi.fn(),
 }));
 
+vi.mock('@/lib/correlation/save', () => ({
+  updateCorrelationStatsAfterLog: vi.fn(),
+}));
+
 import { requireSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 

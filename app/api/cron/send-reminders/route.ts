@@ -154,17 +154,17 @@ export async function POST(req: Request) {
         } else {
           untakenNames.push(...medsAtSlot.medications);
         }
-        if (untakenNames.length === 0) continue;
-
-        let body = `${untakenNames.join('、')} の時間です`;
-        const latestAiComment = latestAiMap.get(userId);
-        if (latestAiComment?.trim()) {
-          const comment = latestAiComment.trim().replace(/\s+/g, ' ');
-          const truncated = comment.length > 60 ? comment.slice(0, 57) + '…' : comment;
-          const fromLabel = getLineFallback('reminder_from', settings?.aiPersonality ?? null);
-          body += `\n\n${fromLabel}: ${truncated}`;
+        if (untakenNames.length > 0) {
+          let body = `${untakenNames.join('、')} の時間です`;
+          const latestAiComment = latestAiMap.get(userId);
+          if (latestAiComment?.trim()) {
+            const comment = latestAiComment.trim().replace(/\s+/g, ' ');
+            const truncated = comment.length > 60 ? comment.slice(0, 57) + '…' : comment;
+            const fromLabel = getLineFallback('reminder_from', settings?.aiPersonality ?? null);
+            body += `\n\n${fromLabel}: ${truncated}`;
+          }
+          sent += await broadcastToUser(subs, lineUserId, '💊 服薬リマインダー', body);
         }
-        sent += await broadcastToUser(subs, lineUserId, '💊 服薬リマインダー', body);
       }
 
       // 検診リマインダー（8時台の最初の実行時のみ）

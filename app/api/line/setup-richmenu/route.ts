@@ -17,7 +17,7 @@ export async function POST() {
   return withSession(async (session) => {
     const env = getServerEnv();
     const adminEmails = (env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
-    if (adminEmails.length > 0 && !adminEmails.includes(session.email ?? '')) {
+    if (adminEmails.length === 0 || !adminEmails.includes(session.email ?? '')) {
       return errorResponse('この操作は管理者のみ実行できます', 403);
     }
 

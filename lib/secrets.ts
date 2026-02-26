@@ -46,6 +46,7 @@ const SECRET_NAMES = [
   'VAPID_PUBLIC_KEY',
   'VAPID_PRIVATE_KEY',
   'CRON_SECRET',
+  'ADMIN_EMAILS',
 ] as const;
 
 /**
