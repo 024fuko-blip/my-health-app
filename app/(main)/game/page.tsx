@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ensureSession, handleUnauthorized, apiFetch } from "@/lib/api-client";
+import { BADGE_DEFS } from "@/lib/game-stats";
 
-const DEFAULT_BADGES = [
-  { id: "streak_3", name: "3日連続記録", emoji: "🔥", earned: false, earnedAt: null as string | null },
-  { id: "streak_7", name: "7日連続記録", emoji: "⭐", earned: false, earnedAt: null },
-  { id: "streak_14", name: "2週間連続", emoji: "🌟", earned: false, earnedAt: null },
-  { id: "streak_30", name: "30日連続記録", emoji: "👑", earned: false, earnedAt: null },
-  { id: "first_log", name: "初記録", emoji: "🎉", earned: false, earnedAt: null },
-];
+const DEFAULT_BADGES = BADGE_DEFS.map((def) => ({
+  id: def.id,
+  name: def.name,
+  emoji: def.emoji as string,
+  earned: false,
+  earnedAt: null as string | null,
+}));
 
 interface Badge {
   id: string;

@@ -14,17 +14,26 @@ export interface NdbDrug {
   isGeneric: boolean;
 }
 
-const drugs: NdbDrug[] = ndbDrugsJson as NdbDrug[];
+interface NdbDrugIndexed extends NdbDrug {
+  _lower: string;
+}
+
+const drugs: NdbDrugIndexed[] = (ndbDrugsJson as NdbDrug[]).map((d) => ({
+  ...d,
+  _lower: d.name.toLowerCase(),
+}));
+
+const MAX_QUERY_LEN = 100;
 
 /** 部分一致で医薬品を検索。limit 件まで返す。 */
 export function searchDrugs(query: string, limit = 20): NdbDrug[] {
-  const q = query.trim().toLowerCase();
+  const q = query.trim().toLowerCase().slice(0, MAX_QUERY_LEN);
   if (!q) return [];
 
   const results: NdbDrug[] = [];
 
   for (const drug of drugs) {
-    if (drug.name.toLowerCase().includes(q)) {
+    if (drug._lower.includes(q)) {
       results.push(drug);
       if (results.length >= limit) break;
     }

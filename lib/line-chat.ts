@@ -3,8 +3,7 @@
  * 既往歴・薬・年齢・性別・生理周期・IBD 等を前提に返信。
  */
 
-import OpenAI from 'openai';
-import { getServerEnv } from './env';
+import { chatCompletion, isOpenAIAvailable } from './openai-client';
 import { getCharaPrompt } from './chara-settings';
 import { getLineFallback } from './line-fallback-messages';
 import { safeParseJson } from './json-utils';
@@ -83,8 +82,7 @@ export async function replyAsCompanion(
     ? userMessage.slice(0, MAX_MESSAGE_LENGTH) + '…'
     : userMessage;
 
-  const env = getServerEnv();
-  if (!env.OPENAI_API_KEY) return getLineFallback('api_unavailable', context.aiPersonality);
+  if (!isOpenAIAvailable()) return getLineFallback('api_unavailable', context.aiPersonality);
 
   const chara = getCharaPrompt(context.aiPersonality, 'line');
 
@@ -106,15 +104,9 @@ ${context.modeIbd ? '- IBD（炎症性腸疾患）あり。腸に負担のかか
 - 150文字以内で簡潔に。
 `;
 
-  const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: truncated },
-    ],
-    temperature: 0.7,
+  return chatCompletion({
+    systemPrompt,
+    userContent: truncated,
+    fallbackMessage: getLineFallback('ai_empty', context.aiPersonality),
   });
-
-  return completion.choices[0]?.message?.content?.trim() ?? getLineFallback('ai_empty', context.aiPersonality);
 }

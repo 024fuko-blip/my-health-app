@@ -1,6 +1,5 @@
 /** Open-Meteo 天気取得（API キー不要） */
-const DEFAULT_LAT = 35.6762;
-const DEFAULT_LON = 139.6503;
+import { DEFAULT_COORDS } from '@/lib/constants';
 
 const DESC_MAP: Record<number, string> = {
   0: '晴れ', 1: 'ほぼ晴れ', 2: '晴れ時々曇り', 3: '曇り',
@@ -13,7 +12,7 @@ export interface WeatherInfo {
   weatherCode?: number;
 }
 
-export async function fetchWeather(lat = DEFAULT_LAT, lon = DEFAULT_LON): Promise<WeatherInfo | null> {
+export async function fetchWeather(lat: number = DEFAULT_COORDS.lat, lon: number = DEFAULT_COORDS.lon): Promise<WeatherInfo | null> {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
     const res = await fetch(url);

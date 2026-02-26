@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { parseJsonBody, withSession } from "@/lib/api-utils";
+import { parseJsonBody, withSession, errorResponse } from "@/lib/api-utils";
 import { MAX_HAPPINESS } from "@/lib/pet-shop";
 
 const TODAY = () => new Date().toISOString().split("T")[0];
@@ -15,158 +15,183 @@ const MinigamePayloadSchema = z.object({
   pairsMatched: z.number().optional().default(0),
 });
 
+type MinigamePayload = z.infer<typeof MinigamePayloadSchema>;
+
+const GAME_CONFIG: Record<
+  string,
+  {
+    dailyLimit: number;
+    limitError: string;
+    calcPoints: (p: MinigamePayload) => { points: number; happiness: number };
+    lastKey: string;
+    usesCount: boolean;
+  }
+> = {
+  catch: {
+    dailyLimit: 3,
+    limitError: "本日のキャッチゲームは3回までです",
+    calcPoints: ({ score = 0 }) => {
+      const s = Math.max(0, Math.min(30, Math.floor(score)));
+      return { points: s * 5, happiness: Math.min(20, s * 2) };
+    },
+    lastKey: "catch",
+    usesCount: true,
+  },
+  pet: {
+    dailyLimit: 1,
+    limitError: "本日のなでなでは1回までです",
+    calcPoints: ({ count = 0 }) => {
+      const c = Math.max(0, Math.min(100, Math.floor(count)));
+      return { points: 10 + Math.min(40, c * 2), happiness: Math.min(15, Math.floor(c / 5)) };
+    },
+    lastKey: "pet",
+    usesCount: false,
+  },
+  quiz: {
+    dailyLimit: 1,
+    limitError: "本日のクイズは1回までです",
+    calcPoints: ({ correct }) => ({ points: correct ? 50 : 10, happiness: correct ? 10 : 2 }),
+    lastKey: "quiz",
+    usesCount: false,
+  },
+  sudoku: {
+    dailyLimit: 1,
+    limitError: "本日の数独は1回までです",
+    calcPoints: ({ completed }) => ({
+      points: completed ? 40 : 5,
+      happiness: completed ? 12 : 2,
+    }),
+    lastKey: "sudoku",
+    usesCount: false,
+  },
+  memory: {
+    dailyLimit: 1,
+    limitError: "本日の神経衰弱は1回までです",
+    calcPoints: ({ pairsMatched = 0 }) => {
+      const p = Math.min(8, Math.max(0, Math.floor(pairsMatched)));
+      return {
+        points: p >= 8 ? 50 : 10 + p * 5,
+        happiness: p >= 8 ? 12 : Math.min(8, 2 + p),
+      };
+    },
+    lastKey: "memory",
+    usesCount: false,
+  },
+};
+
+function checkDailyLimit(
+  gameType: string,
+  last: Record<string, string>,
+  today: string
+): string | null {
+  const config = GAME_CONFIG[gameType];
+  if (!config) return "不正なゲームタイプです";
+
+  if (config.usesCount) {
+    const [lastDate, lastCount] = (last[config.lastKey] ?? ":0").split(":");
+    const count = lastDate === today ? parseInt(lastCount || "0", 10) : 0;
+    if (count >= config.dailyLimit) return config.limitError;
+    return null;
+  }
+
+  if (last[config.lastKey] === today) return config.limitError;
+  return null;
+}
+
+function buildNewLastValues(
+  gameType: string,
+  last: Record<string, string>,
+  today: string
+): Record<string, string> {
+  const config = GAME_CONFIG[gameType];
+  if (!config) return last;
+
+  const result = { ...last };
+  if (config.usesCount) {
+    const [lastDate, lastCount] = (last[config.lastKey] ?? ":0").split(":");
+    const prevCount = lastDate === today ? parseInt(lastCount || "0", 10) : 0;
+    result[config.lastKey] = `${today}:${Math.min(config.dailyLimit, prevCount + 1)}`;
+  } else {
+    result[config.lastKey] = today;
+  }
+  return result;
+}
+
 /** POST: ミニゲーム結果を送信（ポイント・幸福度加算、日次制限チェック） */
 export async function POST(req: Request) {
   return withSession(async (session) => {
-    try {
-      const parsed = await parseJsonBody(req, MinigamePayloadSchema);
-      if (!parsed.ok) return parsed.error;
-      const {
-        game_type,
-        score = 0,
-        count = 0,
-        correct = false,
-        completed = false,
-        pairsMatched = 0,
-      } = parsed.data;
+    const parsed = await parseJsonBody(req, MinigamePayloadSchema);
+    if (!parsed.ok) return parsed.error;
+    const payload = parsed.data;
+    const { game_type } = payload;
 
-      const pet = await prisma.userPet.findUnique({
+    const config = GAME_CONFIG[game_type];
+    if (!config) {
+      return errorResponse("不正なゲームタイプです", 400);
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const pet = await tx.userPet.findUnique({
         where: { userId: session.userId },
       });
       if (!pet) {
-        return NextResponse.json(
-          { error: "ペットがいません" },
-          { status: 400 }
-        );
+        return { error: "ペットがいません" } as const;
       }
 
-      const lastJson = ((pet as { lastMinigameAt?: Record<string, string> })
+      const last = ((pet as { lastMinigameAt?: Record<string, string> })
         .lastMinigameAt ?? {}) as Record<string, string>;
-      const last = lastJson;
       const today = TODAY();
 
-      if (game_type === "catch") {
-        const catchToday = (last["catch"] ?? "").split(":")[0];
-        const catchCount = parseInt((last["catch"] ?? "").split(":")[1] || "0", 10);
-        if (catchToday === today && catchCount >= 3) {
-          return NextResponse.json(
-            { error: "本日のキャッチゲームは3回までです" },
-            { status: 400 }
-          );
-        }
-      } else if (game_type === "pet") {
-        if (last["pet"] === today) {
-          return NextResponse.json(
-            { error: "本日のなでなでは1回までです" },
-            { status: 400 }
-          );
-        }
-      } else if (game_type === "quiz") {
-        if (last["quiz"] === today) {
-          return NextResponse.json(
-            { error: "本日のクイズは1回までです" },
-            { status: 400 }
-          );
-        }
-      } else if (game_type === "sudoku") {
-        if (last["sudoku"] === today) {
-          return NextResponse.json(
-            { error: "本日の数独は1回までです" },
-            { status: 400 }
-          );
-        }
-      } else if (game_type === "memory") {
-        if (last["memory"] === today) {
-          return NextResponse.json(
-            { error: "本日の神経衰弱は1回までです" },
-            { status: 400 }
-          );
-        }
+      const limitError = checkDailyLimit(game_type, last, today);
+      if (limitError) {
+        return { error: limitError } as const;
       }
 
-      let pointsEarned = 0;
-      let happinessGain = 0;
+      const { points: pointsEarned, happiness: happinessGain } = config.calcPoints(payload);
+      const newHappiness = Math.min(MAX_HAPPINESS, pet.happiness + happinessGain);
+      const newLastValues = buildNewLastValues(game_type, last, today);
 
-      if (game_type === "catch") {
-        const s = Math.max(0, Math.min(30, Math.floor(score)));
-        pointsEarned = s * 5;
-        happinessGain = Math.min(20, s * 2);
-      } else if (game_type === "pet") {
-        const c = Math.max(0, Math.min(100, Math.floor(count)));
-        pointsEarned = 10 + Math.min(40, c * 2);
-        happinessGain = Math.min(15, Math.floor(c / 5));
-      } else if (game_type === "quiz") {
-        pointsEarned = correct ? 50 : 10;
-        happinessGain = correct ? 10 : 2;
-      } else if (game_type === "sudoku") {
-        pointsEarned = completed ? 40 : 5;
-        happinessGain = completed ? 12 : 2;
-      } else if (game_type === "memory") {
-        const p = Math.min(8, Math.max(0, Math.floor(pairsMatched)));
-        pointsEarned = p >= 8 ? 50 : 10 + p * 5;
-        happinessGain = p >= 8 ? 12 : Math.min(8, 2 + p);
-      }
-
-      const newHappiness = Math.min(
-        MAX_HAPPINESS,
-        pet.happiness + happinessGain
-      );
-
-      let newLastCatch = last["catch"] ?? "";
-      if (game_type === "catch") {
-        const [lastDate, lastCount] = (last["catch"] ?? ":0").split(":");
-        const prevCount = lastDate === today ? parseInt(lastCount || "0", 10) : 0;
-        newLastCatch = `${today}:${Math.min(3, prevCount + 1)}`;
-      }
-      const newLastPet = game_type === "pet" ? today : last["pet"] ?? "";
-      const newLastQuiz = game_type === "quiz" ? today : last["quiz"] ?? "";
-      const newLastSudoku = game_type === "sudoku" ? today : last["sudoku"] ?? "";
-      const newLastMemory = game_type === "memory" ? today : last["memory"] ?? "";
-
-      const gameStats = await prisma.userGameStats.findUnique({
+      const gameStats = await tx.userGameStats.findUnique({
         where: { userId: session.userId },
       });
       const currentPoints = gameStats?.totalPoints ?? 0;
 
-      await prisma.$transaction([
-        prisma.userPet.update({
-          where: { userId: session.userId },
-          data: {
-            happiness: newHappiness,
-            lastMinigameAt: {
-              catch: newLastCatch,
-              pet: newLastPet,
-              quiz: newLastQuiz,
-              sudoku: newLastSudoku,
-              memory: newLastMemory,
-            },
-          },
-        }),
-        prisma.userGameStats.upsert({
-          where: { userId: session.userId },
-          create: {
-            userId: session.userId,
-            totalPoints: currentPoints + pointsEarned,
-          },
-          update: {
-            totalPoints: currentPoints + pointsEarned,
-          },
-        }),
-      ]);
-
-      return NextResponse.json({
-        ok: true,
-        points_earned: pointsEarned,
-        happiness_gain: happinessGain,
-        new_happiness: newHappiness,
-        new_points: currentPoints + pointsEarned,
+      await tx.userPet.update({
+        where: { userId: session.userId },
+        data: {
+          happiness: newHappiness,
+          lastMinigameAt: newLastValues,
+        },
       });
-    } catch (error) {
-      console.error("pet minigame POST error:", error);
-      return NextResponse.json(
-        { error: "処理に失敗しました" },
-        { status: 500 }
-      );
+      await tx.userGameStats.upsert({
+        where: { userId: session.userId },
+        create: {
+          userId: session.userId,
+          totalPoints: currentPoints + pointsEarned,
+        },
+        update: {
+          totalPoints: currentPoints + pointsEarned,
+        },
+      });
+
+      return {
+        pointsEarned,
+        happinessGain,
+        newHappiness,
+        newPoints: currentPoints + pointsEarned,
+      } as const;
+    });
+
+    if ('error' in result) {
+      return errorResponse(result.error!, 400);
     }
+
+    return NextResponse.json({
+      ok: true,
+      points_earned: result.pointsEarned,
+      happiness_gain: result.happinessGain,
+      new_happiness: result.newHappiness,
+      new_points: result.newPoints,
+    });
   });
 }

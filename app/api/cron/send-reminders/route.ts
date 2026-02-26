@@ -9,6 +9,7 @@ import prisma from '@/lib/prisma';
 import { sendPushNotification } from '@/lib/web-push';
 import { sendLinePush } from '@/lib/line';
 import { getServerEnv } from '@/lib/env';
+import { timingSafeCompare, errorResponse } from '@/lib/api-utils';
 import { getTodayJST, getTomorrowJST } from '@/lib/date-utils';
 import { buildMedicationSchedule } from '@/lib/medication-schedule';
 import { safeParseJson } from '@/lib/json-utils';
@@ -33,12 +34,31 @@ function shouldSendCheckupReminders(): boolean {
   return jst.getHours() === 8 && jst.getMinutes() < 15;
 }
 
+/** Push + LINE でメッセージを送信。送信成功数を返す */
+async function broadcastToUser(
+  subs: Array<{ endpoint: string; p256dh: string; auth: string }>,
+  lineUserId: string | null,
+  title: string,
+  body: string,
+): Promise<number> {
+  let sent = 0;
+  for (const sub of subs) {
+    const ok = await sendPushNotification(
+      { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+      { title, body, url: '/reminders' },
+    );
+    if (ok) sent++;
+  }
+  if (lineUserId && (await sendLinePush(lineUserId, `${title}\n${body}`))) sent++;
+  return sent;
+}
+
 export async function POST(req: Request) {
   try {
     const cronSecret = getServerEnv().CRON_SECRET;
     const headerSecret = req.headers.get('X-Cron-Secret');
-    if (!cronSecret || headerSecret !== cronSecret) {
-      return new NextResponse('Forbidden', { status: 403 });
+    if (!timingSafeCompare(headerSecret, cronSecret)) {
+      return errorResponse('Forbidden', 403);
     }
 
     const subscriptions = await prisma.pushSubscription.findMany({
@@ -62,27 +82,65 @@ export async function POST(req: Request) {
       byUser.set(sub.userId, list);
     }
 
+    // バッチクエリ: 全ユーザーの設定・ログ・LINE連携を一括取得
+    const userIds = [...byUser.keys()];
+    const [allSettings, allTodayLogs, allLineLinks, allLatestAiComments] = await Promise.all([
+      prisma.userSettings.findMany({ where: { userId: { in: userIds } } }),
+      prisma.healthLog.findMany({
+        where: { userId: { in: userIds }, date: today },
+        select: { userId: true, medicationTakenDetail: true, aiComment: true },
+      }),
+      prisma.lineLink.findMany({ where: { userId: { in: userIds } } }),
+      prisma.healthLog.findMany({
+        where: { userId: { in: userIds }, aiComment: { not: null } },
+        orderBy: { date: 'desc' },
+        distinct: ['userId'],
+        select: { userId: true, aiComment: true },
+      }),
+    ]);
+    const settingsMap = new Map(allSettings.map((s) => [s.userId, s]));
+    const todayLogMap = new Map(allTodayLogs.map((l) => [l.userId, l]));
+    const lineLinkMap = new Map(allLineLinks.map((l) => [l.userId, l]));
+    const latestAiMap = new Map(allLatestAiComments.map((l) => [l.userId, l.aiComment]));
+
+    // 検診リマインダーも一括取得
+    let todayCheckupsMap = new Map<string, Array<{ name: string; scheduledTime: string | null; memo: string | null }>>();
+    let tomorrowCheckupsMap = new Map<string, Array<{ name: string; scheduledTime: string | null; memo: string | null }>>();
+    if (sendCheckups) {
+      const [todayCheckups, tomorrowCheckups] = await Promise.all([
+        prisma.checkupReminder.findMany({ where: { userId: { in: userIds }, dueDate: today } }),
+        prisma.checkupReminder.findMany({ where: { userId: { in: userIds }, dueDate: tomorrow } }),
+      ]);
+      for (const c of todayCheckups) {
+        const list = todayCheckupsMap.get(c.userId) ?? [];
+        list.push(c);
+        todayCheckupsMap.set(c.userId, list);
+      }
+      for (const c of tomorrowCheckups) {
+        const list = tomorrowCheckupsMap.get(c.userId) ?? [];
+        list.push(c);
+        tomorrowCheckupsMap.set(c.userId, list);
+      }
+    }
+
     for (const [userId, subs] of byUser) {
-      const settings = await prisma.userSettings.findUnique({
-        where: { userId },
-      });
+      const settings = settingsMap.get(userId);
+      const lineLink = lineLinkMap.get(userId);
+      const lineUserId = lineLink?.lineUserId ?? null;
 
       // 服薬リマインダー
       const medicationSchedule = buildMedicationSchedule(
         settings?.medicationReminderTimes ?? null,
         settings?.currentMedications ?? null,
-        { includeLabel: false }
+        { includeLabel: false },
       );
 
       const medsAtSlot = medicationSchedule.find((m) => m.time === timeSlot);
       if (medsAtSlot && medsAtSlot.medications.length > 0) {
-        const todayLog = await prisma.healthLog.findUnique({
-          where: { userId_date: { userId, date: today } },
-          select: { medicationTakenDetail: true, aiComment: true },
-        });
+        const todayLog = todayLogMap.get(userId);
         const detail = safeParseJson<Record<string, boolean>>(
           todayLog?.medicationTakenDetail ?? null,
-          {}
+          {},
         );
         const medKeys = medsAtSlot.medKeys ?? [];
         const untakenNames: string[] = [];
@@ -99,65 +157,33 @@ export async function POST(req: Request) {
         if (untakenNames.length === 0) continue;
 
         let body = `${untakenNames.join('、')} の時間です`;
-        const latestLog = await prisma.healthLog.findFirst({
-          where: { userId, aiComment: { not: null } },
-          orderBy: { date: 'desc' },
-          select: { aiComment: true },
-        });
-        if (latestLog?.aiComment && latestLog.aiComment.trim()) {
-          const comment = latestLog.aiComment.trim().replace(/\s+/g, ' ');
+        const latestAiComment = latestAiMap.get(userId);
+        if (latestAiComment?.trim()) {
+          const comment = latestAiComment.trim().replace(/\s+/g, ' ');
           const truncated = comment.length > 60 ? comment.slice(0, 57) + '…' : comment;
           const fromLabel = getLineFallback('reminder_from', settings?.aiPersonality ?? null);
           body += `\n\n${fromLabel}: ${truncated}`;
         }
-        const title = '💊 服薬リマインダー';
-        for (const sub of subs) {
-          const ok = await sendPushNotification(
-            {
-              endpoint: sub.endpoint,
-              keys: { p256dh: sub.p256dh, auth: sub.auth },
-            },
-            { title, body, url: '/reminders' }
-          );
-          if (ok) sent++;
-        }
-        const lineLink = await prisma.lineLink.findUnique({ where: { userId } });
-        if (lineLink && (await sendLinePush(lineLink.lineUserId, `${title}\n${body}`))) sent++;
+        sent += await broadcastToUser(subs, lineUserId, '💊 服薬リマインダー', body);
       }
 
-      // 検診リマインダー（8時台の最初の実行時のみ）前日・当日の両方
+      // 検診リマインダー（8時台の最初の実行時のみ）
       if (sendCheckups) {
-        const todayCheckups = await prisma.checkupReminder.findMany({
-          where: { userId, dueDate: today },
-        });
-        const tomorrowCheckups = await prisma.checkupReminder.findMany({
-          where: { userId, dueDate: tomorrow },
-        });
         const formatBody = (c: { name: string; scheduledTime: string | null; memo: string | null }) => {
           const timePart = c.scheduledTime ? ` 予約${c.scheduledTime}` : '';
           const memoPart = c.memo ? `（${c.memo}）` : '';
           return `${c.name}${timePart}${memoPart}`;
         };
-        const sendCheckupReminder = async (title: string, body: string) => {
-          for (const sub of subs) {
-            const ok = await sendPushNotification(
-              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-              { title, body, url: '/reminders' }
-            );
-            if (ok) sent++;
-          }
-          const lineLink = await prisma.lineLink.findUnique({ where: { userId } });
-          if (lineLink && (await sendLinePush(lineLink.lineUserId, `${title}\n${body}`))) sent++;
-        };
-        for (const c of todayCheckups) {
+
+        for (const c of todayCheckupsMap.get(userId) ?? []) {
           const body = `${formatBody(c)} の予定日です`;
-          await sendCheckupReminder('🏥 検診リマインダー', body);
+          sent += await broadcastToUser(subs, lineUserId, '🏥 検診リマインダー', body);
         }
         const [ty, tm, td] = tomorrow.split('-').map(Number);
         const tomorrowLabel = `${ty}年${tm}月${td}日`;
-        for (const c of tomorrowCheckups) {
+        for (const c of tomorrowCheckupsMap.get(userId) ?? []) {
           const body = `明日${tomorrowLabel}は ${formatBody(c)} の予定です。忘れずに準備しましょう`;
-          await sendCheckupReminder('🏥 検診リマインダー（前日）', body);
+          sent += await broadcastToUser(subs, lineUserId, '🏥 検診リマインダー（前日）', body);
         }
       }
     }
@@ -165,6 +191,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ sent });
   } catch (error) {
     console.error('cron send-reminders error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return errorResponse('Internal Server Error', 500);
   }
 }

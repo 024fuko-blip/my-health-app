@@ -7,6 +7,14 @@ import OpenAI from 'openai';
 import type { ChatCompletionContentPart } from 'openai/resources/chat/completions';
 import { getServerEnv } from '@/lib/env';
 
+/** OPENAI_API_KEY 未設定を表すエラー。withSession で自動的に 503 に変換される */
+export class OpenAIKeyMissingError extends Error {
+  constructor() {
+    super('OPENAI_API_KEY が未設定です');
+    this.name = 'OpenAIKeyMissingError';
+  }
+}
+
 export interface ChatCompletionParams {
   systemPrompt: string;
   userContent: string | ChatCompletionContentPart[];
@@ -15,12 +23,18 @@ export interface ChatCompletionParams {
   fallbackMessage?: string;
 }
 
+/** OpenAI クライアントを取得。API キー未設定時は OpenAIKeyMissingError を throw */
 export function getOpenAIClient(): OpenAI {
   const env = getServerEnv();
   if (!env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY が未設定です');
+    throw new OpenAIKeyMissingError();
   }
   return new OpenAI({ apiKey: env.OPENAI_API_KEY });
+}
+
+/** API キーが設定済みかを事前チェック（throw しない版） */
+export function isOpenAIAvailable(): boolean {
+  return !!getServerEnv().OPENAI_API_KEY;
 }
 
 export async function chatCompletion(params: ChatCompletionParams): Promise<string> {

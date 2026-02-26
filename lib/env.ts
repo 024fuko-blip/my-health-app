@@ -90,6 +90,8 @@ export interface ServerEnv {
   VAPID_PRIVATE_KEY: string | undefined;
   /** Cron API 保護用（Cloud Scheduler が X-Cron-Secret で送信） */
   CRON_SECRET: string | undefined;
+  /** 管理者メール（カンマ区切り。Rich Menu 等の管理操作を許可） */
+  ADMIN_EMAILS: string | undefined;
 }
 
 let cached: ServerEnv | null = null;
@@ -112,6 +114,7 @@ function getBuildTimeDummyEnv(): ServerEnv {
     VAPID_PUBLIC_KEY: undefined,
     VAPID_PRIVATE_KEY: undefined,
     CRON_SECRET: undefined,
+    ADMIN_EMAILS: undefined,
   };
 }
 
@@ -147,6 +150,7 @@ export function getServerEnv(): ServerEnv {
     VAPID_PUBLIC_KEY: optional(getSecret('VAPID_PUBLIC_KEY')),
     VAPID_PRIVATE_KEY: optional(getSecret('VAPID_PRIVATE_KEY')),
     CRON_SECRET: optional(getSecret('CRON_SECRET')),
+    ADMIN_EMAILS: optional(getSecret('ADMIN_EMAILS')),
   };
   return cached;
 }

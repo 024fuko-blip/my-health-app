@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCyclePhase, getTsundereComment } from './cycle-phase';
+import { getCyclePhase, getCycleComment } from './cycle-phase';
 
 describe('getCyclePhase', () => {
   it('lastPeriodDate が空のとき null を返す', () => {
@@ -39,19 +39,46 @@ describe('getCyclePhase', () => {
   });
 });
 
-describe('getTsundereComment', () => {
-  it('period フェーズでコメントを返す', () => {
+describe('getCycleComment', () => {
+  it('tsundere: period フェーズでコメントを返す', () => {
     const phase = getCyclePhase('2025-02-12', '2025-02-10', 28, 5);
     expect(phase).not.toBeNull();
-    const comment = getTsundereComment(phase!);
+    const comment = getCycleComment(phase!, 'tsundere');
     expect(comment).toContain('生理');
     expect(comment).toContain('日目');
   });
 
-  it('follicular フェーズでコメントを返す', () => {
+  it('tsundere: follicular フェーズでコメントを返す', () => {
     const phase = getCyclePhase('2025-02-18', '2025-02-10', 28, 5);
     expect(phase?.phase).toBe('follicular');
-    const comment = getTsundereComment(phase!);
+    const comment = getCycleComment(phase!, 'tsundere');
     expect(comment).toContain('卵胞期');
+  });
+
+  it('amayama: period フェーズでコメントを返す', () => {
+    const phase = getCyclePhase('2025-02-12', '2025-02-10', 28, 5);
+    expect(phase).not.toBeNull();
+    const comment = getCycleComment(phase!, 'amayama');
+    expect(comment).toContain('生理');
+    expect(comment).toContain('日目');
+  });
+
+  it('kibishime: pms フェーズでコメントを返す', () => {
+    const phase = getCyclePhase('2025-03-05', '2025-02-10', 28, 5);
+    expect(phase?.phase).toBe('pms');
+    const comment = getCycleComment(phase!, 'kibishime');
+    expect(comment).toContain('PMS');
+  });
+
+  it('naruse: pms フェーズでコメントを返す', () => {
+    const phase = getCyclePhase('2025-03-05', '2025-02-10', 28, 5);
+    const comment = getCycleComment(phase!, 'naruse');
+    expect(comment).toContain('PMS');
+  });
+
+  it('不正な personality は tsundere にフォールバックする', () => {
+    const phase = getCyclePhase('2025-02-12', '2025-02-10', 28, 5);
+    const comment = getCycleComment(phase!, 'unknown_personality');
+    expect(comment).toContain('生理');
   });
 });

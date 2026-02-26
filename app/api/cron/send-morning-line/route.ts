@@ -9,11 +9,14 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendLinePush } from '@/lib/line';
 import { getServerEnv } from '@/lib/env';
+import { timingSafeCompare, errorResponse } from '@/lib/api-utils';
 import { getCharaPrompt } from '@/lib/chara-settings';
 import { getCoordsFromPrefecture } from '@/lib/prefectures';
 import { getPastDates } from '@/lib/date-utils';
 import { fetchWeather } from '@/lib/weather';
-import OpenAI from 'openai';
+import { DEFAULT_COORDS } from '@/lib/constants';
+import { getOpenAIClient } from '@/lib/openai-client';
+import type OpenAI from 'openai';
 
 /** 月から花粉の簡易アドバイス */
 function getPollenNote(month: number): string {
@@ -88,8 +91,8 @@ export async function POST(req: Request) {
   try {
     const cronSecret = getServerEnv().CRON_SECRET;
     const headerSecret = req.headers.get('X-Cron-Secret');
-    if (!cronSecret || headerSecret !== cronSecret) {
-      return new NextResponse('Forbidden', { status: 403 });
+    if (!timingSafeCompare(headerSecret, cronSecret)) {
+      return errorResponse('Forbidden', 403);
     }
 
     const lineLinks = await prisma.lineLink.findMany({
@@ -104,22 +107,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ sent: 0, message: 'No LINE links' });
     }
 
-    const env = getServerEnv();
-    if (!env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: 'OPENAI_API_KEY required for morning message' },
-        { status: 503 }
-      );
-    }
-
-    const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    const openai = getOpenAIClient();
     const pastDates = getPastDates(7);
     const now = new Date();
     const jstMonth = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' })).getMonth() + 1;
+    const pollenNote = getPollenNote(jstMonth);
 
-    let sent = 0;
-    for (const link of lineLinks) {
-      try {
+    const results = await Promise.allSettled(
+      lineLinks.map(async (link) => {
         const settings = link.user.userSettings;
         let lat = settings?.latitude ?? null;
         let lon = settings?.longitude ?? null;
@@ -129,11 +124,10 @@ export async function POST(req: Request) {
           if (coords) [lat, lon] = coords;
         }
         if (lat == null || lon == null) {
-          lat = 35.6762;
-          lon = 139.6503;
+          lat = DEFAULT_COORDS.lat;
+          lon = DEFAULT_COORDS.lon;
         }
         const weather = await fetchWeather(lat, lon);
-        const pollenNote = getPollenNote(jstMonth);
         const prefLabel = pref ? `（${pref}）` : '';
 
         const logs = await prisma.healthLog.findMany({
@@ -160,17 +154,24 @@ export async function POST(req: Request) {
         });
 
         const fullMessage = `おはよう！今朝の相棒メッセージだよ。\n\n${message}`;
-        if (await sendLinePush(link.lineUserId, fullMessage)) {
-          sent++;
-        }
-      } catch (e) {
-        console.error(`morning-line error for user ${link.userId}:`, e);
+        return sendLinePush(link.lineUserId, fullMessage);
+      })
+    );
+
+    const sent = results.filter(
+      (r): r is PromiseFulfilledResult<boolean> => r.status === 'fulfilled' && r.value === true
+    ).length;
+
+    const rejected = results.filter((r) => r.status === 'rejected');
+    for (const r of rejected) {
+      if (r.status === 'rejected') {
+        console.error('morning-line error:', r.reason);
       }
     }
 
     return NextResponse.json({ sent });
   } catch (error) {
     console.error('cron send-morning-line error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return errorResponse('Internal Server Error', 500);
   }
 }

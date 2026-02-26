@@ -15,7 +15,7 @@ export default function CalendarPage() {
     month,
     firstDay,
     lastDate,
-    logs,
+    logsMap,
     selectedLog,
     setSelectedLog,
     loading,
@@ -42,7 +42,7 @@ export default function CalendarPage() {
     }
     for (let day = 1; day <= lastDate; day++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const log = logs.find((l) => l.date === dateStr);
+      const log = logsMap.get(dateStr);
       const periodStatus =
         periodSettings.showPeriodOnCalendar && periodSettings.gender === 'female'
           ? getPeriodStatus(dateStr, periodSettings.lastPeriodDate, periodSettings.periodCycle, periodSettings.periodDuration)

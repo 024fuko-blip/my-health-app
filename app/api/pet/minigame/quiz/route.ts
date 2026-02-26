@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withSession } from "@/lib/api-utils";
-import { getServerEnv } from "@/lib/env";
-import OpenAI from "openai";
+import { chatCompletion, isOpenAIAvailable } from "@/lib/openai-client";
 
 const FALLBACK_QUIZZES = [
   {
@@ -22,11 +21,14 @@ const FALLBACK_QUIZZES = [
   },
 ];
 
+function getRandomFallback() {
+  return FALLBACK_QUIZZES[Math.floor(Math.random() * FALLBACK_QUIZZES.length)];
+}
+
 /** GET: 健康クイズを1問取得（AIでユーザーデータに基づき生成、未設定時はフォールバック） */
 export async function GET() {
   return withSession(async (session) => {
     try {
-      const env = getServerEnv();
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const startStr = sevenDaysAgo.toISOString().split("T")[0];
@@ -40,9 +42,8 @@ export async function GET() {
         orderBy: { date: "asc" },
       });
 
-      if (env.OPENAI_API_KEY && logs.length >= 2) {
+      if (isOpenAIAvailable() && logs.length >= 2) {
         try {
-          const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
           const logsText = logs
             .map(
               (l) =>
@@ -50,27 +51,15 @@ export async function GET() {
             )
             .join("\n");
 
-          const res = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content: `あなたは健康記録アプリのクイズ出題者です。
+          const text = await chatCompletion({
+            systemPrompt: `あなたは健康記録アプリのクイズ出題者です。
 ユーザーの過去7日間の健康記録データを分析し、データに基づいた3択クイズを1問だけ作成してください。
 JSONのみ返してください。形式: {"question":"質問文","choices":["A","B","C"],"correctIndex":0}
 correctIndex は正解の選択肢のインデックス（0,1,2のいずれか）です。
 データに明確な根拠がない場合は一般的な健康クイズにしてください。`,
-              },
-              {
-                role: "user",
-                content: `記録データ:\n${logsText}`,
-              },
-            ],
-            temperature: 0.7,
+            userContent: `記録データ:\n${logsText}`,
           });
 
-          const text =
-            res.choices[0]?.message?.content?.trim() ?? "";
           const jsonMatch = text.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]) as {
@@ -98,17 +87,10 @@ correctIndex は正解の選択肢のインデックス（0,1,2のいずれか�
         }
       }
 
-      const fallback =
-        FALLBACK_QUIZZES[
-          Math.floor(Math.random() * FALLBACK_QUIZZES.length)
-        ];
-      return NextResponse.json(fallback);
+      return NextResponse.json(getRandomFallback());
     } catch (error) {
       console.error("pet minigame quiz GET error:", error);
-      return NextResponse.json(
-        FALLBACK_QUIZZES[0],
-        { status: 200 }
-      );
+      return NextResponse.json(FALLBACK_QUIZZES[0]);
     }
   });
 }

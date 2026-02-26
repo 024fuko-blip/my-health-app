@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { ChatCompletionContentPart } from 'openai/resources/chat/completions';
-import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
-import { advicePostSchema } from '@/lib/validations/api-schemas';
-import { HTTP_STATUS } from '@/lib/constants';
-import { getCharaPrompt } from '@/lib/chara-settings';
+import { advicePostSchema, sanitizeDailyInput } from '@/lib/validations/api-schemas';
+import { getCharaPrompt, getSystemMessages } from '@/lib/chara-settings';
 import { MEDICATION_AI_CAUTION_RULE } from '@/lib/medication-prompt';
 import { chatCompletion } from '@/lib/openai-client';
 import { buildUserContext, getActiveModesText } from '@/lib/insights/user-context';
@@ -30,7 +28,16 @@ const RECORD_LABELS: Record<string, string> = {
   period_status: '生理',
 };
 
-const PRIORITY_RULES = `
+const DERE_EXAMPLE: Record<string, string> = {
+  tsundere: '「...まぁ、やるじゃない。」「今日は見直したわよ。」といった、少し照れくさそうだが素直に褒める（デレる）トーンで',
+  kibishime: '「今日は理想的な行動でした。この調子を続けてください。」といった、率直に評価するトーンで',
+  amayama: '「すごい！本当によく頑張ったね。」「今日は最高だよ！」といった、素直に喜ぶ温かいトーンで',
+  naruse: '「フッ……今日は悪くないな。俺が認めてやる。」「俺様も少し見直してやろう。」といった、ナルシストながら素直に認めるトーンで',
+};
+
+function buildPriorityRules(personality: string): string {
+  const dereExample = DERE_EXAMPLE[personality] ?? DERE_EXAMPLE.tsundere;
+  return `
 ## 【絶対厳守】優先順位ルール
 
 1. **【最優先】体調の急変・危険信号**
@@ -47,10 +54,11 @@ const PRIORITY_RULES = `
    ユーザーが特に関心を持っている項目（下記「関心分野」）を特に見てコメントしなさい。
 
 4. **【デレ】頑張った日は素直に褒める**
-   ユーザーの行動が模範的、または以前より改善されていると判断した場合は、いつもの厳しい口調を封印し、
-   「...まぁ、やるじゃない。」「今日は見直したわよ。」といった、少し照れくさそうだが素直に褒める（デレる）トーンで労うこと。
+   ユーザーの行動が模範的、または以前より改善されていると判断した場合は、いつもの口調を封印し、
+   ${dereExample}労うこと。
    判定基準の例: アルコールを我慢した（0ml）、体調が良いのに運動した、食事内容がヘルシー（画像やテキストから判断）。
 `;
+}
 
 function buildTodayRecordText(dailyInput: Record<string, unknown>): string {
   const lines: string[] = [];
@@ -76,12 +84,14 @@ function buildTodayRecordText(dailyInput: Record<string, unknown>): string {
 
 function buildAdviceSystemPrompt(params: {
   charaSetting: string;
+  personality: string;
   settings: { medical_history: string; current_medications: string };
   activeModesText: string;
   mode: string;
   hasImage: boolean;
 }): string {
-  const { charaSetting, settings, activeModesText, mode, hasImage } = params;
+  const { charaSetting, personality, settings, activeModesText, mode, hasImage } = params;
+  const priorityRules = buildPriorityRules(personality);
   const imageInstruction = hasImage
     ? '\n**画像がある場合**: その食事写真の内容（品目・量・カロリーや栄養バランスの目安）を解析し、IBDやボディメイクの観点からフィードバックを行うこと。'
     : '';
@@ -97,7 +107,7 @@ function buildAdviceSystemPrompt(params: {
 
 ${MEDICATION_AI_CAUTION_RULE}
 
-${PRIORITY_RULES}
+${priorityRules}
 分析結果は250文字以内でまとめなさい。
 `;
   }
@@ -113,75 +123,62 @@ ${imageInstruction}
 
 ${MEDICATION_AI_CAUTION_RULE}
 
-${PRIORITY_RULES}
+${priorityRules}
 150文字以内で、上記優先順位に従ってコメントしなさい。
 `;
 }
 
 export async function POST(req: Request) {
   return withSession(async (session) => {
-    try {
-      const parsed = await parseJsonBody(req, advicePostSchema);
-      if (!parsed.ok) return parsed.error;
-      const body = parsed.data;
-      const { mode, logs, meal_image_base64: mealImageBase64, ...dailyInput } = body;
+    const parsed = await parseJsonBody(req, advicePostSchema);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
+    const { mode, logs, meal_image_base64: mealImageBase64, ...rawDailyInput } = body;
+    const dailyInput = sanitizeDailyInput(rawDailyInput as Record<string, unknown>);
 
-      const userContext = await buildUserContext(session.userId);
-      const charaSetting = getCharaPrompt(userContext.aiPersonality, 'advice');
-      const activeModesText = getActiveModesText(userContext);
-      const todayRecordText = buildTodayRecordText(dailyInput as Record<string, unknown>);
+    const userContext = await buildUserContext(session.userId);
+    const sysMsg = getSystemMessages(userContext.aiPersonality);
+    const charaSetting = getCharaPrompt(userContext.aiPersonality, 'advice');
+    const activeModesText = getActiveModesText(userContext);
+    const todayRecordText = buildTodayRecordText(dailyInput);
 
-      const hasImage =
-        typeof mealImageBase64 === 'string' &&
-        mealImageBase64.startsWith('data:image') &&
-        mealImageBase64.length <= MAX_IMAGE_BASE64;
+    const hasImage =
+      typeof mealImageBase64 === 'string' &&
+      mealImageBase64.startsWith('data:image') &&
+      mealImageBase64.length <= MAX_IMAGE_BASE64;
 
-      const systemPrompt = buildAdviceSystemPrompt({
-        charaSetting,
-        settings: {
-          medical_history: userContext.medicalHistory,
-          current_medications: userContext.currentMedications,
-        },
-        activeModesText,
-        mode: String(mode ?? 'daily'),
-        hasImage,
-      });
+    const systemPrompt = buildAdviceSystemPrompt({
+      charaSetting,
+      personality: userContext.aiPersonality,
+      settings: {
+        medical_history: userContext.medicalHistory,
+        current_medications: userContext.currentMedications,
+      },
+      activeModesText,
+      mode: String(mode ?? 'daily'),
+      hasImage,
+    });
 
-      const userPrompt =
-        mode === 'weekly'
-          ? `これが1週間分の記録よ！ 総合的に分析してちょうだい！\n${JSON.stringify(logs)}`
-          : `今日の記録よ。全部見てコメントしなさい！\n\n${todayRecordText}`;
+    const userPrompt =
+      mode === 'weekly'
+        ? `これが1週間分の記録よ！ 総合的に分析してちょうだい！\n${JSON.stringify(logs)}`
+        : `今日の記録よ。全部見てコメントしなさい！\n\n${todayRecordText}`;
 
-      const env = getServerEnv();
-      if (!env.OPENAI_API_KEY) {
-        return NextResponse.json(
-          { advice: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
-          { status: HTTP_STATUS.SERVICE_UNAVAILABLE },
-        );
-      }
+    const isDailyWithImage = mode === 'daily' && hasImage;
+    const model = isDailyWithImage ? 'gpt-4o' : 'gpt-4o-mini';
+    const userContent: string | ChatCompletionContentPart[] = isDailyWithImage
+      ? [
+          { type: 'text', text: userPrompt },
+          { type: 'image_url', image_url: { url: mealImageBase64 as string } },
+        ]
+      : userPrompt;
 
-      const isDailyWithImage = mode === 'daily' && hasImage;
-      const model = isDailyWithImage ? 'gpt-4o' : 'gpt-4o-mini';
-      const userContent: string | ChatCompletionContentPart[] = isDailyWithImage
-        ? [
-            { type: 'text', text: userPrompt },
-            { type: 'image_url', image_url: { url: mealImageBase64 as string } },
-          ]
-        : userPrompt;
-
-      const advice = await chatCompletion({
-        systemPrompt,
-        userContent,
-        model,
-        fallbackMessage: 'あら、返事が出せなかったわ。もう一度送ってちょうだい！',
-      });
-      return NextResponse.json({ advice });
-    } catch (error) {
-      console.error('API Error:', error);
-      return NextResponse.json(
-        { advice: 'あらヤダ、サーバーのエラーよ！システム管理者を呼んできて！', error: String(error) },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
-      );
-    }
-  });
+    const advice = await chatCompletion({
+      systemPrompt,
+      userContent,
+      model,
+      fallbackMessage: sysMsg.apiError,
+    });
+    return NextResponse.json({ advice });
+  }, { rateLimit: { windowMs: 60_000, maxRequests: 15 } });
 }

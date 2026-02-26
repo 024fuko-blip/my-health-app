@@ -54,10 +54,10 @@ async function fetchAiAdvice(params: AiAdviceParams): Promise<string> {
       sleep_quality: params.modes.mode_mental ? params.sleepQuality : null,
       meal_image_base64: params.mealImageBase64 ?? undefined,
     });
-    if (!res.ok) return '通信エラーよ！オネエがちょっと休憩中みたい。（API接続に失敗しました）';
+    if (!res.ok) return 'AI接続に失敗しました。しばらくしてから再度お試しください。';
     return res.data.advice;
   } catch {
-    return '通信エラーよ！オネエがちょっと休憩中みたい。（API接続に失敗しました）';
+    return 'AI接続に失敗しました。しばらくしてから再度お試しください。';
   }
 }
 

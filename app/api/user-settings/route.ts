@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
 import { userSettingsPutSchema } from '@/lib/validations/api-schemas';
 import { safeNumber, safeLongString } from '@/lib/json-utils';
-import { HTTP_STATUS } from '@/lib/constants';
 
 const MAX_STRING_LENGTH = 10000;
 
@@ -71,89 +70,69 @@ function toApiShape(row: {
 
 export async function GET() {
   return withSession(async (session) => {
-    try {
-      const row = await prisma.userSettings.findUnique({
-        where: { userId: session.userId },
-      });
+    const row = await prisma.userSettings.findUnique({
+      where: { userId: session.userId },
+    });
 
-      if (!row) {
-        return NextResponse.json(toApiShape(DEFAULT_USER_SETTINGS));
-      }
-
-      return NextResponse.json(toApiShape(row));
-    } catch (error) {
-      console.error('user-settings GET error:', error);
-      return new NextResponse('Internal Server Error', {
-        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      });
-    }
+    return NextResponse.json(toApiShape(row ?? DEFAULT_USER_SETTINGS));
   });
 }
 
 export async function PUT(req: Request) {
   return withSession(async (session) => {
-    try {
-      const parsed = await parseJsonBody(req, userSettingsPutSchema);
-      if (!parsed.ok) return parsed.error;
-      const body = parsed.data;
+    const parsed = await parseJsonBody(req, userSettingsPutSchema);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
 
-      const {
-        mode_ibd,
-        mode_alcohol,
-        mode_mental,
-        mode_diet,
-        medical_history,
-        current_medications,
-        medication_reminder_times,
-        gender,
-        ai_personality,
-        profile_name,
-        birth_date,
-        height,
-        weight,
-        normal_temperature,
-        prefecture,
-        latitude,
-        longitude,
-      } = body;
+    const {
+      mode_ibd,
+      mode_alcohol,
+      mode_mental,
+      mode_diet,
+      medical_history,
+      current_medications,
+      medication_reminder_times,
+      gender,
+      ai_personality,
+      profile_name,
+      birth_date,
+      height,
+      weight,
+      normal_temperature,
+      prefecture,
+      latitude,
+      longitude,
+    } = body;
 
-      const personality = ai_personality ?? 'tsundere';
-      const genderStr = typeof gender === 'string' ? gender : 'unspecified';
+    const personality = ai_personality ?? 'tsundere';
+    const genderStr = typeof gender === 'string' ? gender : 'unspecified';
 
-      const data = {
-        modeIbd: Boolean(mode_ibd ?? true),
-        modeAlcohol: Boolean(mode_alcohol ?? false),
-        modeMental: Boolean(mode_mental ?? false),
-        modeDiet: Boolean(mode_diet ?? false),
-        medicalHistory: safeLongString(medical_history, MAX_STRING_LENGTH),
-        currentMedications: safeLongString(current_medications, MAX_STRING_LENGTH),
-        medicationReminderTimes: safeLongString(medication_reminder_times, 2000),
-        gender: genderStr,
-        aiPersonality: personality,
-        profileName: safeLongString(profile_name, 100),
-        birthDate: safeLongString(birth_date, 20),
-        prefecture: safeLongString(prefecture, 50),
-        height: safeNumber(height, 0, 300),
-        weight: safeNumber(weight, 0, 500),
-        normalTemperature: safeNumber(normal_temperature, 34, 42),
-        latitude: safeNumber(latitude, -90, 90),
-        longitude: safeNumber(longitude, -180, 180),
-      };
+    const data = {
+      modeIbd: Boolean(mode_ibd ?? true),
+      modeAlcohol: Boolean(mode_alcohol ?? false),
+      modeMental: Boolean(mode_mental ?? false),
+      modeDiet: Boolean(mode_diet ?? false),
+      medicalHistory: safeLongString(medical_history, MAX_STRING_LENGTH),
+      currentMedications: safeLongString(current_medications, MAX_STRING_LENGTH),
+      medicationReminderTimes: safeLongString(medication_reminder_times, 2000),
+      gender: genderStr,
+      aiPersonality: personality,
+      profileName: safeLongString(profile_name, 100),
+      birthDate: safeLongString(birth_date, 20),
+      prefecture: safeLongString(prefecture, 50),
+      height: safeNumber(height, 0, 300),
+      weight: safeNumber(weight, 0, 500),
+      normalTemperature: safeNumber(normal_temperature, 34, 42),
+      latitude: safeNumber(latitude, -90, 90),
+      longitude: safeNumber(longitude, -180, 180),
+    };
 
-      await prisma.userSettings.upsert({
-        where: { userId: session.userId },
-        create: { userId: session.userId, ...data },
+    await prisma.userSettings.upsert({
+      where: { userId: session.userId },
+      create: { userId: session.userId, ...data },
       update: data,
-      });
+    });
 
-      return NextResponse.json({ ok: true });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error('user-settings PUT error:', msg, error);
-      return NextResponse.json(
-        { error: '保存に失敗しました', detail: msg },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
-      );
-    }
+    return NextResponse.json({ ok: true });
   });
 }

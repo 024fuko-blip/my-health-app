@@ -3,13 +3,12 @@ import prisma from '@/lib/prisma';
 import { updateStatsAfterLog } from '@/lib/game-stats';
 import { updateCorrelationStatsAfterLog } from '@/lib/correlation/save';
 import { isValidDateStr } from '@/lib/date-utils';
-import { parseJsonBody, withSession } from '@/lib/api-utils';
+import { parseJsonBody, withSession, errorResponse } from '@/lib/api-utils';
 import { toStringOrNull, toNumOrNull, safeNumber } from '@/lib/json-utils';
 import { healthLogPostSchema, healthLogPatchSchema } from '@/lib/validations/api-schemas';
 import { HTTP_STATUS } from '@/lib/constants';
 import type { HealthLog } from '@prisma/client';
 
-/** Prisma HealthLog をフロント期待の snake_case 形式に変換 */
 function safeTemperature(val: unknown): number | null {
   return safeNumber(val, 30, 45);
 }
@@ -47,87 +46,53 @@ function toApiShape(log: HealthLog) {
 
 export async function GET(req: Request) {
   return withSession(async (session) => {
-    try {
-      const { searchParams } = new URL(req.url);
-      const date = searchParams.get('date');
-      const startDate = searchParams.get('startDate');
-      const endDate = searchParams.get('endDate');
+    const { searchParams } = new URL(req.url);
+    const date = searchParams.get('date');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
-      if (date) {
-        if (!isValidDateStr(date)) {
-          return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', {
-            status: HTTP_STATUS.BAD_REQUEST,
-          });
-        }
-        const log = await prisma.healthLog.findUnique({
-          where: {
-            userId_date: { userId: session.userId, date },
-          },
-        });
-        return NextResponse.json(log ? toApiShape(log) : null);
+    if (date) {
+      if (!isValidDateStr(date)) {
+        return errorResponse('Bad Request: invalid date format (YYYY-MM-DD)', HTTP_STATUS.BAD_REQUEST);
       }
-
-      if (startDate && endDate) {
-        if (!isValidDateStr(startDate) || !isValidDateStr(endDate)) {
-          return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', {
-            status: HTTP_STATUS.BAD_REQUEST,
-          });
-        }
-        const logs = await prisma.healthLog.findMany({
-          where: {
-            userId: session.userId,
-            date: { gte: startDate, lte: endDate },
-          },
-          orderBy: { date: 'asc' },
-        });
-        return NextResponse.json(logs.map(toApiShape));
-      }
-
-      return new NextResponse('Bad Request: date or startDate+endDate required', {
-        status: HTTP_STATUS.BAD_REQUEST,
+      const log = await prisma.healthLog.findUnique({
+        where: { userId_date: { userId: session.userId, date } },
       });
-    } catch (error) {
-      console.error('health-logs GET error:', error);
-      return new NextResponse('Internal Server Error', {
-        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      });
+      return NextResponse.json(log ? toApiShape(log) : null);
     }
+
+    if (startDate && endDate) {
+      if (!isValidDateStr(startDate) || !isValidDateStr(endDate)) {
+        return errorResponse('Bad Request: invalid date format (YYYY-MM-DD)', HTTP_STATUS.BAD_REQUEST);
+      }
+      const logs = await prisma.healthLog.findMany({
+        where: {
+          userId: session.userId,
+          date: { gte: startDate, lte: endDate },
+        },
+        orderBy: { date: 'asc' },
+      });
+      return NextResponse.json(logs.map(toApiShape));
+    }
+
+    return errorResponse('Bad Request: date or startDate+endDate required', HTTP_STATUS.BAD_REQUEST);
   });
 }
 
 export async function POST(req: Request) {
   return withSession(async (session) => {
-    try {
-      const parsed = await parseJsonBody(req, healthLogPostSchema);
-      if (!parsed.ok) return parsed.error;
-      const body = parsed.data;
-      const {
-        date,
-        memo,
-        medication_taken,
-        medication_taken_detail,
-        general_mood,
-        temperature,
-        meal_description,
-        period_status,
-        ai_comment,
-        pain_level,
-        stool_type,
-        alcohol_amount,
-        alcohol_percent,
-        alcohol_type,
-        stress_level,
-        sleep_quality,
-        spending,
-        weight,
-        body_fat,
-        calories,
-        protein,
-        steps,
-        exercise_minutes,
-      } = body;
+    const parsed = await parseJsonBody(req, healthLogPostSchema);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
+    const {
+      date, memo, medication_taken, medication_taken_detail, general_mood,
+      temperature, meal_description, period_status, ai_comment, pain_level,
+      stool_type, alcohol_amount, alcohol_percent, alcohol_type, stress_level,
+      sleep_quality, spending, weight, body_fat, calories, protein, steps,
+      exercise_minutes,
+    } = body;
 
-      const data = {
+    const data = {
       userId: session.userId,
       date: String(date),
       memo: toStringOrNull(memo),
@@ -157,58 +122,34 @@ export async function POST(req: Request) {
       exerciseMinutes: toNumOrNull(exercise_minutes),
     };
 
-    let log;
-    try {
-      log = await prisma.healthLog.upsert({
-        where: {
-          userId_date: { userId: session.userId, date: String(date) },
-        },
-        create: data,
-        update: data,
-      });
-    } catch (upsertError: unknown) {
-      const msg = upsertError instanceof Error ? upsertError.message : String(upsertError);
-      if (msg.includes('medication_taken_detail') || msg.includes('column')) {
-        const { medicationTakenDetail, ...dataWithoutDetail } = data;
-        log = await prisma.healthLog.upsert({
-          where: {
-            userId_date: { userId: session.userId, date: String(date) },
-          },
-          create: dataWithoutDetail,
-          update: dataWithoutDetail,
-        });
-      } else {
-        throw upsertError;
-      }
-    }
+    const log = await prisma.healthLog.upsert({
+      where: { userId_date: { userId: session.userId, date: String(date) } },
+      create: data,
+      update: data,
+    });
 
-    await updateStatsAfterLog(session.userId, String(date));
-    await updateCorrelationStatsAfterLog(session.userId, String(date));
+    await Promise.all([
+      updateStatsAfterLog(session.userId, String(date)),
+      updateCorrelationStatsAfterLog(session.userId, String(date)),
+    ]);
 
-      return NextResponse.json(toApiShape(log));
-    } catch (error) {
-      console.error('health-logs POST error:', error);
-      return new NextResponse('Internal Server Error', {
-        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      });
-    }
+    return NextResponse.json(toApiShape(log));
   });
 }
 
 export async function PATCH(req: Request) {
   return withSession(async (session) => {
-    try {
-      const parsed = await parseJsonBody(req, healthLogPatchSchema);
-      if (!parsed.ok) return parsed.error;
-      const body = parsed.data;
-      const { id, ...updates } = body;
+    const parsed = await parseJsonBody(req, healthLogPatchSchema);
+    if (!parsed.ok) return parsed.error;
+    const body = parsed.data;
+    const { id, ...updates } = body;
 
-      const existing = await prisma.healthLog.findFirst({
+    const existing = await prisma.healthLog.findFirst({
       where: { id: String(id), userId: session.userId },
     });
-      if (!existing) {
-        return new NextResponse('Not Found', { status: HTTP_STATUS.NOT_FOUND });
-      }
+    if (!existing) {
+      return errorResponse('Not Found', HTTP_STATUS.NOT_FOUND);
+    }
 
     const data: Partial<{
       memo: string;
@@ -248,20 +189,13 @@ export async function PATCH(req: Request) {
       data,
     });
 
-      return NextResponse.json(toApiShape(log));
-    } catch (error) {
-      console.error('health-logs PATCH error:', error);
-      return new NextResponse('Internal Server Error', {
-        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      });
-    }
+    return NextResponse.json(toApiShape(log));
   });
 }
 
 export async function DELETE(req: Request) {
   return withSession(async (session) => {
-    try {
-      const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     const date = searchParams.get('date');
 
@@ -269,7 +203,7 @@ export async function DELETE(req: Request) {
       const existing = await prisma.healthLog.findFirst({
         where: { id, userId: session.userId },
       });
-      if (!existing) return new NextResponse('Not Found', { status: HTTP_STATUS.NOT_FOUND });
+      if (!existing) return errorResponse('Not Found', HTTP_STATUS.NOT_FOUND);
       await prisma.healthLog.delete({
         where: { id, userId: session.userId },
       });
@@ -278,28 +212,18 @@ export async function DELETE(req: Request) {
 
     if (date) {
       if (!isValidDateStr(date)) {
-        return new NextResponse('Bad Request: invalid date format (YYYY-MM-DD)', {
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return errorResponse('Bad Request: invalid date format (YYYY-MM-DD)', HTTP_STATUS.BAD_REQUEST);
       }
       const existing = await prisma.healthLog.findUnique({
         where: { userId_date: { userId: session.userId, date } },
       });
-      if (!existing) return new NextResponse('Not Found', { status: HTTP_STATUS.NOT_FOUND });
+      if (!existing) return errorResponse('Not Found', HTTP_STATUS.NOT_FOUND);
       await prisma.healthLog.delete({
         where: { userId_date: { userId: session.userId, date } },
       });
       return NextResponse.json({ ok: true });
     }
 
-      return new NextResponse('Bad Request: id or date required', {
-        status: HTTP_STATUS.BAD_REQUEST,
-      });
-    } catch (error) {
-      console.error('health-logs DELETE error:', error);
-      return new NextResponse('Internal Server Error', {
-        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      });
-    }
+    return errorResponse('Bad Request: id or date required', HTTP_STATUS.BAD_REQUEST);
   });
 }

@@ -4,7 +4,7 @@
  * 実行: POST /api/line/setup-richmenu
  */
 import { NextResponse } from 'next/server';
-import { withSession } from '@/lib/api-utils';
+import { withSession, errorResponse } from '@/lib/api-utils';
 import { getServerEnv } from '@/lib/env';
 import {
   createRichMenu,
@@ -14,33 +14,27 @@ import {
 import { generateRichMenuImage } from '@/lib/line-richmenu-image';
 
 export async function POST() {
-  return withSession(async () => {
-    try {
-      const baseUrl = getServerEnv().NEXTAUTH_URL ?? '';
-      if (!baseUrl) {
-        return NextResponse.json(
-          { error: 'NEXTAUTH_URL が設定されていません' },
-          { status: 500 }
-        );
-      }
+  return withSession(async (session) => {
+    const env = getServerEnv();
+    const adminEmails = (env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
+    if (adminEmails.length > 0 && !adminEmails.includes(session.email ?? '')) {
+      return errorResponse('この操作は管理者のみ実行できます', 403);
+    }
 
-      const imageBuffer = await generateRichMenuImage();
+    const baseUrl = env.NEXTAUTH_URL ?? '';
+    if (!baseUrl) {
+      return errorResponse('NEXTAUTH_URL が設定されていません', 500);
+    }
+
+    const imageBuffer = await generateRichMenuImage();
     const richMenuId = await createRichMenu(baseUrl);
     await uploadRichMenuImage(richMenuId, imageBuffer);
     await setDefaultRichMenu(richMenuId);
 
-      return NextResponse.json({
-        ok: true,
-        richMenuId,
-        message: 'Rich Menu をセットアップしました。LINE アプリで確認してください。',
-      });
-    } catch (error) {
-      console.error('Rich Menu setup error:', error);
-      const msg = error instanceof Error ? error.message : String(error);
-      return NextResponse.json(
-        { error: `Rich Menu セットアップ失敗: ${msg}` },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({
+      ok: true,
+      richMenuId,
+      message: 'Rich Menu をセットアップしました。LINE アプリで確認してください。',
+    });
   });
 }

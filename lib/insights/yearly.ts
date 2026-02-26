@@ -3,7 +3,7 @@
  */
 
 import prisma from '@/lib/prisma';
-import { getCharaPrompt } from '@/lib/chara-settings';
+import { getCharaPrompt, getSystemMessages } from '@/lib/chara-settings';
 import { chatCompletion } from '@/lib/openai-client';
 import { buildYearlySystemPrompt } from './prompts';
 import { buildUserContext } from './user-context';
@@ -26,11 +26,13 @@ export async function generateYearlyInsight(
     monthlyCount: monthlyInsights.length,
   };
 
+  const sysMsg = getSystemMessages(userContext.aiPersonality);
+
   if (monthlyInsights.length === 0) {
     return {
       startDate,
       endDate,
-      summary: 'この年の月次分析がまだないわ。先に月次分析を生成してから年次を試してね。',
+      summary: sysMsg.yearlyNoMonthly,
       metadata,
     };
   }
@@ -48,7 +50,7 @@ export async function generateYearlyInsight(
   const summary = await chatCompletion({
     systemPrompt,
     userContent: userPrompt,
-    fallbackMessage: '今年の分析結果を出せなかったわ。月次分析がもう少し溜まったら試してね。',
+    fallbackMessage: sysMsg.insightApiError,
   });
 
   return {

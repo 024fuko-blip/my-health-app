@@ -3,6 +3,14 @@ import prisma from '@/lib/prisma';
 import { withSession } from '@/lib/api-utils';
 import { BADGE_DEFS } from '@/lib/game-stats';
 
+const EMPTY_BADGES = BADGE_DEFS.map((def) => ({
+  id: def.id,
+  name: def.name,
+  emoji: def.emoji,
+  earned: false,
+  earnedAt: null,
+}));
+
 export async function GET() {
   return withSession(async (session) => {
     try {
@@ -32,17 +40,11 @@ export async function GET() {
     } catch (error) {
       console.error('game-stats GET error:', error);
       return NextResponse.json({
-      total_points: 0,
-      current_streak: 0,
-      longest_streak: 0,
-      last_record_date: null,
-      badges: BADGE_DEFS.map((def) => ({
-        id: def.id,
-        name: def.name,
-        emoji: def.emoji,
-        earned: false,
-        earnedAt: null,
-      })),
+        total_points: 0,
+        current_streak: 0,
+        longest_streak: 0,
+        last_record_date: null,
+        badges: EMPTY_BADGES,
       });
     }
   });

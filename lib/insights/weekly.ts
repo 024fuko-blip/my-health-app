@@ -3,7 +3,7 @@
  */
 
 import prisma from '@/lib/prisma';
-import { getCharaPrompt } from '@/lib/chara-settings';
+import { getCharaPrompt, getSystemMessages } from '@/lib/chara-settings';
 import { chatCompletion } from '@/lib/openai-client';
 import { healthLogToPromptShape } from '@/lib/health-log-prompt';
 import { buildWeeklySystemPrompt } from './prompts';
@@ -27,13 +27,14 @@ export async function generateWeeklyInsight(
   const logsForPrompt = logs.map(healthLogToPromptShape);
 
   const chara = getCharaPrompt(userContext.aiPersonality, 'advice');
+  const sysMsg = getSystemMessages(userContext.aiPersonality);
   const systemPrompt = buildWeeklySystemPrompt(chara, userContext);
   const userPrompt = `これが${startDate}〜${endDate}の記録よ！因果関係を暴いてちょうだい！\n\n## 記録データ\n${JSON.stringify(logsForPrompt, null, 2)}`;
 
   const summary = await chatCompletion({
     systemPrompt,
     userContent: userPrompt,
-    fallbackMessage: '今週の分析結果を出せなかったわ。もう少し記録が溜まったら試してね。',
+    fallbackMessage: sysMsg.weeklyNoData,
   });
 
   return {

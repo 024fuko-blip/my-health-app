@@ -3,14 +3,14 @@
  * 過去1週間の健康記録・天気・花粉・黄砂・生理情報から AI が今日の体調を予測。
  */
 
-import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
+import { chatCompletion, isOpenAIAvailable } from '@/lib/openai-client';
 import { getCharaPrompt } from '@/lib/chara-settings';
 import { getLineFallback } from '@/lib/line-fallback-messages';
 import { getCoordsFromPrefecture } from '@/lib/prefectures';
 import { getPastDates } from '@/lib/date-utils';
-import { getServerEnv } from '@/lib/env';
 import { fetchWeather } from '@/lib/weather';
+import { DEFAULT_COORDS } from '@/lib/constants';
 
 /** 月から花粉・黄砂の簡易アドバイス */
 function getEnvironmentNote(month: number): string {
@@ -35,8 +35,7 @@ export async function generateHealthPrediction(params: {
     medicalHistory: string | null;
   };
 }): Promise<string> {
-  const env = getServerEnv();
-  if (!env.OPENAI_API_KEY) {
+  if (!isOpenAIAvailable()) {
     return '申し訳ない、今は体調予想に答えられないの。あとで試してね。';
   }
 
@@ -54,8 +53,8 @@ export async function generateHealthPrediction(params: {
     if (coords) [lat, lon] = coords;
   }
   if (lat == null || lon == null) {
-    lat = 35.6762;
-    lon = 139.6503;
+    lat = DEFAULT_COORDS.lat;
+    lon = DEFAULT_COORDS.lon;
   }
 
   const weather = await fetchWeather(lat, lon);
@@ -120,15 +119,9 @@ ${weatherText}
 ${logsText}
 `;
 
-  const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    temperature: 0.7,
+  return chatCompletion({
+    systemPrompt,
+    userContent: userPrompt,
+    fallbackMessage: getLineFallback('prediction_failed', settings.aiPersonality ?? null),
   });
-
-  return completion.choices[0]?.message?.content?.trim() ?? getLineFallback('prediction_failed', settings.aiPersonality ?? null);
 }

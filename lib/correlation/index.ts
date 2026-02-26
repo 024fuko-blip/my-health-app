@@ -4,23 +4,9 @@
 
 import { pearsonCorrelation } from './pearson';
 import { detectAllTriggers, type HealthLogForTrigger, type TriggerResult } from './triggers';
+import { sleepToNum, periodToNum, nextDateStr } from './utils';
 
 export type { TriggerResult, HealthLogForTrigger };
-
-/** 睡眠品質を数値化 */
-function sleepToNum(s: string | null | undefined): number | null {
-  if (!s) return null;
-  if (s.includes('悪') || s === '悪い') return 1;
-  if (s.includes('普') || s === '普通') return 2;
-  if (s.includes('良') || s === '良い') return 3;
-  return null;
-}
-
-/** 生理中を 1、それ以外を 0 */
-function periodToNum(s: string | null | undefined): number | null {
-  if (!s) return null;
-  return s === '生理中' ? 1 : 0;
-}
 
 export interface CorrelationPair {
   key: string;
@@ -113,10 +99,7 @@ export function computeCorrelations(
     for (const log of recent) {
       const x = pair.x(log);
       if (x == null) continue;
-      const nextDate = new Date(log.date + 'T12:00:00');
-      nextDate.setDate(nextDate.getDate() + 1);
-      const nextStr = nextDate.toISOString().split('T')[0];
-      const nextLog = byDate.get(nextStr);
+      const nextLog = byDate.get(nextDateStr(log.date));
       if (!nextLog) continue;
       const y = pair.yNext(nextLog);
       if (y == null) continue;

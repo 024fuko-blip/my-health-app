@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ensureSession, handleUnauthorized, apiFetch, apiPost, apiDelete } from "@/lib/api-client";
@@ -34,7 +34,7 @@ export default function RemindersPage() {
   const [hospitalNames, setHospitalNames] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const fetchReminders = async () => {
+  const fetchReminders = useCallback(async () => {
     const session = await ensureSession(router);
     if (!session) return;
     const res = await apiFetch("/api/reminders");
@@ -50,11 +50,11 @@ export default function RemindersPage() {
       setHospitalNames(data.hospital_names ?? []);
     }
     setLoading(false);
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchReminders();
-  }, [router]);
+  }, [fetchReminders]);
 
   const handleAddCheckup = async (e: React.FormEvent) => {
     e.preventDefault();

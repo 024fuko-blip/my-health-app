@@ -25,3 +25,6 @@ export const HTTP_STATUS = {
 export const PATH = {
   LOGIN: '/login',
 } as const;
+
+/** 位置情報が未設定時のデフォルト座標（東京） */
+export const DEFAULT_COORDS = { lat: 35.6762, lon: 139.6503 } as const;

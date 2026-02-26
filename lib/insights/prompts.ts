@@ -14,6 +14,15 @@ export interface UserContext {
   modeMental: boolean;
 }
 
+function userContextBlock(ctx: UserContext): string {
+  return `## ユーザー情報
+- 既往歴: ${ctx.medicalHistory}
+- 薬: ${ctx.currentMedications}
+- 関心: IBD=${ctx.modeIbd} / ボディメイク=${ctx.modeDiet} / アルコール=${ctx.modeAlcohol} / メンタル=${ctx.modeMental}
+
+${MEDICATION_AI_CAUTION_RULE}`;
+}
+
 export function buildWeeklySystemPrompt(charaSetting: string, userContext: UserContext): string {
   return `
 ${charaSetting}
@@ -28,15 +37,10 @@ ${charaSetting}
 
 ## 出力ルール
 - 因果がはっきりしたパターンは具体的に「〇〇の日は△△になってる」と断じなさい。
-- データが少ない部分は「もう少し記録を続けないとわからないわ」と正直に言いなさい。
+- データが少ない部分は「もう少し記録が必要です」と正直に言いなさい。
 - 300文字以内で、読みやすく改行を入れなさい。
 
-## ユーザー情報
-- 既往歴: ${userContext.medicalHistory}
-- 薬: ${userContext.currentMedications}
-- 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
-
-${MEDICATION_AI_CAUTION_RULE}
+${userContextBlock(userContext)}
 `;
 }
 
@@ -58,12 +62,7 @@ ${charaSetting}
 - 因果が不明な部分は正直に言いなさい。
 - 300文字以内で、読みやすく改行を入れなさい。
 
-## ユーザー情報
-- 既往歴: ${userContext.medicalHistory}
-- 薬: ${userContext.currentMedications}
-- 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
-
-${MEDICATION_AI_CAUTION_RULE}
+${userContextBlock(userContext)}
 `;
 }
 
@@ -85,11 +84,6 @@ ${charaSetting}
 - 「去年の春も同じように体調崩してた」のように具体的に言いなさい。
 - 300文字以内で、読みやすく改行を入れなさい。
 
-## ユーザー情報
-- 既往歴: ${userContext.medicalHistory}
-- 薬: ${userContext.currentMedications}
-- 関心: IBD=${userContext.modeIbd} / ボディメイク=${userContext.modeDiet} / アルコール=${userContext.modeAlcohol} / メンタル=${userContext.modeMental}
-
-${MEDICATION_AI_CAUTION_RULE}
+${userContextBlock(userContext)}
 `;
 }

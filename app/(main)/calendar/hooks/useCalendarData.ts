@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ensureSession, handleUnauthorized, apiFetch, apiPut, apiPatch, apiDelete } from '@/lib/api-client';
 import { PATH, DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from '@/lib/constants';
@@ -35,7 +35,12 @@ export function useCalendarData(currentDate: Date) {
   });
   const [fullSettings, setFullSettings] = useState<Record<string, unknown>>({});
 
-  const fetchLogs = async () => {
+  const logsMap = useMemo(
+    () => new Map(logs.map((l) => [l.date, l])),
+    [logs]
+  );
+
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     const session = await ensureSession(router);
     if (!session) {
@@ -76,11 +81,11 @@ export function useCalendarData(currentDate: Date) {
       console.error('Calendar fetch error:', res.status, await res.text().catch(() => ''));
     }
     setLoading(false);
-  };
+  }, [router, year, month, lastDate]);
 
   useEffect(() => {
     fetchLogs();
-  }, [currentDate]);
+  }, [fetchLogs]);
 
   const handleToggleShowPeriod = async () => {
     const next = !periodSettings.showPeriodOnCalendar;
@@ -105,7 +110,7 @@ export function useCalendarData(currentDate: Date) {
 
   const handleDateClick = (day: number) => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const log = logs.find((l) => l.date === dateStr);
+    const log = logsMap.get(dateStr);
     if (log) {
       setSelectedLog(log);
       setEditForm(log);
@@ -177,6 +182,7 @@ export function useCalendarData(currentDate: Date) {
     firstDay,
     lastDate,
     logs,
+    logsMap,
     selectedLog,
     setSelectedLog,
     loading,

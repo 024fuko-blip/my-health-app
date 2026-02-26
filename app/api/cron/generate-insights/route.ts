@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
+import { timingSafeCompare, errorResponse } from '@/lib/api-utils';
 import { generateAndSaveInsight } from '@/lib/insights/generate';
 import {
   getTodayJST,
@@ -16,12 +17,14 @@ import {
   getPreviousYearRange,
 } from '@/lib/date-utils';
 
+const BATCH_SIZE = 5;
+
 export async function POST(req: Request) {
   try {
     const cronSecret = getServerEnv().CRON_SECRET;
     const headerSecret = req.headers.get('X-Cron-Secret');
-    if (!cronSecret || headerSecret !== cronSecret) {
-      return new NextResponse('Forbidden', { status: 403 });
+    if (!timingSafeCompare(headerSecret, cronSecret)) {
+      return errorResponse('Forbidden', 403);
     }
 
     const today = getTodayJST();
@@ -29,10 +32,14 @@ export async function POST(req: Request) {
     const dayOfWeek = jstNow.getDay();
     const dayOfMonth = jstNow.getDate();
 
-    const [, month, day] = today.split('-').map(Number);
+    const [, month] = today.split('-').map(Number);
     const isFirstOfMonth = dayOfMonth === 1;
     const isJanFirst = month === 1 && dayOfMonth === 1;
     const isMonday = dayOfWeek === 1;
+
+    if (!isMonday && !isFirstOfMonth && !isJanFirst) {
+      return NextResponse.json({ generated: 0, message: 'No insight generation needed today' });
+    }
 
     const users = await prisma.user.findMany({
       select: { id: true },
@@ -45,31 +52,38 @@ export async function POST(req: Request) {
 
     let generated = 0;
 
-    for (const userId of userIds) {
-      try {
-        if (isMonday) {
-          const range = getPreviousWeekRange();
-          await generateAndSaveInsight(userId, 'weekly', range.startDate, range.endDate);
-          generated += 1;
-        }
-        if (isFirstOfMonth) {
-          const range = getPreviousMonthRange();
-          await generateAndSaveInsight(userId, 'monthly', range.startDate, range.endDate);
-          generated += 1;
-        }
-        if (isJanFirst) {
-          const range = getPreviousYearRange();
-          await generateAndSaveInsight(userId, 'yearly', range.startDate, range.endDate);
-          generated += 1;
-        }
-      } catch (e) {
-        console.error(`generate-insights error for user ${userId}:`, e);
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+      const batch = userIds.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (userId) => {
+          let count = 0;
+          if (isMonday) {
+            const range = getPreviousWeekRange();
+            await generateAndSaveInsight(userId, 'weekly', range.startDate, range.endDate);
+            count += 1;
+          }
+          if (isFirstOfMonth) {
+            const range = getPreviousMonthRange();
+            await generateAndSaveInsight(userId, 'monthly', range.startDate, range.endDate);
+            count += 1;
+          }
+          if (isJanFirst) {
+            const range = getPreviousYearRange();
+            await generateAndSaveInsight(userId, 'yearly', range.startDate, range.endDate);
+            count += 1;
+          }
+          return count;
+        })
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled') generated += r.value;
+        else console.error('generate-insights batch error:', r.reason);
       }
     }
 
     return NextResponse.json({ generated });
   } catch (error) {
     console.error('cron generate-insights error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return errorResponse('Internal Server Error', 500);
   }
 }

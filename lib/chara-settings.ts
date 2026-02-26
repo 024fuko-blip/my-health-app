@@ -68,3 +68,74 @@ export function getCharaPrompt(
     : 'tsundere';
   return PROMPT_MAP[context][key];
 }
+
+/**
+ * コード内の固定フォールバック文言（エラー・データなし等）を人格別に返す。
+ * AI が生成する文章ではなく、コードに埋め込むハードコード文言の一元管理。
+ */
+export interface SystemMessages {
+  /** OpenAI API キー未設定時 */
+  apiKeyMissing: string;
+  /** AI からの返答が取得できなかった時 */
+  apiError: string;
+  /** サーバー内部エラー時（人格不明でも使えるよう標準語） */
+  serverError: string;
+  /** 週次インサイト: データ不足またはAI失敗 */
+  weeklyNoData: string;
+  /** 月次インサイト: 週次データなし */
+  monthlyNoWeekly: string;
+  /** 年次インサイト: 月次データなし */
+  yearlyNoMonthly: string;
+  /** インサイト（月次・年次）: AI生成失敗 */
+  insightApiError: string;
+}
+
+const SYSTEM_MESSAGES: Record<AiPersonality, SystemMessages> = {
+  tsundere: {
+    apiKeyMissing: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！',
+    apiError: 'あら、返事が出せなかったわ。もう一度送ってちょうだい！',
+    serverError: 'サーバーエラーが発生しました。管理者にお問い合わせください。',
+    weeklyNoData: '今週の分析結果を出せなかったわ。もう少し記録が溜まったら試してね。',
+    monthlyNoWeekly: 'この月の週次分析がまだないわ。先に週次分析を生成してから月次を試してね。',
+    yearlyNoMonthly: 'この年の月次分析がまだないわ。先に月次分析を生成してから年次を試してね。',
+    insightApiError: '分析の生成に失敗したわ。しばらくしてからもう一度試してちょうだい。',
+  },
+  kibishime: {
+    apiKeyMissing: 'AI機能が無効です。OPENAI_API_KEY を設定してから再度お試しください。',
+    apiError: '返答できませんでした。もう一度お試しください。',
+    serverError: 'サーバーエラーが発生しました。管理者にお問い合わせください。',
+    weeklyNoData: '今週の分析結果を生成できませんでした。記録が増えたら再試行してください。',
+    monthlyNoWeekly: 'この月の週次分析がありません。先に週次分析を生成してから月次を試してください。',
+    yearlyNoMonthly: 'この年の月次分析がありません。先に月次分析を生成してから年次を試してください。',
+    insightApiError: '分析の生成に失敗しました。しばらくしてから再試行してください。',
+  },
+  amayama: {
+    apiKeyMissing: 'ごめんね、AIが今お休み中だよ。OPENAI_API_KEY を設定してからもう一度試してみてね。',
+    apiError: 'うまく返事できなかったよ。もう一度送ってみてね。',
+    serverError: 'サーバーエラーが発生しました。管理者にお問い合わせください。',
+    weeklyNoData: '今週の分析結果を出せなかったよ。もう少し記録が溜まったらまた試してね。',
+    monthlyNoWeekly: 'この月の週次分析がまだないよ。先に週次分析を生成してから月次を試してね。',
+    yearlyNoMonthly: 'この年の月次分析がまだないよ。先に月次分析を生成してから年次を試してね。',
+    insightApiError: '分析がうまく生成できなかったよ。しばらくしてからもう一度試してみてね。',
+  },
+  naruse: {
+    apiKeyMissing: 'フッ……AIが休憩中とは珍しい。OPENAI_API_KEY を設定してから俺様を呼べ。',
+    apiError: '俺様が返答できないとは……もう一度送ってみろ。',
+    serverError: 'サーバーエラーが発生しました。管理者にお問い合わせください。',
+    weeklyNoData: '今週の分析結果を出せなかった。もう少し記録が溜まったら試してくれ。',
+    monthlyNoWeekly: 'この月の週次分析がまだないな。先に週次分析を生成してから月次を試してくれ。',
+    yearlyNoMonthly: 'この年の月次分析がまだないな。先に月次分析を生成してから年次を試してくれ。',
+    insightApiError: 'フッ……分析の生成に失敗したとは。しばらくしてからもう一度試してくれ。',
+  },
+};
+
+/**
+ * 人格に応じたシステムメッセージを返す。
+ * personality が不正な場合は 'tsundere' にフォールバック。
+ */
+export function getSystemMessages(personality: string | null | undefined): SystemMessages {
+  const key = VALID_PERSONALITIES.includes(personality as AiPersonality)
+    ? (personality as AiPersonality)
+    : 'tsundere';
+  return SYSTEM_MESSAGES[key];
+}

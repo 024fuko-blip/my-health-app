@@ -5,27 +5,27 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { parseJsonBody, withSession } from '@/lib/api-utils';
+import { parseJsonBody, withSession, errorResponse } from '@/lib/api-utils';
+import { periodPatchSchema } from '@/lib/validations/api-schemas';
 import { safeParseJson } from '@/lib/json-utils';
 
 export async function PATCH(req: Request) {
   return withSession(async (session) => {
-    try {
-      const parsed = await parseJsonBody<{ last_period_date?: string; period_duration?: number }>(req);
-    const body = parsed.ok ? parsed.data : {};
-    const { last_period_date, period_duration } = body;
+    const parsed = await parseJsonBody(req, periodPatchSchema);
+    if (!parsed.ok) return parsed.error;
+    const { last_period_date, period_duration } = parsed.data;
 
     const row = await prisma.userSettings.findUnique({
       where: { userId: session.userId },
     });
-    if (!row) return new NextResponse('Not Found', { status: 404 });
+    if (!row) return errorResponse('Not Found', 404);
 
     const medicalHistory = safeParseJson<Record<string, unknown>>(row.medicalHistory, {});
 
-    if (typeof last_period_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(last_period_date)) {
+    if (last_period_date) {
       medicalHistory.lastPeriodDate = last_period_date;
     }
-    if (typeof period_duration === 'number' && period_duration >= 1 && period_duration <= 14) {
+    if (period_duration !== undefined) {
       medicalHistory.periodDuration = period_duration;
     }
 
@@ -34,10 +34,6 @@ export async function PATCH(req: Request) {
       data: { medicalHistory: JSON.stringify(medicalHistory) },
     });
 
-      return NextResponse.json({ ok: true });
-    } catch (error) {
-      console.error('period PATCH error:', error);
-      return new NextResponse('Internal Server Error', { status: 500 });
-    }
+    return NextResponse.json({ ok: true });
   });
 }
