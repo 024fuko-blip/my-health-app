@@ -24,96 +24,104 @@ export default function ConsentPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 flex flex-col">
-      <div className="flex-1 flex items-center justify-center py-8">
-        <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">同意画面</h1>
-        <p className="text-sm text-gray-700">
-          本サービスを利用するには、以下の内容に同意してください。
-        </p>
-
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-          <div className="text-xs text-gray-700 mb-2">
-            内容を最後までスクロールすると同意に進めます
-          </div>
-          <div
-            ref={scrollRef}
-            className="h-60 overflow-y-scroll bg-white p-3 text-xs text-gray-700 rounded border border-gray-100"
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-              if (atEnd) setScrolledToEnd(true);
-            }}
-          >
-            <p className="mb-2 font-bold">プライバシーポリシーの要点</p>
-            <p className="mb-2">
-              本アプリは、Google ログインを通じて以下の情報を取得します。
-              取得項目は「メールアドレス」「氏名（設定されている場合）」「プロフィール画像（設定されている場合）」です。
-            </p>
-            <p className="mb-2">
-              取得した情報は「ユーザー認証・本人確認」「アカウント作成・管理」
-              「サービス提供・改善のための分析」に利用します。
-            </p>
-            <p className="mb-2">
-              法令に基づく場合を除き、取得した個人情報を第三者に提供することはありません。
-            </p>
-            <p className="mb-2">
-              取得した情報は、サービス提供に必要な期間に限り保存し、不要となった場合は適切に削除します。
-            </p>
-            <p className="mb-2">
-              本ポリシーに関するお問い合わせは運営者までご連絡ください。必要に応じて内容を改定し、本ページで通知します。
-            </p>
-            <p>
-              続行することで、プライバシーポリシーおよび利用規約に同意したものとみなされます。
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <label className="flex items-start gap-3 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={agreePrivacy}
-              onChange={(e) => setAgreePrivacy(e.target.checked)}
-              className="mt-1"
-              disabled={!scrolledToEnd}
-            />
-            <span>
-              <a href="/privacy" className="text-blue-600 hover:underline">プライバシーポリシー</a>
-              に同意します
-            </span>
-          </label>
-          <label className="flex items-start gap-3 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={agreeTerms}
-              onChange={(e) => setAgreeTerms(e.target.checked)}
-              className="mt-1"
-              disabled={!scrolledToEnd}
-            />
-            <span>
-              <a href="/terms" className="text-blue-600 hover:underline">利用規約</a>
-              に同意します
-            </span>
-          </label>
-        </div>
-
-        <button
-          type="button"
-          disabled={!canContinue}
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              localStorage.setItem("consentAccepted", "true");
-            }
-            router.push("/guide?from=consent");
-          }}
-          className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold disabled:bg-gray-300 disabled:text-gray-600"
+    <div className="min-h-screen bg-slate-50/80 px-4 flex flex-col">
+      <div className="flex-1 flex items-center justify-center py-6 sm:py-10">
+        <div
+          className="w-full max-w-xl mx-auto rounded-2xl bg-white p-6 sm:p-8 shadow-sm border border-slate-100"
+          style={{ maxWidth: "min(100%, 28rem)" }}
         >
-          同意して使い方へ
-        </button>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4">
+            利用開始のご同意
+          </h1>
+          <p className="text-base text-slate-700 leading-relaxed mb-6">
+            このアプリを使うには、プライバシーポリシーと利用規約への同意が必要です。
+          </p>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 mb-6">
+            <p className="text-sm text-slate-600 mb-3">
+              以下を最後まで読むと、同意に進めます
+            </p>
+            <div
+              ref={scrollRef}
+              className="max-h-52 overflow-y-auto bg-white p-4 rounded-lg border border-slate-100 text-slate-700"
+              style={{
+                lineHeight: 1.75,
+                letterSpacing: "0.02em",
+              }}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
+                if (atEnd) setScrolledToEnd(true);
+              }}
+            >
+              <p className="font-semibold text-slate-800 mb-3">プライバシーポリシーの要点</p>
+              <p className="mb-3 text-[15px]">
+                本アプリは、Google ログインを通じて以下の情報を取得します。
+              </p>
+              <p className="mb-3 text-[15px] pl-3 border-l-2 border-slate-200">
+                メールアドレス、氏名（設定されている場合）、プロフィール画像（設定されている場合）
+              </p>
+              <p className="mb-3 text-[15px]">
+                これらの情報は、本人確認・アカウント管理・サービス改善に利用します。法令に基づく場合を除き、第三者へ提供することはありません。
+              </p>
+              <p className="mb-3 text-[15px]">
+                サービス提供に必要な期間のみ保存し、不要になったら削除します。
+              </p>
+              <p className="text-[15px]">
+                続行することで、プライバシーポリシーおよび利用規約に同意したものとみなされます。
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-6">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={agreePrivacy}
+                onChange={(e) => setAgreePrivacy(e.target.checked)}
+                disabled={!scrolledToEnd}
+                className="mt-1 w-4 h-4 rounded border-slate-300 text-[var(--color-sage)] focus:ring-[var(--color-sage)]"
+              />
+              <span className="text-[15px] text-slate-700 leading-relaxed">
+                <a href="/privacy" className="text-slate-800 font-medium underline underline-offset-2 hover:text-[var(--color-sage)]">
+                  プライバシーポリシー
+                </a>
+                に同意します
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                disabled={!scrolledToEnd}
+                className="mt-1 w-4 h-4 rounded border-slate-300 text-[var(--color-sage)] focus:ring-[var(--color-sage)]"
+              />
+              <span className="text-[15px] text-slate-700 leading-relaxed">
+                <a href="/terms" className="text-slate-800 font-medium underline underline-offset-2 hover:text-[var(--color-sage)]">
+                  利用規約
+                </a>
+                に同意します
+              </span>
+            </label>
+          </div>
+
+          <button
+            type="button"
+            disabled={!canContinue}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.setItem("consentAccepted", "true");
+              }
+              router.push("/guide?from=consent");
+            }}
+            className="w-full bg-[var(--color-sage)] text-white py-3.5 px-4 rounded-xl font-bold text-base disabled:bg-slate-300 disabled:text-slate-500 transition-colors"
+          >
+            同意して使い方へ
+          </button>
         </div>
       </div>
-      <footer className="w-full max-w-2xl mx-auto py-4 pb-8">
+      <footer className="w-full max-w-xl mx-auto py-6 pb-8">
         <FooterLink />
       </footer>
     </div>

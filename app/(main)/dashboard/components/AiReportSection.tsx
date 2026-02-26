@@ -22,10 +22,7 @@ export function AiReportSection({
       className="overflow-hidden rounded-xl border border-slate-200"
     >
       <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-slate-800 bg-slate-50 hover:bg-slate-100">
-        <span className="flex items-center gap-2">
-          <span>💋</span>
-          相棒の期間総評（因果関係分析）
-        </span>
+        <span>相棒の期間総評</span>
         <span className="text-xs font-normal text-gray-600">
           {sectionOpen.report ? '閉じる' : '開く'}
         </span>
