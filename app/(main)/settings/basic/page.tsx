@@ -82,20 +82,20 @@ export default function SettingsBasicPage() {
         <p className="text-sm text-slate-700">記録・分析で使う項目を選びます</p>
         <div className="space-y-2">
           <label className="flex justify-between items-center py-2">
-            <span>💊 IBD管理</span>
+            <span className="text-slate-800 font-medium">💊 IBD管理</span>
             <input type="checkbox" checked={settings.mode_ibd} onChange={() => toggleMode("mode_ibd")} className="w-6 h-6" />
           </label>
           <label className="flex justify-between items-center py-2">
-            <span>🍺 アルコール管理</span>
+            <span className="text-slate-800 font-medium">🍺 アルコール管理</span>
             <input type="checkbox" checked={settings.mode_alcohol} onChange={() => toggleMode("mode_alcohol")} className="w-6 h-6" />
           </label>
           <label className="flex justify-between items-center py-2">
-            <span>🌿 メンタルケア</span>
+            <span className="text-slate-800 font-medium">🌿 メンタルケア</span>
             <input type="checkbox" checked={settings.mode_mental} onChange={() => toggleMode("mode_mental")} className="w-6 h-6" />
           </label>
           <label className="flex justify-between items-center py-2">
-            <span>💪 ボディメイク</span>
-            <input type="checkbox" checked={settings.mode_diet} onChange={() => toggleMode("mode_diet")} className="w-6 h-6 accent-purple-600" />
+            <span className="text-slate-800 font-medium">💪 ボディメイク</span>
+            <input type="checkbox" checked={settings.mode_diet} onChange={() => toggleMode("mode_diet")} className="w-6 h-6" />
           </label>
         </div>
       </div>
