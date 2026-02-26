@@ -21,8 +21,8 @@ export default function SettingsIndexPage() {
     <div className="space-y-4 pt-2">
       <div className="bg-white p-4 rounded-xl border flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-gray-700">使い方ガイド</h3>
-          <p className="text-xs text-gray-700">モードやプロフィールの説明はこちら</p>
+          <h3 className="font-bold text-slate-800">使い方ガイド</h3>
+          <p className="text-sm text-slate-700">モードやプロフィールの説明はこちら</p>
         </div>
         <Link
           href="/guide"
@@ -39,11 +39,11 @@ export default function SettingsIndexPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">🔧 基本設定</h3>
-            <p className="text-xs text-gray-700 mt-0.5">
+            <p className="text-sm text-slate-700 mt-0.5">
               AIの口調・健康管理モード（IBD・アルコール・メンタル・ボディメイク）
             </p>
           </div>
-          <span className="text-gray-600">→</span>
+          <span className="text-slate-600">→</span>
         </div>
       </Link>
 
@@ -54,11 +54,11 @@ export default function SettingsIndexPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">👤 プロフィール</h3>
-            <p className="text-xs text-gray-700 mt-0.5">
+            <p className="text-sm text-slate-700 mt-0.5">
               名前・生年月日・性別・身長・体重・既往歴
             </p>
           </div>
-          <span className="text-gray-600">→</span>
+          <span className="text-slate-600">→</span>
         </div>
       </Link>
 
@@ -69,11 +69,11 @@ export default function SettingsIndexPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">🏥 健康管理</h3>
-            <p className="text-xs text-gray-700 mt-0.5">
+            <p className="text-sm text-slate-700 mt-0.5">
               生理周期・服薬中の薬
             </p>
           </div>
-          <span className="text-gray-600">→</span>
+          <span className="text-slate-600">→</span>
         </div>
       </Link>
 
@@ -84,11 +84,11 @@ export default function SettingsIndexPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">⏰ リマインダー</h3>
-            <p className="text-xs text-gray-700 mt-0.5">
+            <p className="text-sm text-slate-700 mt-0.5">
               今日の服薬スケジュール・検診予定
             </p>
           </div>
-          <span className="text-gray-600">→</span>
+          <span className="text-slate-600">→</span>
         </div>
       </Link>
 
@@ -99,11 +99,11 @@ export default function SettingsIndexPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">🐾 マイペット</h3>
-            <p className="text-xs text-gray-700 mt-0.5">
+            <p className="text-sm text-slate-700 mt-0.5">
               相棒ペットの餌やり・着せ替え
             </p>
           </div>
-          <span className="text-gray-600">→</span>
+          <span className="text-slate-600">→</span>
         </div>
       </Link>
 
@@ -111,7 +111,7 @@ export default function SettingsIndexPage() {
 
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="w-full bg-gray-200 text-gray-700 p-3 rounded-lg text-sm font-medium hover:bg-gray-300"
+        className="w-full bg-slate-200 text-slate-800 p-3 rounded-lg text-sm font-medium hover:bg-slate-300"
       >
         ログアウト
       </button>

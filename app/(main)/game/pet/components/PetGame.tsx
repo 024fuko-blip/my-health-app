@@ -64,7 +64,7 @@ export function PetGame({ petEmoji, onFinish, onClose }: PetGameProps) {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div className="bg-white p-6 max-w-sm w-full">
           <h3 className="font-bold text-lg mb-2">なでなでタイム</h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-slate-700 mb-4">
             ペットをタップしてなでなで！60秒間で何回なでられるかな？1日1回まで。
           </p>
           <div className="flex gap-2">
@@ -120,7 +120,7 @@ export function PetGame({ petEmoji, onFinish, onClose }: PetGameProps) {
         ))}
       </div>
       <div className="p-4 bg-white border-t">
-        <p className="text-sm text-center text-gray-600">
+        <p className="text-sm text-center text-slate-700">
           ペットをタップしてなでなで！
         </p>
       </div>

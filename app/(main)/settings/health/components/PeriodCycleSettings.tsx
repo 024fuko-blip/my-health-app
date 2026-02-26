@@ -34,20 +34,20 @@ export function PeriodCycleSettings({
             onChange={(e) => setShowPeriodOnCalendar(e.target.checked)}
             className="w-4 h-4"
           />
-          <span className="text-sm">カレンダー・記録画面に生理周期を表示する</span>
+          <span className="text-sm text-slate-800">カレンダー・記録画面に生理周期を表示する</span>
         </label>
         <div>
-          <label className="block text-xs font-bold mb-1">最後の生理開始日</label>
+          <label className="block text-sm font-bold text-slate-800 mb-1">最後の生理開始日</label>
           <input
             type="date"
             value={lastPeriodDate}
             onChange={(e) => setLastPeriodDate(e.target.value)}
-            className="w-full p-2 border rounded text-sm"
+            className="w-full p-2 border rounded text-sm text-slate-900"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold mb-1">周期（日数）</label>
+            <label className="block text-sm font-bold text-slate-800 mb-1">周期（日数）</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -55,13 +55,13 @@ export function PeriodCycleSettings({
                 max={40}
                 value={periodCycle}
                 onChange={(e) => setPeriodCycle(parseInt(e.target.value) || 28)}
-                className="w-full p-2 border rounded text-sm text-center"
+                className="w-full p-2 border rounded text-sm text-center text-slate-900"
               />
-              <span className="text-sm text-gray-700">日</span>
+              <span className="text-sm text-slate-800">日</span>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold mb-1">生理期間</label>
+            <label className="block text-sm font-bold text-slate-800 mb-1">生理期間</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -69,9 +69,9 @@ export function PeriodCycleSettings({
                 max={10}
                 value={periodDuration}
                 onChange={(e) => setPeriodDuration(parseInt(e.target.value) || 5)}
-                className="w-full p-2 border rounded text-sm text-center"
+                className="w-full p-2 border rounded text-sm text-center text-slate-900"
               />
-              <span className="text-sm text-gray-700">日</span>
+              <span className="text-sm text-slate-800">日</span>
             </div>
           </div>
         </div>
@@ -85,13 +85,13 @@ export function PeriodCycleSettings({
             })()}
           </p>
         )}
-        <p className="text-xs text-gray-700">カレンダーに生理予測・PMSが表示されます</p>
+        <p className="text-sm text-slate-700">カレンダーに生理予測・PMSが表示されます</p>
       </div>
     );
   }
 
   return (
-    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+    <p className="text-sm text-slate-800 bg-slate-50 p-3 rounded-lg">
       生理周期はプロフィールで性別を「女性」にすると表示されます。
     </p>
   );

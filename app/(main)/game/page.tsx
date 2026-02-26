@@ -94,7 +94,7 @@ export default function GamePage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-gray-700 hover:bg-amber-200 transition"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-slate-800 hover:bg-amber-200 transition"
           aria-label="戻る"
         >
           ←
@@ -113,14 +113,14 @@ export default function GamePage() {
           <span className="text-amber-600">{showExplanation ? "閉じる ▼" : "開く ▶"}</span>
         </button>
         {showExplanation && (
-          <div className="px-4 pb-4 pt-0 text-sm text-gray-700 space-y-2 border-t border-amber-200/80">
+          <div className="px-4 pb-4 pt-0 text-sm text-slate-700 space-y-2 border-t border-amber-200/80">
             <p>
               <strong>記録を続ける</strong>とポイントがもらえるよ。連続で記録すると<strong>ストリーク</strong>が伸びて、バッジがもらえる。
             </p>
             <p>
               <strong>ぽっち</strong>は、ねこ・いぬ・うさぎ・カピバラ・ハムスター・アヒルの<strong>6種類</strong>から選べるペット。たまったポイントで<strong>餌</strong>や<strong>着せ替え</strong>を買って、育てていこう！
             </p>
-            <p className="text-xs text-gray-700">
+            <p className="text-sm text-slate-700">
               まだペットを迎えてない場合は下の「ぽっち」カードから種類を選んで迎えよう。
             </p>
           </div>
@@ -154,16 +154,16 @@ export default function GamePage() {
               <span>{pet?.species_emoji ?? "🐱"}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-bold text-gray-800">
+              <h2 className="font-bold text-slate-800">
                 {pet ? pet.pet_name : "ぽっち"}
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-slate-700">
                 {pet
                   ? `幸福度 ${pet.happiness} · 餌・着替・部屋・ミニゲームで育てよう`
                   : "タップしてぽっちを迎えよう"}
               </p>
             </div>
-            <span className="text-gray-600">→</span>
+            <span className="text-slate-600">→</span>
           </div>
         </Link>
         {pet && (
@@ -188,12 +188,12 @@ export default function GamePage() {
       </div>
 
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-        <p className="text-sm font-bold text-gray-700 mb-1">最長ストリーク</p>
-        <p className="text-2xl font-bold text-gray-900">{stats.longest_streak} 日</p>
+        <p className="text-sm font-bold text-slate-800 mb-1">最長ストリーク</p>
+        <p className="text-2xl font-bold text-slate-900">{stats.longest_streak} 日</p>
       </div>
 
       <div>
-        <h2 className="font-bold text-gray-800 mb-3">Badges</h2>
+        <h2 className="font-bold text-slate-800 mb-3">Badges</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {stats.badges.map((b) => (
             <div
@@ -205,7 +205,7 @@ export default function GamePage() {
               }`}
             >
               <span className="text-2xl block mb-1">{b.emoji ?? "?"}</span>
-              <p className="text-xs font-bold text-gray-800">{b.name}</p>
+              <p className="text-sm font-bold text-slate-800">{b.name}</p>
               {b.earned && b.earnedAt && (
                 <p className="text-[10px] text-amber-700 mt-0.5">
                   {b.earnedAt} 獲得

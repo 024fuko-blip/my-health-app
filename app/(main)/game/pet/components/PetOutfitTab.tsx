@@ -11,7 +11,7 @@ interface PetOutfitTabProps {
 export function PetOutfitTab({ data, onEquip, onBuy }: PetOutfitTabProps) {
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-gray-800">着せ替え</h3>
+      <h3 className="font-bold text-slate-800">着せ替え</h3>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -36,11 +36,11 @@ export function PetOutfitTab({ data, onEquip, onBuy }: PetOutfitTabProps) {
               }`}
             >
               {o.emoji && <span>{o.emoji}</span>}
-              <span>{o.name}</span>
+              <span className="text-slate-900 font-medium">{o.name}</span>
             </button>
           ))}
       </div>
-      <h3 className="font-bold text-gray-800 pt-2">ショップ（着せ替え）</h3>
+      <h3 className="font-bold text-slate-800 pt-2">ショップ（着せ替え）</h3>
       <div className="grid gap-2">
         {data.outfits.map((o) => (
           <div
@@ -49,8 +49,8 @@ export function PetOutfitTab({ data, onEquip, onBuy }: PetOutfitTabProps) {
           >
             <span className="text-2xl">{o.emoji ?? "—"}</span>
             <div className="flex-1 mx-2 text-left">
-              <p className="font-bold">{o.name}</p>
-              <p className="text-xs text-gray-700">{o.cost} pt</p>
+              <p className="font-bold text-slate-900">{o.name}</p>
+              <p className="text-sm text-slate-800">{o.cost} pt</p>
             </div>
             <button
               type="button"

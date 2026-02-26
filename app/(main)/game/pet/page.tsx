@@ -46,7 +46,7 @@ export default function GamePetPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/game"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-gray-700 hover:bg-amber-200 transition"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-slate-800 hover:bg-amber-200 transition"
           aria-label="ゲームに戻る"
         >
           ←
@@ -80,7 +80,7 @@ export default function GamePetPage() {
           <h2 className="font-bold text-amber-900 mb-3">ぽっちを迎えよう</h2>
           <form onSubmit={handleCreatePet} className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">名前</label>
+              <label className="block text-sm font-bold text-slate-800 mb-1">名前</label>
               <input
                 type="text"
                 value={petName}
@@ -90,7 +90,7 @@ export default function GamePetPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">種類（6種類から選択）</label>
+              <label className="block text-sm font-bold text-slate-800 mb-1">種類（6種類から選択）</label>
               <div className="flex gap-2 flex-wrap">
                 {PET_SPECIES.map((s) => (
                   <button
@@ -144,7 +144,7 @@ export default function GamePetPage() {
                 className={`flex-1 py-2 font-bold text-sm ${
                   tab === t.key
                     ? "bg-amber-500 text-white"
-                    : "bg-gray-100 text-gray-600"
+                    : "bg-slate-100 text-slate-800"
                 }`}
               >
                 {t.label}

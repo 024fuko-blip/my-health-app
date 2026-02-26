@@ -7,8 +7,8 @@ interface PetPlayTabProps {
 export function PetPlayTab({ onMinigame }: PetPlayTabProps) {
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-gray-800">ミニゲーム</h3>
-      <p className="text-sm text-gray-700">
+      <h3 className="font-bold text-slate-800">ミニゲーム</h3>
+      <p className="text-sm text-slate-700">
         遊んでポイントと幸福度をゲット！
       </p>
       <div className="grid gap-3">
@@ -19,8 +19,8 @@ export function PetPlayTab({ onMinigame }: PetPlayTabProps) {
         >
           <span className="text-3xl">🔢</span>
           <div>
-            <p className="font-bold">6×6 数独</p>
-            <p className="text-xs text-gray-600">
+            <p className="font-bold text-slate-900">6×6 数独</p>
+            <p className="text-sm text-slate-700">
               1〜6を埋めてクリア！1日1回
             </p>
           </div>
@@ -32,8 +32,8 @@ export function PetPlayTab({ onMinigame }: PetPlayTabProps) {
         >
           <span className="text-3xl">🃏</span>
           <div>
-            <p className="font-bold">神経衰弱</p>
-            <p className="text-xs text-gray-600">
+            <p className="font-bold text-slate-900">神経衰弱</p>
+            <p className="text-sm text-slate-700">
               健康用語のペアを探せ！1日1回
             </p>
           </div>
@@ -45,8 +45,8 @@ export function PetPlayTab({ onMinigame }: PetPlayTabProps) {
         >
           <span className="text-3xl">💕</span>
           <div>
-            <p className="font-bold">なでなでタイム</p>
-            <p className="text-xs text-gray-600">
+            <p className="font-bold text-slate-900">なでなでタイム</p>
+            <p className="text-sm text-slate-700">
               ペットをタップしてなでなで！60秒・1日1回
             </p>
           </div>
@@ -58,8 +58,8 @@ export function PetPlayTab({ onMinigame }: PetPlayTabProps) {
         >
           <span className="text-3xl">📝</span>
           <div>
-            <p className="font-bold">健康クイズ</p>
-            <p className="text-xs text-gray-600">
+            <p className="font-bold text-slate-900">健康クイズ</p>
+            <p className="text-sm text-slate-700">
               あなたの記録に基づいたクイズ！1日1回
             </p>
           </div>

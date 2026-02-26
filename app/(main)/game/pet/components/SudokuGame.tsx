@@ -82,7 +82,7 @@ export function SudokuGame({ onFinish, onClose }: SudokuGameProps) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-4 max-w-sm w-full">
         <h3 className="font-bold text-lg mb-3">6×6 数独</h3>
-        <p className="text-xs text-gray-600 mb-3">
+        <p className="text-sm text-slate-700 mb-3">
           1〜6を各行・各列・各2×3ブロックに1つずつ入れてね
         </p>
         <div className="grid grid-cols-6 gap-0.5 border-2 border-gray-800">

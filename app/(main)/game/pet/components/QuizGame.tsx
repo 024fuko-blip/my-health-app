@@ -91,7 +91,7 @@ export function QuizGame({ onFinish, onClose }: QuizGameProps) {
           ))}
         </div>
         {selected !== null && (
-          <p className="mt-4 text-sm text-center text-gray-600">
+          <p className="mt-4 text-sm text-center text-slate-700">
             {selected === quiz.correctIndex ? "正解！" : "残念..."}
           </p>
         )}

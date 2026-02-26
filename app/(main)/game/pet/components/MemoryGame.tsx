@@ -80,7 +80,7 @@ export function MemoryGame({ onFinish, onClose }: MemoryGameProps) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-4 max-w-sm w-full">
         <h3 className="font-bold text-lg mb-2">神経衰弱</h3>
-        <p className="text-xs text-gray-600 mb-3">
+        <p className="text-sm text-slate-700 mb-3">
           ペアのカードを探してめくってね（健康用語）
         </p>
         <div className="grid grid-cols-4 gap-2">
@@ -103,7 +103,7 @@ export function MemoryGame({ onFinish, onClose }: MemoryGameProps) {
             );
           })}
         </div>
-        <p className="mt-3 text-sm text-center text-gray-600">
+        <p className="mt-3 text-sm text-center text-slate-700">
           マッチ: {matched.size} / {CARD_PAIRS.length}
         </p>
         {isComplete && (

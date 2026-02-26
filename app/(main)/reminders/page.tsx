@@ -112,12 +112,12 @@ export default function RemindersPage() {
             {medicationSchedule.map((item, i) => (
               <li key={i} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-green-100">
                 <span className="font-mono font-bold text-green-700 w-12">{item.time}</span>
-                <span className="text-sm text-gray-700">{item.medications.join("、")}</span>
+                <span className="text-sm text-slate-800">{item.medications.join("、")}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-700">
             設定の「健康管理」で服薬中の薬とタイミング（朝・昼・晩・眠前）を登録すると、ここに今日の服薬スケジュールが表示されます。
           </p>
         )}
@@ -144,7 +144,7 @@ export default function RemindersPage() {
         {showAddCheckup && (
           <form onSubmit={handleAddCheckup} className="mb-4 p-3 bg-white rounded-lg border border-blue-100 space-y-2">
             <div>
-              <label className="block text-xs text-gray-600 mb-0.5">病院名</label>
+              <label className="block text-sm text-slate-800 mb-0.5">病院名</label>
               <input
                 type="text"
                 list="hospital-history"
@@ -162,7 +162,7 @@ export default function RemindersPage() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-gray-600 mb-0.5">予定日</label>
+                <label className="block text-sm text-slate-800 mb-0.5">予定日</label>
                 <input
                   type="date"
                   value={newDueDate}
@@ -172,7 +172,7 @@ export default function RemindersPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-0.5">予約時間（任意）</label>
+                <label className="block text-sm text-slate-800 mb-0.5">予約時間（任意）</label>
                 <input
                   type="time"
                   value={newScheduledTime}
@@ -182,7 +182,7 @@ export default function RemindersPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-0.5">メモ（任意）</label>
+              <label className="block text-sm text-slate-800 mb-0.5">メモ（任意）</label>
               <input
                 type="text"
                 value={newMemo}
@@ -210,7 +210,7 @@ export default function RemindersPage() {
               >
                 <div>
                   <p className="font-bold text-gray-800">{c.name}</p>
-                  <p className="text-xs text-gray-700">
+                  <p className="text-sm text-slate-700">
                     {c.due_date}
                     {c.scheduled_time ? ` ${c.scheduled_time}` : ""}
                     {c.memo ? ` ・ ${c.memo}` : ""}
@@ -228,7 +228,7 @@ export default function RemindersPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-700">
             健康診断や検診の予定日を登録しておくと、忘れずに管理できます。
           </p>
         )}
