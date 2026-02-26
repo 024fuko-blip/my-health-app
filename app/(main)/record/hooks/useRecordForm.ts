@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { ensureSession, apiFetch, apiPut } from '@/lib/api-client';
+import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION, PATH } from '@/lib/constants';
 import {
   DRINK_PRESETS,
   calculateDecompositionTime,
@@ -24,8 +26,8 @@ export function useRecordForm() {
   const [gender, setGender] = useState('unspecified');
   const [periodSettings, setPeriodSettings] = useState<PeriodSettings>({
     lastPeriodDate: '',
-    periodCycle: 28,
-    periodDuration: 5,
+    periodCycle: DEFAULT_PERIOD_CYCLE,
+    periodDuration: DEFAULT_PERIOD_DURATION,
     showPeriodOnCalendar: true,
   });
 
@@ -77,12 +79,7 @@ export function useRecordForm() {
     async (medKey: string, taken: boolean) => {
       lastUserEditRef.current = { date, time: Date.now() };
       try {
-        await fetch('/api/health-logs/medication-status', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date, med_key: medKey, taken }),
-          credentials: 'include',
-        });
+        await apiPut('/api/health-logs/medication-status', { date, med_key: medKey, taken });
       } catch (e) {
         console.error('Medication status save error:', e);
       }
@@ -178,11 +175,13 @@ export function useRecordForm() {
     if (loading) return;
     const fetchStarted = Date.now();
     const loadLogForDate = async () => {
-      const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
-      const sessionData = await sessionRes.json();
-      if (!sessionData.user) return;
-      const logRes = await fetch(`/api/health-logs?date=${date}`, { credentials: 'include' });
-      if (logRes.status === 401) return;
+      const session = await ensureSession(router);
+      if (!session) return;
+      const logRes = await apiFetch(`/api/health-logs?date=${date}`);
+      if (logRes.status === 401) {
+        router.replace(PATH.LOGIN);
+        return;
+      }
       const log = logRes.ok ? await logRes.json() : null;
       const now = Date.now();
       const edit = lastUserEditRef.current;

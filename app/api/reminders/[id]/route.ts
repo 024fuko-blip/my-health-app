@@ -37,7 +37,7 @@ export async function PATCH(
     if (memo !== undefined) data.memo = memo === '' ? null : String(memo);
 
     const updated = await prisma.checkupReminder.update({
-      where: { id },
+      where: { id, userId: session.userId },
       data,
     });
       return NextResponse.json({
@@ -67,7 +67,9 @@ export async function DELETE(
     });
     if (!existing) return new NextResponse('Not Found', { status: 404 });
 
-      await prisma.checkupReminder.delete({ where: { id } });
+      await prisma.checkupReminder.delete({
+        where: { id, userId: session.userId },
+      });
       return NextResponse.json({ ok: true });
     } catch (error) {
       console.error('reminders DELETE error:', error);

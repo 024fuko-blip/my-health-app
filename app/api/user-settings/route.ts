@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
+import { userSettingsPutSchema } from '@/lib/validations/api-schemas';
 import { safeNumber, safeLongString } from '@/lib/json-utils';
+import { HTTP_STATUS } from '@/lib/constants';
 
 const MAX_STRING_LENGTH = 10000;
 
@@ -81,7 +83,9 @@ export async function GET() {
       return NextResponse.json(toApiShape(row));
     } catch (error) {
       console.error('user-settings GET error:', error);
-      return new NextResponse('Internal Server Error', { status: 500 });
+      return new NextResponse('Internal Server Error', {
+        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      });
     }
   });
 }
@@ -89,7 +93,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   return withSession(async (session) => {
     try {
-      const parsed = await parseJsonBody(req);
+      const parsed = await parseJsonBody(req, userSettingsPutSchema);
       if (!parsed.ok) return parsed.error;
       const body = parsed.data;
 
@@ -113,12 +117,7 @@ export async function PUT(req: Request) {
         longitude,
       } = body;
 
-      const PERSONALITIES: readonly string[] = ['tsundere', 'kibishime', 'amayama', 'naruse'];
-      const personality =
-        typeof ai_personality === 'string' && PERSONALITIES.includes(ai_personality)
-          ? (ai_personality as 'tsundere' | 'kibishime' | 'amayama' | 'naruse')
-          : 'tsundere';
-
+      const personality = ai_personality ?? 'tsundere';
       const genderStr = typeof gender === 'string' ? gender : 'unspecified';
 
       const data = {
@@ -153,7 +152,7 @@ export async function PUT(req: Request) {
       console.error('user-settings PUT error:', msg, error);
       return NextResponse.json(
         { error: '保存に失敗しました', detail: msg },
-        { status: 500 }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
   });

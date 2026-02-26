@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
+import { reportPostSchema } from '@/lib/validations/api-schemas';
+import { HTTP_STATUS } from '@/lib/constants';
 import { getCharaPrompt } from '@/lib/chara-settings';
 import { MEDICATION_AI_CAUTION_RULE } from '@/lib/medication-prompt';
 import { chatCompletion } from '@/lib/openai-client';
@@ -13,7 +15,7 @@ const DAILY_REPORT_LEVEL_PREFIX = 'daily_report_';
 export async function POST(req: Request) {
   return withSession(async (session) => {
     try {
-      const parsed = await parseJsonBody<{ period?: number }>(req);
+      const parsed = await parseJsonBody(req, reportPostSchema);
       if (!parsed.ok) return parsed.error;
       const body = parsed.data;
       const period = body.period === 30 ? 30 : 7;
@@ -79,7 +81,7 @@ ${MEDICATION_AI_CAUTION_RULE}
     if (!env.OPENAI_API_KEY) {
       return NextResponse.json(
         { report: '相棒が休憩中です。OPENAI_API_KEY を設定してからもう一度お試しください。' },
-        { status: 503 },
+        { status: HTTP_STATUS.SERVICE_UNAVAILABLE },
       );
     }
 
@@ -118,7 +120,7 @@ ${MEDICATION_AI_CAUTION_RULE}
       console.error('Report API Error:', error);
       return NextResponse.json(
         { report: 'サーバーエラーが発生しました。しばらくしてからもう一度お試しください。', error: String(error) },
-        { status: 500 }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
   });

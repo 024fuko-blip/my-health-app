@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 
 import type { HealthLogApiResponse, UserSettingsMode } from '@/app/(main)/record/hooks/record-form-types';
+import { ensureSession, handleUnauthorized, apiFetch, apiPost } from '@/lib/api-client';
 import { buildPmdaUrl } from '@/lib/medication-prompt';
 import { computeMindScore, computeBodyScore, buildChartData } from '@/lib/dashboard-utils';
 
@@ -90,11 +91,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
-      const sessionData = await sessionRes.json();
-      if (!sessionData.user) return;
+      const session = await ensureSession(router);
+      if (!session) return;
 
-      const settingsRes = await fetch('/api/user-settings', { credentials: 'include' });
+      const settingsRes = await apiFetch('/api/user-settings');
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
         setModes({
@@ -123,11 +123,11 @@ export default function DashboardPage() {
       const endStr = endDate.toISOString().split('T')[0];
 
       const [logsRes, todayRes] = await Promise.all([
-        fetch(`/api/health-logs?startDate=${startStr}&endDate=${endStr}`, { credentials: 'include' }),
-        fetch(`/api/health-logs?date=${endStr}`, { credentials: 'include' }),
+        apiFetch(`/api/health-logs?startDate=${startStr}&endDate=${endStr}`),
+        apiFetch(`/api/health-logs?date=${endStr}`),
       ]);
       if (logsRes.status === 401 || todayRes.status === 401) {
-        router.replace('/login');
+        handleUnauthorized(router);
         setLoading(false);
         return;
       }
@@ -147,9 +147,9 @@ export default function DashboardPage() {
       setInsightsLoading(true);
       try {
         const level = insightTab === 'weekly' ? 'weekly' : insightTab === 'monthly' ? 'monthly' : 'yearly';
-        const res = await fetch(`/api/insights?level=${level}&limit=20`, { credentials: 'include' });
+        const res = await apiFetch(`/api/insights?level=${level}&limit=20`);
         if (res.status === 401) {
-          router.replace('/login');
+          handleUnauthorized(router);
           return;
         }
         const data = await res.json();
@@ -169,7 +169,7 @@ export default function DashboardPage() {
     const fetchCorrelationStats = async () => {
       if (insightTab !== 'daily') return;
       try {
-        const res = await fetch('/api/correlation-stats', { credentials: 'include' });
+        const res = await apiFetch('/api/correlation-stats');
         if (res.ok) {
           const data = await res.json();
           setTriggers(data.triggers ?? []);
@@ -188,23 +188,16 @@ export default function DashboardPage() {
       setAnalyzing(true);
       setReport('');
       try {
-        const res = await fetch('/api/report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ period }),
-          credentials: 'include',
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setReport(data.report ?? '');
+        const result = await apiPost<{ report?: string }>('/api/report', { period });
+        if (result.ok) {
+          setReport(result.data.report ?? '');
         } else {
-          if (res.status === 401) {
-            setReport('セッションが切れました。再度ログインしてください。');
-            router.replace('/login');
+          if (result.status === 401) {
+            handleUnauthorized(router);
             return;
           }
-          console.error('Report API error:', res.status, data);
-          setReport(data.report ?? '分析に失敗しました。もう一度お試しください。');
+          console.error('Report API error:', result.status, result.error);
+          setReport(result.error ?? '分析に失敗しました。もう一度お試しください。');
         }
       } catch (err) {
         console.error('Report fetch error:', err);
@@ -224,19 +217,13 @@ export default function DashboardPage() {
     const level = insightTab === 'weekly' ? 'weekly' : insightTab === 'monthly' ? 'monthly' : 'yearly';
     setInsightGenerating(true);
     try {
-      const res = await fetch('/api/insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ level }),
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const listRes = await fetch(`/api/insights?level=${level}&limit=20`, { credentials: 'include' });
+      const result = await apiPost<{ ok?: boolean }>('/api/insights', { level });
+      if (result.ok) {
+        const listRes = await apiFetch(`/api/insights?level=${level}&limit=20`);
         const listData = await listRes.json();
         if (listRes.ok && Array.isArray(listData.insights)) setInsights(listData.insights as InsightRow[]);
       } else {
-        console.error('Insight generation failed:', data);
+        console.error('Insight generation failed:', result.error);
       }
     } catch (e) {
       console.error('Regenerate error:', e);

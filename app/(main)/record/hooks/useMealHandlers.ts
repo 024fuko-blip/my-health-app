@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { processMealImageFile } from './meal-image-handler';
+import { apiPost } from '@/lib/api-client';
 import type { NutritionData } from './record-form-types';
 
 interface UseMealHandlersDeps {
@@ -81,18 +82,15 @@ export function useMealHandlers({
     setIsAnalyzing(true);
     setNutritionData(null);
     try {
-      const res = await fetch('/api/analyze-meal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meal_description: text }),
-        credentials: 'include',
+      const result = await apiPost<Record<string, unknown>>('/api/analyze-meal', {
+        meal_description: text,
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (result.ok) {
+        const data = result.data;
         if (data.error) {
           setNutritionData({ foods: [text] });
         } else {
-          setNutritionData(data);
+          setNutritionData(data as NutritionData);
           if (data.calories != null) setCalories(String(data.calories));
           if (data.protein != null) setProtein(String(data.protein));
         }

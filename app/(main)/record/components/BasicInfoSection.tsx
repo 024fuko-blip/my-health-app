@@ -103,35 +103,39 @@ function PeriodButtons({
   );
 }
 
-interface BasicInfoSectionProps {
+/** フォーム値（体調・体温・体重・生理・肌・服薬） */
+export interface BasicInfoFormState {
   generalMood: number;
-  setGeneralMood: (v: number) => void;
   temperature: string;
-  setTemperature: (v: string) => void;
   weight: string;
-  setWeight: (v: string) => void;
-  medications: Medication[];
-  medicationTaken: Record<string, boolean>;
-  setMedicationTaken: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  gender: string;
   periodStatus: string;
-  setPeriodStatus: (v: string) => void;
   skinCondition: number;
-  setSkinCondition: (v: number) => void;
-  /** 生理が来た時に lastPeriodDate を更新するコールバック */
-  onPeriodStart?: (date: string) => Promise<void>;
-  /** 生理終了時に periodDuration を更新するコールバック */
-  onPeriodEnd?: (startDate: string, duration: number) => Promise<void>;
-  /** 生理ボタン選択をその日の記録に即時保存（保持用） */
-  onPeriodStatusSave?: (date: string, status: string) => Promise<void>;
-  /** 薬チェックをその日の記録に即時保存（リマインダースキップ用） */
-  onMedicationStatusSave?: (medKey: string, taken: boolean) => Promise<void>;
+  medicationTaken: Record<string, boolean>;
+}
+
+/** 生理関連の設定・コールバック */
+export interface BasicInfoPeriodConfig {
   lastPeriodDate?: string;
-  /** 選択中の日付（即時保存時に使用） */
   selectedDate?: string;
-  /** ユーザー編集時（loadLog による上書きを防ぐ） */
+  onPeriodStart?: (date: string) => Promise<void>;
+  onPeriodEnd?: (startDate: string, duration: number) => Promise<void>;
+  onPeriodStatusSave?: (date: string, status: string) => Promise<void>;
+}
+
+/** 5 props に集約（Clean Code） */
+export interface BasicInfoSectionProps {
+  formState: BasicInfoFormState;
+  setGeneralMood: (v: number) => void;
+  setTemperature: (v: string) => void;
+  setWeight: (v: string) => void;
+  setPeriodStatus: (v: string) => void;
+  setSkinCondition: (v: number) => void;
+  setMedicationTaken: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  medications: Medication[];
+  onMedicationStatusSave?: (medKey: string, taken: boolean) => Promise<void>;
+  periodConfig: BasicInfoPeriodConfig;
+  gender: string;
   onUserEdit?: () => void;
-  /** プロフィールから取得したデフォルト値（placeholder に使用） */
   defaultTemperature?: string;
   defaultWeight?: string;
 }
@@ -143,30 +147,36 @@ function stepValue(current: string, fallback: string, step: number): string {
 }
 
 export function BasicInfoSection({
-  generalMood,
+  formState,
   setGeneralMood,
-  temperature,
   setTemperature,
-  weight,
   setWeight,
-  medications,
-  medicationTaken,
-  setMedicationTaken,
-  gender,
-  periodStatus,
   setPeriodStatus,
-  skinCondition,
   setSkinCondition,
-  onPeriodStart,
-  onPeriodEnd,
-  onPeriodStatusSave,
+  setMedicationTaken,
+  medications,
   onMedicationStatusSave,
-  lastPeriodDate,
-  selectedDate,
+  periodConfig,
+  gender,
   onUserEdit,
   defaultTemperature,
   defaultWeight,
 }: BasicInfoSectionProps) {
+  const {
+    generalMood,
+    temperature,
+    weight,
+    periodStatus,
+    skinCondition,
+    medicationTaken,
+  } = formState;
+  const {
+    lastPeriodDate,
+    selectedDate,
+    onPeriodStart,
+    onPeriodEnd,
+    onPeriodStatusSave,
+  } = periodConfig;
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
       <div>

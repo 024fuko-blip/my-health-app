@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch, apiPost } from "@/lib/api-client";
 
 export default function PushNotifyButton() {
   const [status, setStatus] = useState<"idle" | "checking" | "prompt" | "subscribed" | "unsupported" | "error">("checking");
@@ -31,7 +32,7 @@ export default function PushNotifyButton() {
       setStatus("unsupported");
       return;
     }
-    fetch("/api/push-subscribe", { credentials: "include" })
+    apiFetch("/api/push-subscribe")
       .then((r) => r.json())
       .then((data) => {
         if (!data.enabled) setStatus("unsupported");
@@ -50,7 +51,7 @@ export default function PushNotifyButton() {
         await navigator.serviceWorker.register("/sw.js");
       }
       const reg = await navigator.serviceWorker.ready;
-      const subRes = await fetch("/api/push-subscribe", { credentials: "include" });
+      const subRes = await apiFetch("/api/push-subscribe");
       const subData = await subRes.json();
       const vapid_public_key = subData.vapid_public_key;
       if (!vapid_public_key) {
@@ -61,23 +62,17 @@ export default function PushNotifyButton() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapid_public_key) as BufferSource,
       });
-      const res = await fetch("/api/push-subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey("p256dh")!))),
-            auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey("auth")!))),
-          },
-        }),
+      const result = await apiPost<Record<string, unknown>>("/api/push-subscribe", {
+        endpoint: subscription.endpoint,
+        keys: {
+          p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey("p256dh")!))),
+          auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey("auth")!))),
+        },
       });
-      if (res.ok) {
+      if (result.ok) {
         setStatus("subscribed");
       } else {
-        const errBody = await res.json().catch(() => ({}));
-        setErrorDetail(errBody.error || `サーバーエラー (${res.status})`);
+        setErrorDetail(result.error || `サーバーエラー (${result.status})`);
         setStatus("error");
       }
     } catch (err) {

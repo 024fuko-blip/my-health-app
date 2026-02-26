@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { parseJsonBody, withSession } from "@/lib/api-utils";
@@ -5,25 +6,29 @@ import { MAX_HAPPINESS } from "@/lib/pet-shop";
 
 const TODAY = () => new Date().toISOString().split("T")[0];
 
+const MinigamePayloadSchema = z.object({
+  game_type: z.enum(["catch", "pet", "quiz", "sudoku", "memory"]),
+  score: z.number().optional().default(0),
+  count: z.number().optional().default(0),
+  correct: z.boolean().optional().default(false),
+  completed: z.boolean().optional().default(false),
+  pairsMatched: z.number().optional().default(0),
+});
+
 /** POST: ミニゲーム結果を送信（ポイント・幸福度加算、日次制限チェック） */
 export async function POST(req: Request) {
   return withSession(async (session) => {
     try {
-      const parsed = await parseJsonBody<{
-        game_type?: "catch" | "pet" | "quiz";
-        score?: number;
-        count?: number;
-        correct?: boolean;
-      }>(req);
+      const parsed = await parseJsonBody(req, MinigamePayloadSchema);
       if (!parsed.ok) return parsed.error;
-      const { game_type, score = 0, count = 0, correct = false } = parsed.data;
-
-      if (game_type !== "catch" && game_type !== "pet" && game_type !== "quiz") {
-        return NextResponse.json(
-          { error: "無効なゲームタイプです" },
-          { status: 400 }
-        );
-      }
+      const {
+        game_type,
+        score = 0,
+        count = 0,
+        correct = false,
+        completed = false,
+        pairsMatched = 0,
+      } = parsed.data;
 
       const pet = await prisma.userPet.findUnique({
         where: { userId: session.userId },
@@ -63,6 +68,20 @@ export async function POST(req: Request) {
             { status: 400 }
           );
         }
+      } else if (game_type === "sudoku") {
+        if (last["sudoku"] === today) {
+          return NextResponse.json(
+            { error: "本日の数独は1回までです" },
+            { status: 400 }
+          );
+        }
+      } else if (game_type === "memory") {
+        if (last["memory"] === today) {
+          return NextResponse.json(
+            { error: "本日の神経衰弱は1回までです" },
+            { status: 400 }
+          );
+        }
       }
 
       let pointsEarned = 0;
@@ -76,9 +95,16 @@ export async function POST(req: Request) {
         const c = Math.max(0, Math.min(100, Math.floor(count)));
         pointsEarned = 10 + Math.min(40, c * 2);
         happinessGain = Math.min(15, Math.floor(c / 5));
-      } else {
+      } else if (game_type === "quiz") {
         pointsEarned = correct ? 50 : 10;
         happinessGain = correct ? 10 : 2;
+      } else if (game_type === "sudoku") {
+        pointsEarned = completed ? 40 : 5;
+        happinessGain = completed ? 12 : 2;
+      } else if (game_type === "memory") {
+        const p = Math.min(8, Math.max(0, Math.floor(pairsMatched)));
+        pointsEarned = p >= 8 ? 50 : 10 + p * 5;
+        happinessGain = p >= 8 ? 12 : Math.min(8, 2 + p);
       }
 
       const newHappiness = Math.min(
@@ -94,6 +120,8 @@ export async function POST(req: Request) {
       }
       const newLastPet = game_type === "pet" ? today : last["pet"] ?? "";
       const newLastQuiz = game_type === "quiz" ? today : last["quiz"] ?? "";
+      const newLastSudoku = game_type === "sudoku" ? today : last["sudoku"] ?? "";
+      const newLastMemory = game_type === "memory" ? today : last["memory"] ?? "";
 
       const gameStats = await prisma.userGameStats.findUnique({
         where: { userId: session.userId },
@@ -109,6 +137,8 @@ export async function POST(req: Request) {
               catch: newLastCatch,
               pet: newLastPet,
               quiz: newLastQuiz,
+              sudoku: newLastSudoku,
+              memory: newLastMemory,
             },
           },
         }),

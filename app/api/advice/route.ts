@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import type { ChatCompletionContentPart } from 'openai/resources/chat/completions';
 import { getServerEnv } from '@/lib/env';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
+import { advicePostSchema } from '@/lib/validations/api-schemas';
+import { HTTP_STATUS } from '@/lib/constants';
 import { getCharaPrompt } from '@/lib/chara-settings';
 import { MEDICATION_AI_CAUTION_RULE } from '@/lib/medication-prompt';
 import { chatCompletion } from '@/lib/openai-client';
 import { buildUserContext, getActiveModesText } from '@/lib/insights/user-context';
+import { MAX_IMAGE_BASE64 } from '@/lib/constants';
 
 const RECORD_LABELS: Record<string, string> = {
   meal_description: '食事メモ',
@@ -118,7 +121,7 @@ ${PRIORITY_RULES}
 export async function POST(req: Request) {
   return withSession(async (session) => {
     try {
-      const parsed = await parseJsonBody<Record<string, unknown>>(req);
+      const parsed = await parseJsonBody(req, advicePostSchema);
       if (!parsed.ok) return parsed.error;
       const body = parsed.data;
       const { mode, logs, meal_image_base64: mealImageBase64, ...dailyInput } = body;
@@ -128,7 +131,6 @@ export async function POST(req: Request) {
       const activeModesText = getActiveModesText(userContext);
       const todayRecordText = buildTodayRecordText(dailyInput as Record<string, unknown>);
 
-      const MAX_IMAGE_BASE64 = 3 * 1024 * 1024;
       const hasImage =
         typeof mealImageBase64 === 'string' &&
         mealImageBase64.startsWith('data:image') &&
@@ -154,7 +156,7 @@ export async function POST(req: Request) {
       if (!env.OPENAI_API_KEY) {
         return NextResponse.json(
           { advice: 'オネエが休憩中よ！OPENAI_API_KEY を設定してからもう一度試してちょうだい！' },
-          { status: 503 },
+          { status: HTTP_STATUS.SERVICE_UNAVAILABLE },
         );
       }
 
@@ -178,7 +180,7 @@ export async function POST(req: Request) {
       console.error('API Error:', error);
       return NextResponse.json(
         { advice: 'あらヤダ、サーバーのエラーよ！システム管理者を呼んできて！', error: String(error) },
-        { status: 500 },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR },
       );
     }
   });

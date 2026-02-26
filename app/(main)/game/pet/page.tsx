@@ -3,10 +3,16 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ensureSession, handleUnauthorized, apiFetch, apiPost, apiPut } from "@/lib/api-client";
 import { PET_SPECIES } from "@/lib/pet-shop";
-import { CatchGame } from "./components/CatchGame";
 import { PetGame } from "./components/PetGame";
 import { QuizGame } from "./components/QuizGame";
+import { SudokuGame } from "./components/SudokuGame";
+import { MemoryGame } from "./components/MemoryGame";
+import { PetFeedTab } from "./components/PetFeedTab";
+import { PetOutfitTab } from "./components/PetOutfitTab";
+import { PetRoomTab } from "./components/PetRoomTab";
+import { PetPlayTab } from "./components/PetPlayTab";
 
 interface PetState {
   pet_name: string;
@@ -77,7 +83,7 @@ export default function GamePetPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PetData | null>(null);
   const [tab, setTab] = useState<"feed" | "outfit" | "room" | "play">("feed");
-  const [minigame, setMinigame] = useState<"catch" | "pet" | "quiz" | null>(null);
+  const [minigame, setMinigame] = useState<"sudoku" | "memory" | "pet" | "quiz" | null>(null);
   const [petName, setPetName] = useState("");
   const [petSpecies, setPetSpecies] = useState("cat");
   const [saving, setSaving] = useState(false);
@@ -97,18 +103,14 @@ export default function GamePetPage() {
 
   const fetchPet = async () => {
     try {
-      const sessionRes = await fetch("/api/auth/session", {
-        credentials: "include",
-      });
-      const sessionData = await sessionRes.json();
-      if (!sessionData.user) {
-        router.replace("/login");
+      const session = await ensureSession(router);
+      if (!session) {
         setLoading(false);
         return;
       }
-      const res = await fetch("/api/pet", { credentials: "include" });
+      const res = await apiFetch("/api/pet");
       if (res.status === 401) {
-        router.replace("/login");
+        handleUnauthorized(router);
         setLoading(false);
         return;
       }
@@ -143,20 +145,15 @@ export default function GamePetPage() {
     setSaving(true);
     setMessage(null);
     try {
-      const res = await fetch("/api/pet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pet_name: petName.trim() || "ぽっち",
-          pet_species: petSpecies,
-        }),
-        credentials: "include",
+      const result = await apiPost<Record<string, unknown>>("/api/pet", {
+        pet_name: petName.trim() || "ぽっち",
+        pet_species: petSpecies,
       });
-      const j = await res.json().catch(() => ({}));
-      if (res.ok) {
+      const j = result.ok ? result.data : {};
+      if (result.ok) {
         await fetchPet();
       } else {
-        setMessage((j as { error?: string }).error ?? "作成に失敗しました");
+        setMessage(result.error ?? "作成に失敗しました");
       }
     } catch (err) {
       setMessage("通信エラーです。ブラウザを更新して再度お試しください。");
@@ -168,14 +165,9 @@ export default function GamePetPage() {
 
   const handleFeed = async (itemId: string) => {
     setMessage(null);
-    const res = await fetch("/api/pet/feed", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itemId }),
-      credentials: "include",
-    });
-    const j = await res.json();
-    if (res.ok) {
+    const result = await apiPost<{ used?: string; happiness?: number; error?: string }>("/api/pet/feed", { itemId });
+    const j = result.ok ? result.data : { error: result.error };
+    if (result.ok) {
       setMessage(`${j.used}をあげた！ 幸福度 ${j.happiness}`);
       await fetchPet();
     } else setMessage(j.error ?? "失敗しました");
@@ -187,35 +179,31 @@ export default function GamePetPage() {
       return;
     }
     setMessage(null);
-    const res = await fetch("/api/pet/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itemId, quantity: quantity ?? 1 }),
-      credentials: "include",
-    });
-    const j = await res.json();
-    if (res.ok) {
+    const result = await apiPost<{ error?: string }>("/api/pet/buy", { itemId, quantity: quantity ?? 1 });
+    const j = result.ok ? {} : { error: result.error };
+    if (result.ok) {
       setMessage("購入した！");
       await fetchPet();
     } else setMessage(j.error ?? "購入に失敗しました");
   };
 
   const submitMinigame = async (
-    gameType: "catch" | "pet" | "quiz",
-    payload: { score?: number; count?: number; correct?: boolean }
+    gameType: "catch" | "pet" | "quiz" | "sudoku" | "memory",
+    payload: {
+      score?: number;
+      count?: number;
+      correct?: boolean;
+      completed?: boolean;
+      pairsMatched?: number;
+    }
   ) => {
     setMessage(null);
-    const res = await fetch("/api/pet/minigame", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        game_type: gameType,
-        ...payload,
-      }),
-      credentials: "include",
+    const result = await apiPost<{ points_earned?: number; happiness_gain?: number; error?: string }>("/api/pet/minigame", {
+      game_type: gameType,
+      ...payload,
     });
-    const j = await res.json();
-    if (res.ok) {
+    const j = result.ok ? result.data : { error: result.error };
+    if (result.ok) {
       setMessage(
         `+${j.points_earned}pt！幸福度+${j.happiness_gain}`
       );
@@ -231,40 +219,28 @@ export default function GamePetPage() {
     placed?: Array<{ itemId: string; position: string }>
   ) => {
     setMessage(null);
-    const res = await fetch("/api/pet/room", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        current_room_id: roomId ?? data?.current_room_id ?? null,
-        placed_furniture: placed ?? data?.placed_furniture ?? [],
-      }),
-      credentials: "include",
+    const result = await apiPut<{ error?: string }>("/api/pet/room", {
+      current_room_id: roomId ?? data?.current_room_id ?? null,
+      placed_furniture: placed ?? data?.placed_furniture ?? [],
     });
-    if (res.ok) {
+    if (result.ok) {
       setMessage("部屋を更新した！");
       await fetchPet();
     } else {
-      const j = await res.json();
-      setMessage(j.error ?? "失敗しました");
+      setMessage(result.error ?? "失敗しました");
     }
   };
 
   const handleEquip = async (outfitId: string | null) => {
     setMessage(null);
-    const res = await fetch("/api/pet/outfit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        outfitId: outfitId === "outfit_none" ? null : outfitId,
-      }),
-      credentials: "include",
+    const result = await apiPost<{ error?: string }>("/api/pet/outfit", {
+      outfitId: outfitId === "outfit_none" ? null : outfitId,
     });
-    if (res.ok) {
+    if (result.ok) {
       setMessage(outfitId ? "着せ替えた！" : "衣装を外した");
       await fetchPet();
     } else {
-      const j = await res.json();
-      setMessage(j.error ?? "失敗しました");
+      setMessage(result.error ?? "失敗しました");
     }
   };
 
@@ -472,16 +448,11 @@ export default function GamePetPage() {
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setSaving(true);
-                  const res = await fetch("/api/pet", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      pet_name: petName.trim() || "ぽっち",
-                      pet_species: petSpecies,
-                    }),
-                    credentials: "include",
+                  const result = await apiPost<Record<string, unknown>>("/api/pet", {
+                    pet_name: petName.trim() || "ぽっち",
+                    pet_species: petSpecies,
                   });
-                  if (res.ok) await fetchPet();
+                  if (result.ok) await fetchPet();
                   setSaving(false);
                 }}
                 className="mt-2 p-3 bg-amber-50 rounded-lg space-y-2"
@@ -571,201 +542,36 @@ export default function GamePetPage() {
           </div>
 
           {tab === "feed" && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-800">所持している餌</h3>
-              {dataToUse.foods.filter((f) => f.owned > 0).length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  餌を持っていません。下のショップで購入しよう。
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {dataToUse.foods
-                    .filter((f) => f.owned > 0)
-                    .map((f) => (
-                      <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => handleFeed(f.id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-100 border-2 border-amber-300 rounded-xl hover:bg-amber-200"
-                      >
-                        <span className="text-xl">{f.emoji}</span>
-                        <span className="font-bold">{f.name}</span>
-                        <span className="text-xs">x{f.owned}</span>
-                      </button>
-                    ))}
-                </div>
-              )}
-              <h3 className="font-bold text-gray-800 pt-2">ショップ（餌）</h3>
-              <div className="grid gap-2">
-                {dataToUse.foods.map((f) => (
-                  <div
-                    key={f.id}
-                    className="flex items-center justify-between p-3 bg-white border rounded-xl"
-                  >
-                    <span className="text-2xl">{f.emoji}</span>
-                    <div className="flex-1 mx-2 text-left">
-                      <p className="font-bold">{f.name}</p>
-                      <p className="text-xs text-gray-500">
-                        +{f.happiness_gain} 幸福度 / {f.cost} pt
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleBuy(f.id, f.cost, 1)}
-                        disabled={dataToUse.points < f.cost}
-                        className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm font-bold disabled:opacity-50"
-                      >
-                        1個
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleBuy(f.id, f.cost * 5, 5)}
-                        disabled={dataToUse.points < f.cost * 5}
-                        className="px-3 py-1 bg-amber-600 text-white rounded-lg text-sm font-bold disabled:opacity-50"
-                      >
-                        5個
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <PetFeedTab
+              data={dataToUse}
+              onFeed={handleFeed}
+              onBuy={handleBuy}
+            />
           )}
 
           {tab === "room" && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-800">部屋の背景</h3>
-              <div className="flex flex-wrap gap-2">
-                {(dataToUse.rooms ?? []).map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() =>
-                      r.owned ? handleRoomUpdate(r.id) : undefined
-                    }
-                    disabled={!r.owned}
-                    className={`flex items-center gap-2 px-3 py-2 border-2 ${
-                      ((dataToUse.current_room_id ?? null) || "room_default") === r.id
-                        ? "border-amber-500 bg-amber-50"
-                        : "border-gray-200"
-                    } disabled:opacity-50`}
-                  >
-                    <span className="text-xl">{r.emoji}</span>
-                    <span>{r.name}</span>
-                    {!r.owned && r.cost > 0 && (
-                      <span className="text-xs text-gray-500">{r.cost}pt</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-              <h3 className="font-bold text-gray-800 pt-2">家具の配置</h3>
-              <p className="text-xs text-gray-500">
-                所持している家具を最大8個まで部屋に飾れます。
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {(dataToUse.furniture ?? []).map((f) => (
-                  <div
-                    key={f.id}
-                    className="flex items-center justify-between p-3 bg-white border"
-                  >
-                    <span className="text-xl">{f.emoji}</span>
-                    <div className="flex-1 mx-2 text-left">
-                      <p className="font-bold text-sm">{f.name}</p>
-                      <p className="text-xs text-gray-500">所持: {f.owned}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleBuy(f.id, f.cost)}
-                      disabled={(dataToUse.points ?? 0) < f.cost}
-                      className="px-2 py-1 bg-amber-500 text-white text-xs font-bold disabled:opacity-50"
-                    >
-                      購入
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <h3 className="font-bold text-gray-800 pt-2">部屋・家具ショップ</h3>
-              <div className="space-y-2">
-                {(dataToUse.rooms ?? [])
-                  .filter((r) => r.cost > 0 && !r.owned)
-                  .map((r) => (
-                    <div
-                      key={r.id}
-                      className="flex items-center justify-between p-3 bg-white border"
-                    >
-                      <span className="text-2xl">{r.emoji}</span>
-                      <div className="flex-1 mx-2 text-left">
-                        <p className="font-bold">{r.name}</p>
-                        <p className="text-xs text-gray-500">{r.cost} pt</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleBuy(r.id, r.cost)}
-                        disabled={(dataToUse.points ?? 0) < r.cost}
-                        className="px-3 py-1 bg-violet-500 text-white text-sm font-bold disabled:opacity-50"
-                      >
-                        購入
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            </div>
+            <PetRoomTab
+              data={dataToUse}
+              onRoomUpdate={(id) => handleRoomUpdate(id)}
+              onBuy={(id, cost) => handleBuy(id, cost)}
+            />
           )}
 
           {tab === "play" && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-800">ミニゲーム</h3>
-              <p className="text-sm text-gray-500">
-                遊んでポイントと幸福度をゲット！
-              </p>
-              <div className="grid gap-3">
-                <button
-                  type="button"
-                  onClick={() => setMinigame("catch")}
-                  className="flex items-center gap-3 p-4 bg-amber-100 border-2 border-amber-300 text-left"
-                >
-                  <span className="text-3xl">🍖</span>
-                  <div>
-                    <p className="font-bold">おやつキャッチ</p>
-                    <p className="text-xs text-gray-600">
-                      落ちてくるおやつをタップ！30秒・1日3回
-                    </p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMinigame("pet")}
-                  className="flex items-center gap-3 p-4 bg-pink-100 border-2 border-pink-300 text-left"
-                >
-                  <span className="text-3xl">💕</span>
-                  <div>
-                    <p className="font-bold">なでなでタイム</p>
-                    <p className="text-xs text-gray-600">
-                      ペットをタップしてなでなで！60秒・1日1回
-                    </p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMinigame("quiz")}
-                  className="flex items-center gap-3 p-4 bg-violet-100 border-2 border-violet-300 text-left"
-                >
-                  <span className="text-3xl">📝</span>
-                  <div>
-                    <p className="font-bold">健康クイズ</p>
-                    <p className="text-xs text-gray-600">
-                      あなたの記録に基づいたクイズ！1日1回
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
+            <PetPlayTab onMinigame={setMinigame} />
           )}
 
-          {minigame === "catch" && (
-            <CatchGame
-              onFinish={(s) => submitMinigame("catch", { score: s })}
+          {minigame === "sudoku" && (
+            <SudokuGame
+              onFinish={(completed) => submitMinigame("sudoku", { completed })}
+              onClose={() => setMinigame(null)}
+            />
+          )}
+          {minigame === "memory" && (
+            <MemoryGame
+              onFinish={(pairsMatched) =>
+                submitMinigame("memory", { pairsMatched })
+              }
               onClose={() => setMinigame(null)}
             />
           )}
@@ -784,62 +590,11 @@ export default function GamePetPage() {
           )}
 
           {tab === "outfit" && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-800">着せ替え</h3>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleEquip("outfit_none")}
-                  className={`px-3 py-2 rounded-xl border-2 ${
-                    !dataToUse.pet?.current_outfit_id
-                      ? "border-amber-500 bg-amber-50"
-                      : "border-gray-200"
-                  }`}
-                >
-                  なし
-                </button>
-                {dataToUse.outfits
-                  .filter((o) => o.owned)
-                  .map((o) => (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() => handleEquip(o.id)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 ${
-                        o.equipped
-                          ? "border-amber-500 bg-amber-50"
-                          : "border-gray-200"
-                      }`}
-                    >
-                      {o.emoji && <span>{o.emoji}</span>}
-                      <span>{o.name}</span>
-                    </button>
-                  ))}
-              </div>
-              <h3 className="font-bold text-gray-800 pt-2">ショップ（着せ替え）</h3>
-              <div className="grid gap-2">
-                {dataToUse.outfits.map((o) => (
-                  <div
-                    key={o.id}
-                    className="flex items-center justify-between p-3 bg-white border rounded-xl"
-                  >
-                    <span className="text-2xl">{o.emoji ?? "—"}</span>
-                    <div className="flex-1 mx-2 text-left">
-                      <p className="font-bold">{o.name}</p>
-                      <p className="text-xs text-gray-500">{o.cost} pt</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleBuy(o.id, o.cost)}
-                      disabled={dataToUse.points < o.cost || o.owned}
-                      className="px-3 py-1 bg-violet-500 text-white rounded-lg text-sm font-bold disabled:opacity-50"
-                    >
-                      {o.owned ? "所持済み" : "購入"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <PetOutfitTab
+              data={dataToUse}
+              onEquip={handleEquip}
+              onBuy={(id, cost) => handleBuy(id, cost)}
+            />
           )}
         </>
       )}

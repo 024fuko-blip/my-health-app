@@ -205,26 +205,30 @@ export default function RecordPage() {
 
       <form onSubmit={form.handleSubmit} className="space-y-6">
         <BasicInfoSection
-          generalMood={form.generalMood}
+          formState={{
+            generalMood: form.generalMood,
+            temperature: form.temperature,
+            weight: form.weight,
+            periodStatus: form.periodStatus,
+            skinCondition: form.skinCondition,
+            medicationTaken: form.medicationTaken,
+          }}
           setGeneralMood={form.setGeneralMood}
-          temperature={form.temperature}
           setTemperature={form.setTemperature}
-          weight={form.weight}
           setWeight={form.setWeight}
-          medications={form.medications}
-          medicationTaken={form.medicationTaken}
-          setMedicationTaken={form.setMedicationTaken}
-          gender={form.gender}
-          periodStatus={form.periodStatus}
           setPeriodStatus={form.setPeriodStatus}
-          skinCondition={form.skinCondition}
           setSkinCondition={form.setSkinCondition}
-          onPeriodStart={form.handlePeriodStart}
-          onPeriodEnd={form.handlePeriodEnd}
-          onPeriodStatusSave={form.savePeriodStatusToLog}
+          setMedicationTaken={form.setMedicationTaken}
+          medications={form.medications}
           onMedicationStatusSave={form.saveMedicationStatusToLog}
-          lastPeriodDate={form.periodSettings.lastPeriodDate}
-          selectedDate={form.date}
+          periodConfig={{
+            lastPeriodDate: form.periodSettings.lastPeriodDate,
+            selectedDate: form.date,
+            onPeriodStart: form.handlePeriodStart,
+            onPeriodEnd: form.handlePeriodEnd,
+            onPeriodStatusSave: form.savePeriodStatusToLog,
+          }}
+          gender={form.gender}
           onUserEdit={form.markUserEdit}
           defaultTemperature={form.defaultTemperature}
           defaultWeight={form.defaultWeight}

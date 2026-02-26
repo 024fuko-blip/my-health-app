@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { RouterLike } from '@/lib/api-client';
 import { ensureSession, apiFetch } from '@/lib/api-client';
+import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION, PATH } from '@/lib/constants';
 import type { HealthLogRow, UserSettingsMode } from './record-form-types';
 
 export interface PeriodSettings {
@@ -47,7 +48,7 @@ export function useRecordInit(router: RouterLike) {
 
         const settingsRes = await apiFetch('/api/user-settings');
         if (settingsRes.status === 401) {
-          router.replace('/login');
+          router.replace(PATH.LOGIN);
           return;
         }
         const settings = settingsRes.ok ? await settingsRes.json() : null;
@@ -58,10 +59,10 @@ export function useRecordInit(router: RouterLike) {
         let meds: Medication[] = [];
         let defaultTemperature = '';
         let defaultWeight = '';
-        let         periodSettings: PeriodSettings = {
+        let periodSettings: PeriodSettings = {
           lastPeriodDate: '',
-          periodCycle: 28,
-          periodDuration: 5,
+          periodCycle: DEFAULT_PERIOD_CYCLE,
+          periodDuration: DEFAULT_PERIOD_DURATION,
           showPeriodOnCalendar: true,
         };
 
@@ -94,8 +95,8 @@ export function useRecordInit(router: RouterLike) {
             const medHistory = JSON.parse(settings.medical_history || '{}');
             periodSettings = {
               lastPeriodDate: medHistory.lastPeriodDate || '',
-              periodCycle: medHistory.periodCycle || 28,
-              periodDuration: medHistory.periodDuration || 5,
+              periodCycle: medHistory.periodCycle ?? DEFAULT_PERIOD_CYCLE,
+              periodDuration: medHistory.periodDuration ?? DEFAULT_PERIOD_DURATION,
               showPeriodOnCalendar: medHistory.showPeriodOnCalendar !== false,
             };
           } catch {
@@ -108,9 +109,9 @@ export function useRecordInit(router: RouterLike) {
         }
 
         const today = new Date().toISOString().split('T')[0];
-        const logRes = await fetch(`/api/health-logs?date=${today}`, { credentials: 'include' });
+        const logRes = await apiFetch(`/api/health-logs?date=${today}`);
         if (logRes.status === 401) {
-          router.replace('/login');
+          router.replace(PATH.LOGIN);
           return;
         }
         const log = logRes.ok ? await logRes.json() : null;

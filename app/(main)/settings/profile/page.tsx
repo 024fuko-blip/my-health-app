@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ensureSession, handleUnauthorized, apiFetch, apiPut } from "@/lib/api-client";
+import { PATH } from "@/lib/constants";
 import { PREFECTURES, getNearestPrefecture } from "@/lib/prefectures";
 
 export default function SettingsProfilePage() {
@@ -25,15 +27,11 @@ export default function SettingsProfilePage() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
-      const sessionData = await sessionRes.json();
-      if (!sessionData.user) {
-        router.push("/login");
-        return;
-      }
-      const res = await fetch("/api/user-settings", { credentials: "include" });
+      const session = await ensureSession(router);
+      if (!session) return;
+      const res = await apiFetch("/api/user-settings");
       if (res.status === 401) {
-        router.push("/login");
+        handleUnauthorized(router);
         setLoading(false);
         return;
       }
@@ -90,27 +88,15 @@ export default function SettingsProfilePage() {
       latitude: profile.latitude,
       longitude: profile.longitude,
     };
-    const res = await fetch("/api/user-settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      credentials: "include",
-    });
+    const result = await apiPut<Record<string, unknown>>("/api/user-settings", payload);
     setSaving(false);
-    if (res.ok) {
+    if (result.ok) {
       setFullSettings(payload);
       alert("保存しました");
-    } else if (res.status === 401) {
-      router.push("/login");
+    } else if (result.status === 401) {
+      router.replace(PATH.LOGIN);
     } else {
-      let msg = "保存に失敗しました";
-      try {
-        const err = await res.json();
-        if (err?.detail) msg += ` (${err.detail})`;
-      } catch {
-        /* ignore */
-      }
-      alert(msg);
+      alert("保存に失敗しました" + (result.error ? ` (${result.error})` : ""));
     }
   };
 

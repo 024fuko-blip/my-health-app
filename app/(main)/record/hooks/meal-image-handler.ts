@@ -1,6 +1,7 @@
 /** 食事画像の処理（Base64変換・API送信・栄養分析） */
 
 import type React from 'react';
+import { apiPost } from '@/lib/api-client';
 import type { NutritionData } from './record-form-types';
 
 export interface MealImageHandlerParams {
@@ -49,18 +50,15 @@ export async function processMealImageFile(
     setNutritionData(null);
 
     try {
-      const res = await fetch('/api/analyze-meal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_base64: result }),
-        credentials: 'include',
+      const apiResult = await apiPost<Record<string, unknown>>('/api/analyze-meal', {
+        image_base64: result,
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (apiResult.ok) {
+        const data = apiResult.data;
         if (data.error) {
           setNutritionData({ foods: ['料理名を入力してください'] });
         } else {
-          setNutritionData(data);
+          setNutritionData(data as NutritionData);
           if (data.calories) setCalories(String(data.calories));
           if (data.protein) setProtein(String(data.protein));
         }

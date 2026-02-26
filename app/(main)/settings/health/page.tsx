@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { ensureSession, handleUnauthorized, apiFetch, apiPut } from "@/lib/api-client";
+import { PATH } from "@/lib/constants";
+import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from "@/lib/constants";
 
 const MEDICATION_TIMINGS = ["朝", "昼", "晩", "眠前"];
 const DEFAULT_REMINDER_TIMES: Record<string, string> = {
@@ -31,8 +34,8 @@ export default function SettingsHealthPage() {
   const [saving, setSaving] = useState(false);
   const [fullSettings, setFullSettings] = useState<Record<string, unknown>>({});
   const [gender, setGender] = useState("unspecified");
-  const [periodCycle, setPeriodCycle] = useState(28);
-  const [periodDuration, setPeriodDuration] = useState(5);
+  const [periodCycle, setPeriodCycle] = useState(DEFAULT_PERIOD_CYCLE);
+  const [periodDuration, setPeriodDuration] = useState(DEFAULT_PERIOD_DURATION);
   const [lastPeriodDate, setLastPeriodDate] = useState("");
   const [showPeriodOnCalendar, setShowPeriodOnCalendar] = useState(true);
   const [medications, setMedications] = useState<Medication[]>([]);
@@ -62,7 +65,7 @@ export default function SettingsHealthPage() {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`/api/drugs/search?q=${encodeURIComponent(q)}&limit=15`, { credentials: "include" });
+        const res = await apiFetch(`/api/drugs/search?q=${encodeURIComponent(q)}&limit=15`);
         if (res.ok) {
           const { drugs } = await res.json();
           setDrugCandidates(drugs);
@@ -83,15 +86,11 @@ export default function SettingsHealthPage() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
-      const sessionData = await sessionRes.json();
-      if (!sessionData.user) {
-        router.push("/login");
-        return;
-      }
-      const res = await fetch("/api/user-settings", { credentials: "include" });
+      const session = await ensureSession(router);
+      if (!session) return;
+      const res = await apiFetch("/api/user-settings");
       if (res.status === 401) {
-        router.push("/login");
+        handleUnauthorized(router);
         setLoading(false);
         return;
       }
@@ -100,13 +99,13 @@ export default function SettingsHealthPage() {
         setFullSettings(data);
         setGender(data.gender ?? "unspecified");
 
-        let pCycle = 28,
-          pDuration = 5,
+        let pCycle = DEFAULT_PERIOD_CYCLE,
+          pDuration = DEFAULT_PERIOD_DURATION,
           lastPeriod = "";
         try {
           const historyData = JSON.parse(data.medical_history || "{}");
-          pCycle = historyData.periodCycle ?? 28;
-          pDuration = historyData.periodDuration ?? 5;
+          pCycle = historyData.periodCycle ?? DEFAULT_PERIOD_CYCLE;
+          pDuration = historyData.periodDuration ?? DEFAULT_PERIOD_DURATION;
           lastPeriod = historyData.lastPeriodDate ?? "";
           setShowPeriodOnCalendar(historyData.showPeriodOnCalendar !== false);
         } catch {
@@ -181,27 +180,15 @@ export default function SettingsHealthPage() {
       current_medications: medicationData,
       medication_reminder_times: JSON.stringify(reminderTimes),
     };
-    const res = await fetch("/api/user-settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      credentials: "include",
-    });
+    const result = await apiPut<Record<string, unknown>>("/api/user-settings", payload);
     setSaving(false);
-    if (res.ok) {
+    if (result.ok) {
       setFullSettings(payload);
       alert("保存しました");
-    } else if (res.status === 401) {
-      router.push("/login");
+    } else if (result.status === 401) {
+      router.replace(PATH.LOGIN);
     } else {
-      let msg = "保存に失敗しました";
-      try {
-        const err = await res.json();
-        if (err?.detail) msg += ` (${err.detail})`;
-      } catch {
-        /* ignore */
-      }
-      alert(msg);
+      alert("保存に失敗しました" + (result.error ? ` (${result.error})` : ""));
     }
   };
 

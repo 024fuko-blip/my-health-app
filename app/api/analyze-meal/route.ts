@@ -3,8 +3,8 @@ import OpenAI from 'openai';
 import { getServerEnv } from '@/lib/env';
 import { sanitizeForPrompt } from '@/lib/prompt-utils';
 import { parseJsonBody, withSession } from '@/lib/api-utils';
-
-const MAX_IMAGE_BASE64 = 3 * 1024 * 1024; // 3MB（DoS防止）
+import { analyzeMealPostSchema } from '@/lib/validations/api-schemas';
+import { MAX_IMAGE_BASE64, HTTP_STATUS } from '@/lib/constants';
 
 const NUTRITION_JSON_PROMPT = `
 あなたは食事から栄養成分を推定する専門家です。
@@ -30,37 +30,29 @@ const NUTRITION_JSON_PROMPT = `
 export async function POST(req: Request) {
   return withSession(async () => {
     try {
-      const parsed = await parseJsonBody<{ image_base64?: string; meal_description?: string }>(req);
-    if (!parsed.ok) return parsed.error;
-    const body = parsed.data;
-    const imageBase64 = body.image_base64;
-    const mealDescription =
-      typeof body.meal_description === 'string' ? body.meal_description.trim() : '';
+      const parsed = await parseJsonBody(req, analyzeMealPostSchema);
+      if (!parsed.ok) return parsed.error;
+      const body = parsed.data;
+      const imageBase64 = body.image_base64;
+      const mealDescription =
+        typeof body.meal_description === 'string' ? body.meal_description.trim() : '';
 
-    const hasImage =
-      imageBase64 &&
-      typeof imageBase64 === 'string' &&
-      imageBase64.startsWith('data:image');
-    const hasText = mealDescription.length > 0;
+      const hasImage =
+        imageBase64 &&
+        typeof imageBase64 === 'string' &&
+        imageBase64.startsWith('data:image');
 
-    if (!hasImage && !hasText) {
-      return NextResponse.json(
-        { error: '画像データまたは食事の文字説明が必要です' },
-        { status: 400 }
-      );
-    }
+      if (hasImage && typeof imageBase64 === 'string' && imageBase64.length > MAX_IMAGE_BASE64) {
+        return NextResponse.json(
+          { error: '画像サイズは3MBまでです' },
+          { status: HTTP_STATUS.BAD_REQUEST }
+        );
+      }
 
-    if (hasImage && typeof imageBase64 === 'string' && imageBase64.length > MAX_IMAGE_BASE64) {
-      return NextResponse.json(
-        { error: '画像サイズは3MBまでです' },
-        { status: 400 }
-      );
-    }
-
-    const env = getServerEnv();
-    if (!env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: 'API未設定' }, { status: 503 });
-    }
+      const env = getServerEnv();
+      if (!env.OPENAI_API_KEY) {
+        return NextResponse.json({ error: 'API未設定' }, { status: HTTP_STATUS.SERVICE_UNAVAILABLE });
+      }
 
     const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
@@ -111,14 +103,14 @@ export async function POST(req: Request) {
       console.error('Failed to parse nutrition data:', responseText);
       return NextResponse.json(
         { error: '分析結果の解析に失敗しました', raw: responseText },
-        { status: 500 }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
 
       return NextResponse.json(nutritionData);
     } catch (error) {
       console.error('Meal analysis error:', error);
-      return NextResponse.json({ error: '分析エラー' }, { status: 500 });
+      return NextResponse.json({ error: '分析エラー' }, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR });
     }
   });
 }

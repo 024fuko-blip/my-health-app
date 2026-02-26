@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ensureSession, handleUnauthorized, apiFetch } from "@/lib/api-client";
 
 const DEFAULT_BADGES = [
   { id: "streak_3", name: "3日連続記録", emoji: "🔥", earned: false, earnedAt: null as string | null },
@@ -54,19 +55,15 @@ export default function GamePage() {
   useEffect(() => {
     const fetchData = async () => {
       setFetchError(false);
-      const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
-      const sessionData = await sessionRes.json();
-      if (!sessionData.user) {
-        router.replace("/login");
-        return;
-      }
+      const session = await ensureSession(router);
+      if (!session) return;
       try {
         const [statsRes, petRes] = await Promise.all([
-          fetch("/api/game-stats", { credentials: "include" }),
-          fetch("/api/pet", { credentials: "include" }),
+          apiFetch("/api/game-stats"),
+          apiFetch("/api/pet"),
         ]);
         if (statsRes.status === 401 || petRes.status === 401) {
-          router.replace("/login");
+          handleUnauthorized(router);
           setLoading(false);
           return;
         }

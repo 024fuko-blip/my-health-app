@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { apiPatch, apiPut } from '@/lib/api-client';
 import type { PeriodSettings } from './useRecordInit';
 
 interface UsePeriodHandlersDeps {
@@ -10,12 +11,7 @@ export function usePeriodHandlers({ setPeriodSettings, lastUserEditRef }: UsePer
   const handlePeriodStart = useCallback(
     async (dateStr: string) => {
       try {
-        const res = await fetch('/api/user-settings/period', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ last_period_date: dateStr }),
-          credentials: 'include',
-        });
+        const res = await apiPatch<unknown>('/api/user-settings/period', { last_period_date: dateStr });
         if (res.ok) {
           setPeriodSettings((prev) => ({ ...prev, lastPeriodDate: dateStr }));
         }
@@ -29,12 +25,7 @@ export function usePeriodHandlers({ setPeriodSettings, lastUserEditRef }: UsePer
   const handlePeriodEnd = useCallback(
     async (_startDate: string, duration: number) => {
       try {
-        const res = await fetch('/api/user-settings/period', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ period_duration: duration }),
-          credentials: 'include',
-        });
+        const res = await apiPatch<unknown>('/api/user-settings/period', { period_duration: duration });
         if (res.ok) {
           setPeriodSettings((prev) => ({ ...prev, periodDuration: duration }));
         }
@@ -49,12 +40,7 @@ export function usePeriodHandlers({ setPeriodSettings, lastUserEditRef }: UsePer
     async (dateStr: string, status: string) => {
       lastUserEditRef.current = { date: dateStr, time: Date.now() };
       try {
-        await fetch('/api/health-logs/period-status', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: dateStr, period_status: status }),
-          credentials: 'include',
-        });
+        await apiPut('/api/health-logs/period-status', { date: dateStr, period_status: status });
       } catch (e) {
         console.error('Period status save error:', e);
       }

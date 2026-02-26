@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
+import { ensureSession } from "@/lib/api-client";
 import { signOut } from "next-auth/react";
 import LineLinkCard from "./components/LineLinkCard";
 
@@ -11,11 +12,7 @@ export default function SettingsIndexPage() {
 
   useEffect(() => {
     const check = async () => {
-      const res = await fetch("/api/auth/session", { credentials: "include" });
-      const data = await res.json();
-      if (!data.user) {
-        router.push("/login");
-      }
+      await ensureSession(router);
     };
     check();
   }, [router]);

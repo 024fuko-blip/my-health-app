@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch, apiPost, apiDelete } from "@/lib/api-client";
 
 /** スマホ判定（line:// で直接アプリ起動するために使用） */
 function isMobile(): boolean {
@@ -28,8 +29,8 @@ export default function LineLinkCard() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/line/status", { credentials: "include" }).then((r) => r.json()),
-      fetch("/api/line/add-friend-url", { credentials: "include" }).then((r) => r.json().catch(() => ({ url: null }))),
+      apiFetch("/api/line/status").then((r) => r.json()),
+      apiFetch("/api/line/add-friend-url").then((r) => r.json().catch(() => ({ url: null }))),
     ]).then(([statusData, urlData]) => {
       if (!statusData.enabled) setStatus("unsupported");
       else if (statusData.linked) setStatus("linked");
@@ -43,8 +44,8 @@ export default function LineLinkCard() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await fetch("/api/line/link-request", { method: "POST", credentials: "include" });
-      const data = await res.json().catch(() => ({}));
+      const result = await apiPost<{ linked?: boolean; code?: string; error?: string }>("/api/line/link-request", {});
+      const data = result.ok ? result.data : { error: result.error };
       if (data.linked) {
         setStatus("linked");
       } else if (data.code) {
@@ -52,8 +53,8 @@ export default function LineLinkCard() {
         setStatus("requesting");
         // 友だち追加URLが有効なら、ボタン押下と同時にLINE友だち追加画面を開く（スマホなら line:// で直接アプリ起動）
         if (addFriendUrl) window.open(getAddFriendUrlForDevice(addFriendUrl), "_blank", "noopener");
-      } else if (!res.ok) {
-        setErrorMsg(data.error || `エラー (${res.status})`);
+      } else if (!result.ok) {
+        setErrorMsg(data.error || `エラー (${result.status})`);
       }
     } catch (err) {
       setErrorMsg("通信エラー。ログインしているか確認してください。");
@@ -66,12 +67,12 @@ export default function LineLinkCard() {
     setRichMenuLoading(true);
     setRichMenuMsg(null);
     try {
-      const res = await fetch("/api/line/setup-richmenu", { method: "POST", credentials: "include" });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.ok) {
+      const result = await apiPost<{ ok?: boolean; error?: string }>("/api/line/setup-richmenu", {});
+      const data = result.ok ? result.data : { error: result.error };
+      if (result.ok && data.ok) {
         setRichMenuMsg("✓ Rich Menu を設定しました");
       } else {
-        setRichMenuMsg(data.error || `エラー (${res.status})`);
+        setRichMenuMsg(data.error || `エラー (${result.status})`);
       }
     } catch {
       setRichMenuMsg("通信エラー");
@@ -84,8 +85,8 @@ export default function LineLinkCard() {
     if (!confirm("LINE連携を解除しますか？")) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/line/unlink", { method: "DELETE", credentials: "include" });
-      if (res.ok) {
+      const delResult = await apiDelete("/api/line/unlink");
+      if (delResult.ok) {
         setStatus("unlinked");
         setCode(null);
       }

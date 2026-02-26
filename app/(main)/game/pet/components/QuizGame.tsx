@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api-client";
 
 interface QuizGameProps {
   onFinish: (correct: boolean) => void;
@@ -19,7 +20,7 @@ export function QuizGame({ onFinish, onClose }: QuizGameProps) {
   const [selected, setSelected] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/pet/minigame/quiz", { credentials: "include" })
+    apiFetch("/api/pet/minigame/quiz")
       .then((r) => r.json())
       .then((data) => {
         setQuiz({

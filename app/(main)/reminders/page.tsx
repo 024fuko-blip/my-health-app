@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ensureSession, handleUnauthorized, apiFetch, apiPost, apiDelete } from "@/lib/api-client";
 import PushNotifyButton from "./components/PushNotifyButton";
 
 interface MedicationItem {
@@ -34,15 +35,11 @@ export default function RemindersPage() {
   const [saving, setSaving] = useState(false);
 
   const fetchReminders = async () => {
-    const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
-    const sessionData = await sessionRes.json();
-    if (!sessionData.user) {
-      router.replace("/login");
-      return;
-    }
-    const res = await fetch("/api/reminders", { credentials: "include" });
+    const session = await ensureSession(router);
+    if (!session) return;
+    const res = await apiFetch("/api/reminders");
     if (res.status === 401) {
-      router.replace("/login");
+      handleUnauthorized(router);
       setLoading(false);
       return;
     }
@@ -64,18 +61,13 @@ export default function RemindersPage() {
     if (!newName.trim() || !newDueDate) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/reminders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newName.trim(),
-          due_date: newDueDate,
-          scheduled_time: newScheduledTime.trim() || undefined,
-          memo: newMemo.trim() || undefined,
-        }),
-        credentials: "include",
+      const result = await apiPost<Record<string, unknown>>("/api/reminders", {
+        name: newName.trim(),
+        due_date: newDueDate,
+        scheduled_time: newScheduledTime.trim() || undefined,
+        memo: newMemo.trim() || undefined,
       });
-      if (res.ok) {
+      if (result.ok) {
         setNewName("");
         setNewDueDate("");
         setNewScheduledTime("");
@@ -92,11 +84,8 @@ export default function RemindersPage() {
 
   const handleDeleteCheckup = async (id: string) => {
     if (!confirm("この検診リマインダーを削除しますか？")) return;
-    const res = await fetch(`/api/reminders/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    if (res.ok) await fetchReminders();
+    const delResult = await apiDelete(`/api/reminders/${id}`);
+    if (delResult.ok) await fetchReminders();
     else alert("削除に失敗しました");
   };
 

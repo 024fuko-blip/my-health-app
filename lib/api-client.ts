@@ -3,6 +3,8 @@
  * 認証チェック・credentials・401 ハンドリングを共通化。
  */
 
+import { PATH } from '@/lib/constants';
+
 /** useRouter() 互換型。next/navigation の AppRouterInstance は非公開のため自前定義 */
 export interface RouterLike {
   replace(url: string): void;
@@ -27,7 +29,7 @@ export async function ensureSession(
   const res = await fetch('/api/auth/session', { credentials: 'include' });
   const data = (await res.json()) as { user?: SessionUser };
   if (!data?.user) {
-    if (router) router.replace('/login');
+    if (router) router.replace(PATH.LOGIN);
     return null;
   }
   return { user: data.user };
@@ -57,10 +59,52 @@ export async function apiPost<T>(
   return { ok: true, data: (await res.json()) as T };
 }
 
-/** 401 時の共通処理（alert + /login へリダイレクト） */
+/** JSON ボディで PUT。apiPost と同様の戻り値。 */
+export async function apiPut<T>(
+  url: string,
+  body: unknown
+): Promise<{ ok: true; data: T } | { ok: false; status: number; error?: string }> {
+  const res = await fetch(url, {
+    method: 'PUT',
+    ...DEFAULT_OPTIONS,
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, status: res.status, error: err.error ?? res.statusText };
+  }
+  return { ok: true, data: (await res.json()) as T };
+}
+
+/** JSON ボディで PATCH。apiPost と同様の戻り値。 */
+export async function apiPatch<T>(
+  url: string,
+  body: unknown
+): Promise<{ ok: true; data: T } | { ok: false; status: number; error?: string }> {
+  const res = await fetch(url, {
+    method: 'PATCH',
+    ...DEFAULT_OPTIONS,
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, status: res.status, error: err.error ?? res.statusText };
+  }
+  return { ok: true, data: (await res.json()) as T };
+}
+
+/** DELETE リクエスト。credentials 付き。 */
+export async function apiDelete(
+  url: string
+): Promise<{ ok: true } | { ok: false; status: number }> {
+  const res = await apiFetch(url, { method: 'DELETE' });
+  return res.ok ? { ok: true } : { ok: false, status: res.status };
+}
+
+/** 401 時の共通処理（alert + ログインページへリダイレクト） */
 export function handleUnauthorized(router?: RouterLike): void {
   if (typeof window !== 'undefined') {
     alert('セッションが切れました。再度ログインしてください。');
-    router?.replace('/login');
+    router?.replace(PATH.LOGIN);
   }
 }

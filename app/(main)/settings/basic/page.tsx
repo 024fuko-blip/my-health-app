@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ensureSession, handleUnauthorized, apiFetch, apiPut } from "@/lib/api-client";
+import { PATH } from "@/lib/constants";
 
 export default function SettingsBasicPage() {
   const router = useRouter();
@@ -18,15 +20,11 @@ export default function SettingsBasicPage() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
-      const sessionData = await sessionRes.json();
-      if (!sessionData.user) {
-        router.push("/login");
-        return;
-      }
-      const res = await fetch("/api/user-settings", { credentials: "include" });
+      const session = await ensureSession(router);
+      if (!session) return;
+      const res = await apiFetch("/api/user-settings");
       if (res.status === 401) {
-        router.push("/login");
+        handleUnauthorized(router);
         setLoading(false);
         return;
       }
@@ -49,8 +47,8 @@ export default function SettingsBasicPage() {
     fetchSettings();
   }, [router]);
 
-  const toggleMode = (key: string) => {
-    setSettings((prev) => ({ ...prev, [key]: !(prev as unknown as Record<string, boolean>)[key] }));
+  const toggleMode = (key: "mode_ibd" | "mode_alcohol" | "mode_mental" | "mode_diet") => {
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSave = async () => {
@@ -63,27 +61,15 @@ export default function SettingsBasicPage() {
       mode_diet: settings.mode_diet,
       ai_personality: settings.ai_personality,
     };
-    const res = await fetch("/api/user-settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      credentials: "include",
-    });
+    const result = await apiPut<Record<string, unknown>>("/api/user-settings", payload);
     setSaving(false);
-    if (res.ok) {
+    if (result.ok) {
       setFullSettings(payload);
       alert("保存しました");
-    } else if (res.status === 401) {
-      router.push("/login");
+    } else if (result.status === 401) {
+      router.replace(PATH.LOGIN);
     } else {
-      let msg = "保存に失敗しました";
-      try {
-        const err = await res.json();
-        if (err?.detail) msg += ` (${err.detail})`;
-      } catch {
-        /* ignore */
-      }
-      alert(msg);
+      alert("保存に失敗しました" + (result.error ? ` (${result.error})` : ""));
     }
   };
 

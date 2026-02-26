@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node -e \"console.log('本番環境でのみ開発。変更後は git push でデプロイし、本番URLで確認。'); process.exit(1)\"",
+    "dev": "next dev",
     "setup-secrets": "node scripts/setup-secrets.mjs",
     "grant-secret-access": "node scripts/grant-secret-access.mjs",
     "build": "next build",
@@ -28,7 +28,8 @@
     "recharts": "^3.7.0",
     "sharp": "^0.34.5",
     "typescript-eslint": "^8.56.0",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

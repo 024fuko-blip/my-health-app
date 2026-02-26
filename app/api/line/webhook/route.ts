@@ -21,6 +21,8 @@ import {
 } from '@/lib/line-richmenu';
 import { generateRichMenuImage } from '@/lib/line-richmenu-image';
 import { getServerEnv } from '@/lib/env';
+import { isRateLimited } from '@/lib/line-rate-limit';
+import { HTTP_STATUS } from '@/lib/constants';
 
 function verifySignature(body: string, signature: string | null, channelSecret: string): boolean {
   if (!signature || !channelSecret) return false;
@@ -32,13 +34,13 @@ export async function POST(req: Request) {
   try {
     const config = getLineConfig();
     if (!config.channelSecret) {
-      return new NextResponse('LINE not configured', { status: 503 });
+      return new NextResponse('LINE not configured', { status: HTTP_STATUS.SERVICE_UNAVAILABLE });
     }
 
     const rawBody = await req.text();
     const signature = req.headers.get('x-line-signature');
     if (!verifySignature(rawBody, signature, config.channelSecret)) {
-      return new NextResponse('Invalid signature', { status: 401 });
+      return new NextResponse('Invalid signature', { status: HTTP_STATUS.UNAUTHORIZED });
     }
 
     let body: { events?: Array<{
@@ -51,7 +53,7 @@ export async function POST(req: Request) {
     try {
       body = JSON.parse(rawBody);
     } catch {
-      return new NextResponse('Invalid JSON', { status: 400 });
+      return new NextResponse('Invalid JSON', { status: HTTP_STATUS.BAD_REQUEST });
     }
 
     const events = body.events ?? [];
@@ -59,6 +61,10 @@ export async function POST(req: Request) {
       const lineUserId = event.source?.userId;
       const replyToken = event.replyToken;
       if (!lineUserId) continue;
+
+      if (isRateLimited(lineUserId)) {
+        continue; // レート制限超過時はイベントをスキップ
+      }
 
       // 友だち追加: 挨拶＋使い方＋ボタン＋Rich Menu を全員に設定
       if (event.type === 'follow' && config.accessToken) {
@@ -183,7 +189,7 @@ export async function POST(req: Request) {
 
             if (log) {
               await prisma.healthLog.update({
-                where: { id: log.id },
+                where: { id: log.id, userId: linked.userId },
                 data: update,
               });
             } else {
@@ -233,9 +239,9 @@ export async function POST(req: Request) {
       }
     }
 
-    return new NextResponse('OK', { status: 200 });
+    return new NextResponse('OK', { status: HTTP_STATUS.OK });
   } catch (error) {
     console.error('line webhook error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse('Internal Server Error', { status: HTTP_STATUS.INTERNAL_SERVER_ERROR });
   }
 }
