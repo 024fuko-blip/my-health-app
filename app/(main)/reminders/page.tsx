@@ -210,7 +210,7 @@ export default function RemindersPage() {
               >
                 <div>
                   <p className="font-bold text-gray-800">{c.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-700">
                     {c.due_date}
                     {c.scheduled_time ? ` ${c.scheduled_time}` : ""}
                     {c.memo ? ` ・ ${c.memo}` : ""}

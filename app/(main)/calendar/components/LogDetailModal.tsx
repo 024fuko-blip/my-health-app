@@ -54,12 +54,12 @@ export function LogDetailModal({
             ) : (
               <button
                 onClick={() => setIsEditing(false)}
-                className="text-gray-500 text-sm"
+                className="text-gray-700 text-sm"
               >
                 キャンセル
               </button>
             )}
-            <button onClick={onClose} className="text-gray-400 text-2xl ml-2">
+            <button onClick={onClose} className="text-gray-600 text-2xl ml-2">
               ×
             </button>
           </div>
@@ -69,7 +69,7 @@ export function LogDetailModal({
           <div className="space-y-4 max-h-[60vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs font-bold text-gray-500">体調 (1-5)</label>
+                <label className="text-xs font-bold text-gray-700">体調 (1-5)</label>
                 <input
                   type="number"
                   min="1"
@@ -82,7 +82,7 @@ export function LogDetailModal({
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500">腹痛 (1-5)</label>
+                <label className="text-xs font-bold text-gray-700">腹痛 (1-5)</label>
                 <input
                   type="number"
                   min="1"
@@ -96,7 +96,7 @@ export function LogDetailModal({
               </div>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500">生理</label>
+              <label className="text-xs font-bold text-gray-700">生理</label>
               <select
                 value={editForm.period_status || 'なし'}
                 onChange={(e) =>
@@ -110,7 +110,7 @@ export function LogDetailModal({
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500">便・トイレ</label>
+              <label className="text-xs font-bold text-gray-700">便・トイレ</label>
               <input
                 type="text"
                 placeholder="例: 普通 / トイレ3回"
@@ -122,7 +122,7 @@ export function LogDetailModal({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500">食事メモ</label>
+                <label className="text-xs font-bold text-gray-700">食事メモ</label>
               <textarea
                 value={editForm.meal_description || ''}
                 onChange={(e) =>
@@ -242,7 +242,7 @@ export function LogDetailModal({
               </div>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500">メモ</label>
+              <label className="text-xs font-bold text-gray-700">メモ</label>
               <textarea
                 value={editForm.memo || ''}
                 onChange={(e) =>
@@ -308,7 +308,7 @@ export function LogDetailModal({
                 )}
               </div>
             )}
-            <div className="bg-gray-50 p-3 rounded text-sm text-gray-600 whitespace-pre-wrap">
+            <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 whitespace-pre-wrap">
               {selectedLog.memo || '—'}
             </div>
           </div>

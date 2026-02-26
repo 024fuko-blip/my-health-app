@@ -43,7 +43,7 @@ export function TodayHealthCard({ todayLog, modes }: TodayHealthCardProps) {
           )}
         </div>
       ) : (
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-700 text-sm">
           まだ今日の記録がないわ。記録してから出直しなさい！
         </p>
       )}

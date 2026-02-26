@@ -8,7 +8,7 @@ export function PetPlayTab({ onMinigame }: PetPlayTabProps) {
   return (
     <div className="space-y-4">
       <h3 className="font-bold text-gray-800">ミニゲーム</h3>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-700">
         遊んでポイントと幸福度をゲット！
       </p>
       <div className="grid gap-3">

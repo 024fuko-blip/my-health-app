@@ -57,7 +57,7 @@ export function PeriodCycleSettings({
                 onChange={(e) => setPeriodCycle(parseInt(e.target.value) || 28)}
                 className="w-full p-2 border rounded text-sm text-center"
               />
-              <span className="text-sm text-gray-500">日</span>
+              <span className="text-sm text-gray-700">日</span>
             </div>
           </div>
           <div>
@@ -71,7 +71,7 @@ export function PeriodCycleSettings({
                 onChange={(e) => setPeriodDuration(parseInt(e.target.value) || 5)}
                 className="w-full p-2 border rounded text-sm text-center"
               />
-              <span className="text-sm text-gray-500">日</span>
+              <span className="text-sm text-gray-700">日</span>
             </div>
           </div>
         </div>
@@ -85,13 +85,13 @@ export function PeriodCycleSettings({
             })()}
           </p>
         )}
-        <p className="text-xs text-gray-500">カレンダーに生理予測・PMSが表示されます</p>
+        <p className="text-xs text-gray-700">カレンダーに生理予測・PMSが表示されます</p>
       </div>
     );
   }
 
   return (
-    <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
       生理周期はプロフィールで性別を「女性」にすると表示されます。
     </p>
   );

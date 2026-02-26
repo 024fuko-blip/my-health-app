@@ -6,7 +6,7 @@ import FooterLink from '../components/FooterLink';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isActive = (path: string) => pathname === path ? "text-[var(--color-text)] font-bold" : "text-[var(--color-text-muted)]";
+  const isActive = (path: string) => pathname === path ? "text-[var(--color-text)] font-bold" : "text-gray-700";
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--color-card)] pb-24 overflow-x-hidden">
@@ -32,7 +32,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div className="bg-[var(--color-sage)] w-14 h-14 -mt-6 shadow-kirei-card border-4 border-white flex items-center justify-center transform transition active:scale-95">
             <PenSquare className="w-7 h-7 text-white" strokeWidth={2} />
           </div>
-          <span className={`mt-1 font-bold ${pathname === '/record' ? 'text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}>記録</span>
+          <span className={`mt-1 font-bold ${pathname === '/record' ? 'text-[var(--color-text)]' : 'text-gray-700'}`}>記録</span>
         </Link>
 
         <Link href="/game" className={`flex flex-col items-center gap-1 text-[10px] w-14 py-1 ${isActive('/game')}`}>
@@ -40,7 +40,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <span>ゲーム</span>
         </Link>
 
-        <Link href="/settings" className={`flex flex-col items-center gap-1 text-[10px] w-14 py-1 ${pathname.startsWith('/settings') ? 'text-[var(--color-text)] font-bold' : 'text-[var(--color-text-muted)]'}`}>
+        <Link href="/settings" className={`flex flex-col items-center gap-1 text-[10px] w-14 py-1 ${pathname.startsWith('/settings') ? 'text-[var(--color-text)] font-bold' : 'text-gray-700'}`}>
           <Settings className="w-6 h-6" strokeWidth={2} />
           <span>設定</span>
         </Link>

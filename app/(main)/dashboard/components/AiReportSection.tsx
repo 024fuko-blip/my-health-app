@@ -26,7 +26,7 @@ export function AiReportSection({
           <span>💋</span>
           相棒の期間総評（因果関係分析）
         </span>
-        <span className="text-xs font-normal text-gray-400">
+        <span className="text-xs font-normal text-gray-600">
           {sectionOpen.report ? '閉じる' : '開く'}
         </span>
       </summary>
@@ -37,7 +37,7 @@ export function AiReportSection({
           ) : report ? (
             report
           ) : (
-            <span className="text-gray-400 text-sm">
+            <span className="text-gray-600 text-sm">
               記録がたまると、ここに因果関係に基づく気づきを表示します。
             </span>
           )}

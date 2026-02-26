@@ -37,13 +37,13 @@ export function PetRoomTab({
             <span className="text-xl">{r.emoji}</span>
             <span>{r.name}</span>
             {!r.owned && r.cost > 0 && (
-              <span className="text-xs text-gray-500">{r.cost}pt</span>
+              <span className="text-xs text-gray-700">{r.cost}pt</span>
             )}
           </button>
         ))}
       </div>
       <h3 className="font-bold text-gray-800 pt-2">家具の配置</h3>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-gray-700">
         所持している家具を最大8個まで部屋に飾れます。
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -55,7 +55,7 @@ export function PetRoomTab({
             <span className="text-xl">{f.emoji}</span>
             <div className="flex-1 mx-2 text-left">
               <p className="font-bold text-sm">{f.name}</p>
-              <p className="text-xs text-gray-500">所持: {f.owned}</p>
+              <p className="text-xs text-gray-700">所持: {f.owned}</p>
             </div>
             <button
               type="button"
@@ -80,7 +80,7 @@ export function PetRoomTab({
               <span className="text-2xl">{r.emoji}</span>
               <div className="flex-1 mx-2 text-left">
                 <p className="font-bold">{r.name}</p>
-                <p className="text-xs text-gray-500">{r.cost} pt</p>
+                <p className="text-xs text-gray-700">{r.cost} pt</p>
               </div>
               <button
                 type="button"

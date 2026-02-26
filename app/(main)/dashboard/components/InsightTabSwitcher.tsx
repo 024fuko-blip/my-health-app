@@ -31,14 +31,14 @@ export function InsightTabSwitcher({ insightTab, setInsightTab }: InsightTabSwit
             type="button"
             onClick={() => setInsightTab(tab)}
             className={`flex-1 py-2.5 px-2 rounded-lg font-bold text-sm transition ${
-              insightTab === tab ? 'bg-white text-[var(--color-text)] shadow-kirei-card' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+              insightTab === tab ? 'bg-white text-[var(--color-text)] shadow-kirei-card' : 'text-gray-700 hover:text-[var(--color-text)]'
             }`}
           >
             {insightLabels[tab]}
           </button>
         ))}
       </div>
-      <p className="text-xs text-gray-500 px-1">{tabDescriptions[insightTab]}</p>
+      <p className="text-xs text-gray-700 px-1">{tabDescriptions[insightTab]}</p>
     </div>
   );
 }

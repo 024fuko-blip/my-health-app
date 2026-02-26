@@ -94,7 +94,7 @@ export default function PushNotifyButton() {
   if (status === "checking") return null;
   if (status === "unsupported") {
     return (
-      <p className="text-xs text-gray-500 mt-2">
+      <p className="text-xs text-gray-700 mt-2">
         通知機能はお使いの環境では利用できません。
       </p>
     );

@@ -13,7 +13,7 @@ export function PetFeedTab({ data, onFeed, onBuy }: PetFeedTabProps) {
     <div className="space-y-4">
       <h3 className="font-bold text-gray-800">所持している餌</h3>
       {data.foods.filter((f) => f.owned > 0).length === 0 ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-700">
           餌を持っていません。下のショップで購入しよう。
         </p>
       ) : (
@@ -44,7 +44,7 @@ export function PetFeedTab({ data, onFeed, onBuy }: PetFeedTabProps) {
             <span className="text-2xl">{f.emoji}</span>
             <div className="flex-1 mx-2 text-left">
               <p className="font-bold">{f.name}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-700">
                 +{f.happiness_gain} 幸福度 / {f.cost} pt
               </p>
             </div>

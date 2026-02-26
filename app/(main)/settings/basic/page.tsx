@@ -79,7 +79,7 @@ export default function SettingsBasicPage() {
     <div className="space-y-6">
       <div className="bg-white p-4 rounded-xl border space-y-4">
         <h3 className="font-bold text-slate-700">使用モード</h3>
-        <p className="text-xs text-slate-500">記録・分析で使う項目を選びます</p>
+        <p className="text-xs text-slate-700">記録・分析で使う項目を選びます</p>
         <div className="space-y-2">
           <label className="flex justify-between items-center py-2">
             <span>💊 IBD管理</span>
@@ -102,7 +102,7 @@ export default function SettingsBasicPage() {
 
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
         <h3 className="font-bold text-slate-800">AIモード</h3>
-        <p className="text-xs text-slate-600">相棒の話し方を選べます</p>
+        <p className="text-xs text-slate-700">相棒の話し方を選べます</p>
         <div className="space-y-2">
           {[
             { value: "tsundere" as const, label: "ツンデレ" },
@@ -121,7 +121,7 @@ export default function SettingsBasicPage() {
               }`}
             >
               <span className="font-medium">{label}</span>
-              {settings.ai_personality === value && <span className="text-xs text-slate-600">✓ 使用中</span>}
+              {settings.ai_personality === value && <span className="text-xs text-slate-700">✓ 使用中</span>}
             </button>
           ))}
         </div>

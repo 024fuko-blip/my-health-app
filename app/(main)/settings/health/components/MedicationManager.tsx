@@ -157,7 +157,7 @@ export function MedicationManager({
                 >
                   <span className="font-medium text-green-800">{d.name}</span>
                   {(d.categoryName || d.price != null) && (
-                    <span className="ml-2 text-gray-500 text-xs">
+                    <span className="ml-2 text-gray-700 text-xs">
                       {d.categoryName}
                       {d.price != null && `／${d.price}円`}
                       {d.isGeneric && "（後発品）"}
@@ -202,7 +202,7 @@ export function MedicationManager({
                     className={`py-2 rounded-lg border-2 font-bold text-xs transition ${
                       med.timings.includes(timing)
                         ? "border-green-500 bg-green-100 text-green-800"
-                        : "border-gray-200 bg-gray-50 text-gray-400 hover:border-green-300"
+                        : "border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300"
                     }`}
                   >
                     {timing}
@@ -213,9 +213,9 @@ export function MedicationManager({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-500 text-center py-4">薬が登録されていません</p>
+        <p className="text-sm text-gray-700 text-center py-4">薬が登録されていません</p>
       )}
-      <p className="text-xs text-gray-500 mb-3">記録画面に服用タイミングが表示されます</p>
+      <p className="text-xs text-gray-700 mb-3">記録画面に服用タイミングが表示されます</p>
       <div className="border-t border-green-200 pt-3 mt-3">
         <p className="text-xs font-bold text-green-800 mb-2">リマインダー表示時刻（リマインダー画面で使用）</p>
         <div className="grid grid-cols-2 gap-2">

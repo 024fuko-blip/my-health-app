@@ -66,7 +66,7 @@ export function AlcoholSection({
             onChange={(e) => setDrinkStartTime(e.target.value)}
             className="flex-1 p-2 border rounded text-sm"
           />
-          <span className="text-gray-500">〜</span>
+          <span className="text-gray-700">〜</span>
           <input
             type="time"
             value={drinkEndTime}
@@ -141,11 +141,11 @@ export function AlcoholSection({
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="bg-white p-2 rounded">
-              <span className="text-xs text-gray-500 block">分解にかかる時間</span>
+              <span className="text-xs text-gray-700 block">分解にかかる時間</span>
               <span className="font-bold text-amber-800">約 {decompositionHours.toFixed(1)} 時間</span>
             </div>
             <div className="bg-white p-2 rounded">
-              <span className="text-xs text-gray-500 block">分解完了予測</span>
+              <span className="text-xs text-gray-700 block">分解完了予測</span>
               <span className="font-bold text-amber-800">{soberTime}</span>
             </div>
           </div>

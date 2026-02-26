@@ -49,7 +49,7 @@ export function CalendarCell({
       className={`h-24 border p-1 cursor-pointer transition-colors relative ${bgColor} ${borderColor} hover:opacity-80`}
     >
       <div className="flex items-center justify-between">
-        <span className={`text-xs font-bold ${log ? 'text-gray-800' : 'text-gray-400'}`}>
+        <span className={`text-xs font-bold ${log ? 'text-gray-800' : 'text-gray-600'}`}>
           {day}
         </span>
         <div className="flex gap-0.5">

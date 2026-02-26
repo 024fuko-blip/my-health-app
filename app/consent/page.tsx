@@ -33,7 +33,7 @@ export default function ConsentPage() {
         </p>
 
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-          <div className="text-xs text-gray-500 mb-2">
+          <div className="text-xs text-gray-700 mb-2">
             内容を最後までスクロールすると同意に進めます
           </div>
           <div

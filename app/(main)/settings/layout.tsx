@@ -21,7 +21,7 @@ export default function SettingsLayout({
         >
           ←
         </Link>
-        <h2 className="text-xl font-bold flex-1">設定</h2>
+        <h2 className="text-xl font-bold flex-1 text-[var(--color-text)]">設定</h2>
       </div>
 
       <nav className="flex gap-2 overflow-x-auto overflow-y-hidden pb-1 -mx-1 px-1 min-w-0 w-full scrollbar-hide">
@@ -30,7 +30,7 @@ export default function SettingsLayout({
           className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             pathname === "/settings"
               ? "bg-[var(--color-sage)] text-white"
-              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
+              : "bg-[var(--color-card)] text-gray-700 border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           メニュー
@@ -40,7 +40,7 @@ export default function SettingsLayout({
           className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             isActive("/settings/basic")
               ? "bg-[var(--color-sage)] text-white"
-              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
+              : "bg-[var(--color-card)] text-gray-700 border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           基本設定
@@ -50,7 +50,7 @@ export default function SettingsLayout({
           className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             isActive("/settings/profile")
               ? "bg-[var(--color-sage)] text-white"
-              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
+              : "bg-[var(--color-card)] text-gray-700 border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           プロフィール
@@ -60,7 +60,7 @@ export default function SettingsLayout({
           className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             isActive("/settings/health")
               ? "bg-[var(--color-sage)] text-white"
-              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
+              : "bg-[var(--color-card)] text-gray-700 border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           健康管理
@@ -70,7 +70,7 @@ export default function SettingsLayout({
           className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             pathname === "/reminders"
               ? "bg-[var(--color-sage)] text-white"
-              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
+              : "bg-[var(--color-card)] text-gray-700 border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           リマインダー
@@ -80,7 +80,7 @@ export default function SettingsLayout({
           className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
             pathname === "/game/pet"
               ? "bg-[var(--color-sage)] text-white"
-              : "bg-[var(--color-card)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-border)]"
+              : "bg-[var(--color-card)] text-gray-700 border border-[var(--color-border)] hover:bg-[var(--color-border)]"
           }`}
         >
           マイペット

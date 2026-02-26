@@ -49,10 +49,10 @@ export function HealthChart({
           <span>📈</span>
           {period === 7 ? '週間グラフ' : '月間グラフ'}
         </span>
-        <span className="text-xs font-normal text-gray-400">{sectionOpen.chart ? '閉じる' : '開く'}</span>
+        <span className="text-xs font-normal text-gray-600">{sectionOpen.chart ? '閉じる' : '開く'}</span>
       </summary>
       <div className="px-4 pb-4 border-t border-gray-100">
-        <p className="text-xs text-gray-500 mb-3">
+        <p className="text-xs text-gray-700 mb-3">
           {period === 7 ? '直近7日間' : '直近30日間'}の推移
         </p>
 
@@ -65,7 +65,7 @@ export function HealthChart({
               className={`px-3 py-1.5 rounded-full text-xs font-bold transition border-2 ${
                 selectedItems.has(item.key)
                   ? 'text-white'
-                  : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
               }`}
               style={
                 selectedItems.has(item.key)
@@ -116,11 +116,11 @@ export function HealthChart({
               </LineChart>
             </ResponsiveContainer>
           ) : chartData.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+            <div className="h-full flex items-center justify-center text-gray-600 text-sm">
               この期間の記録がまだないわ。記録画面で入力してから出直しなさい！
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+            <div className="h-full flex items-center justify-center text-gray-600 text-sm">
               表示する項目を選択してちょうだい！
             </div>
           )}

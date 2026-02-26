@@ -74,7 +74,7 @@ function PeriodButtons({
         >
           <span className="text-lg">🩸</span>
           <span>生理中</span>
-          <span className="text-[10px] font-normal text-slate-500">タップでON/OFF</span>
+          <span className="text-[10px] font-normal text-slate-600">タップでON/OFF</span>
         </button>
         <button
           type="button"
@@ -98,7 +98,7 @@ function PeriodButtons({
           <span>生理終了</span>
         </button>
       </div>
-      <p className="text-xs text-gray-500">選択はその日の記録にすぐ保存されます。生理中を選ぶと開始日も記録されます</p>
+      <p className="text-xs text-gray-700">選択はその日の記録にすぐ保存されます。生理中を選ぶと開始日も記録されます</p>
     </div>
   );
 }
@@ -190,7 +190,7 @@ export function BasicInfoSection({
               className={`flex-1 py-2 rounded-lg border-2 font-bold transition record-btn touch-manipulation active:scale-95 ${
                 generalMood === level
                   ? 'border-slate-500 bg-slate-100 text-slate-800'
-                  : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
+                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
               }`}
             >
               {level}
@@ -201,7 +201,7 @@ export function BasicInfoSection({
 
       <div className="flex flex-wrap gap-4">
         <div>
-          <label className="text-xs font-bold text-neutral-600 block mb-1">体温</label>
+          <label className="text-xs font-bold text-neutral-700 block mb-1">体温</label>
           <div className="flex items-center gap-2 max-w-[180px]">
             <button
               type="button"
@@ -227,11 +227,11 @@ export function BasicInfoSection({
             >
               +
             </button>
-            <span className="text-lg font-bold text-neutral-500">℃</span>
+            <span className="text-lg font-bold text-neutral-600">℃</span>
           </div>
         </div>
         <div>
-          <label className="text-xs font-bold text-neutral-600 block mb-1">体重</label>
+          <label className="text-xs font-bold text-neutral-700 block mb-1">体重</label>
           <div className="flex items-center gap-2 max-w-[180px]">
             <button
               type="button"
@@ -257,7 +257,7 @@ export function BasicInfoSection({
             >
               +
             </button>
-            <span className="text-lg font-bold text-neutral-500">kg</span>
+            <span className="text-lg font-bold text-neutral-600">kg</span>
           </div>
         </div>
       </div>
@@ -364,7 +364,7 @@ export function BasicInfoSection({
               </button>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1 px-1">
+          <div className="flex justify-between text-xs text-gray-600 mt-1 px-1">
             <span>荒れ荒れ</span>
             <span>絶好調</span>
           </div>

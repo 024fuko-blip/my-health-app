@@ -67,16 +67,16 @@ export default function CalendarPage() {
       <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-xl shadow-sm">
         <button
           onClick={() => changeMonth(-1)}
-          className="p-2 text-gray-500 hover:bg-gray-100 rounded"
+          className="p-2 text-gray-700 hover:bg-gray-100 rounded"
         >
           ◀
         </button>
-        <h2 className="text-xl font-bold">
+        <h2 className="text-xl font-bold text-gray-800">
           {year}年 {month}月
         </h2>
         <button
           onClick={() => changeMonth(1)}
-          className="p-2 text-gray-500 hover:bg-gray-100 rounded"
+          className="p-2 text-gray-700 hover:bg-gray-100 rounded"
         >
           ▶
         </button>
@@ -85,7 +85,7 @@ export default function CalendarPage() {
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-7 text-center bg-gray-50 border-b">
           {['日', '月', '火', '水', '木', '金', '土'].map((d) => (
-            <div key={d} className="py-2 text-xs font-bold text-gray-500">
+            <div key={d} className="py-2 text-xs font-bold text-gray-700">
               {d}
             </div>
           ))}

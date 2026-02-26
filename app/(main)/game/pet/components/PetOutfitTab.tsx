@@ -50,7 +50,7 @@ export function PetOutfitTab({ data, onEquip, onBuy }: PetOutfitTabProps) {
             <span className="text-2xl">{o.emoji ?? "—"}</span>
             <div className="flex-1 mx-2 text-left">
               <p className="font-bold">{o.name}</p>
-              <p className="text-xs text-gray-500">{o.cost} pt</p>
+              <p className="text-xs text-gray-700">{o.cost} pt</p>
             </div>
             <button
               type="button"

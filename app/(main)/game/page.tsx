@@ -119,7 +119,7 @@ export default function GamePage() {
             <p>
               <strong>ぽっち</strong>は、ねこ・いぬ・うさぎ・カピバラ・ハムスター・アヒルの<strong>6種類</strong>から選べるペット。たまったポイントで<strong>餌</strong>や<strong>着せ替え</strong>を買って、育てていこう！
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-700">
               まだペットを迎えてない場合は下の「ぽっち」カードから種類を選んで迎えよう。
             </p>
           </div>
@@ -162,7 +162,7 @@ export default function GamePage() {
                   : "タップしてぽっちを迎えよう"}
               </p>
             </div>
-            <span className="text-gray-400">→</span>
+            <span className="text-gray-600">→</span>
           </div>
         </Link>
         {pet && (

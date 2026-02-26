@@ -29,7 +29,7 @@ function CollapsibleSection({
           <span>{icon}</span>
           {title}
         </span>
-        <span className="text-xs text-gray-400 group-open:rotate-180 transition-transform">
+        <span className="text-xs text-gray-600 group-open:rotate-180 transition-transform">
           &#9660;
         </span>
       </summary>
@@ -173,7 +173,7 @@ export default function RecordPage() {
                   <span className="font-bold text-sm text-slate-700">
                     今日のあなたへ
                   </span>
-                  <span className="text-xs px-2 py-0.5 text-[var(--color-text-muted)] bg-[var(--color-border)]/80">
+                  <span className="text-xs px-2 py-0.5 text-gray-700 bg-[var(--color-border)]/80">
                     周期 {cyclePhase.dayInCycle}日目
                   </span>
                 </div>

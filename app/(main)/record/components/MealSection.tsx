@@ -50,7 +50,7 @@ export function MealSection({
         >
           {isAnalyzing ? '🔄 推定中...' : '📝 文字から栄養を推定'}
         </button>
-        <span className="text-xs text-gray-500">メモを書いて押すとカロリー・PFC等を推定</span>
+        <span className="text-xs text-gray-700">メモを書いて押すとカロリー・PFC等を推定</span>
       </div>
 
       <div className="space-y-2">
@@ -74,7 +74,7 @@ export function MealSection({
                   <>
                     <span className="font-bold">食事写真をドラッグ&ドロップ</span>
                     <br />
-                    <span className="text-xs text-gray-400">または下のボタンから選択</span>
+                    <span className="text-xs text-gray-600">または下のボタンから選択</span>
                   </>
                 )}
               </p>
@@ -113,7 +113,7 @@ export function MealSection({
                   ×
                 </button>
               </div>
-              <div className="flex-1 text-xs text-gray-500">
+              <div className="flex-1 text-xs text-gray-700">
                 {isAnalyzing ? (
                   <span className="text-orange-600 flex items-center gap-1">
                     <span className="animate-spin">🔄</span> 料理を認識中...
@@ -132,7 +132,7 @@ export function MealSection({
           <div className="bg-white p-3 rounded-lg border border-orange-200 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-orange-700">🍽️ 認識した料理</span>
-              <span className="text-xs text-gray-400">タップで編集</span>
+              <span className="text-xs text-gray-600">タップで編集</span>
             </div>
 
             <div className="space-y-2">
@@ -178,36 +178,36 @@ export function MealSection({
               </div>
               <div className="grid grid-cols-3 gap-1 text-center text-xs">
                 <div className="bg-red-50 p-1.5 rounded">
-                  <span className="text-gray-500 block">カロリー</span>
+                  <span className="text-gray-700 block">カロリー</span>
                   <span className="font-bold text-red-700">{nutritionData.calories ?? '—'}</span>
-                  <span className="text-gray-400">kcal</span>
+                  <span className="text-gray-600">kcal</span>
                 </div>
                 <div className="bg-blue-50 p-1.5 rounded">
-                  <span className="text-gray-500 block">タンパク質</span>
+                  <span className="text-gray-700 block">タンパク質</span>
                   <span className="font-bold text-blue-700">{nutritionData.protein ?? '—'}</span>
-                  <span className="text-gray-400">g</span>
+                  <span className="text-gray-600">g</span>
                 </div>
                 <div className="bg-yellow-50 p-1.5 rounded">
-                  <span className="text-gray-500 block">脂質</span>
+                  <span className="text-gray-700 block">脂質</span>
                   <span className="font-bold text-yellow-700">{nutritionData.fat ?? '—'}</span>
-                  <span className="text-gray-400">g</span>
+                  <span className="text-gray-600">g</span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-1 text-center text-xs mt-1">
                 <div className="bg-green-50 p-1.5 rounded">
-                  <span className="text-gray-500 block">炭水化物</span>
+                  <span className="text-gray-700 block">炭水化物</span>
                   <span className="font-bold text-green-700">{nutritionData.carbs ?? '—'}</span>
-                  <span className="text-gray-400">g</span>
+                  <span className="text-gray-600">g</span>
                 </div>
                 <div className="bg-purple-50 p-1.5 rounded">
-                  <span className="text-gray-500 block">食物繊維</span>
+                  <span className="text-gray-700 block">食物繊維</span>
                   <span className="font-bold text-purple-700">{nutritionData.fiber ?? '—'}</span>
-                  <span className="text-gray-400">g</span>
+                  <span className="text-gray-600">g</span>
                 </div>
                 <div className="bg-gray-50 p-1.5 rounded">
-                  <span className="text-gray-500 block">塩分</span>
+                  <span className="text-gray-700 block">塩分</span>
                   <span className="font-bold text-gray-700">{nutritionData.salt ?? '—'}</span>
-                  <span className="text-gray-400">g</span>
+                  <span className="text-gray-600">g</span>
                 </div>
               </div>
             </div>

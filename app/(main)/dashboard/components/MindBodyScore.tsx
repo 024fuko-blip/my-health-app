@@ -27,7 +27,7 @@ export function MindBodyScore({
     >
       <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-gray-700 bg-slate-50 hover:bg-slate-100">
         <span>心身スコア</span>
-        <span className="text-xs font-normal text-gray-400">
+        <span className="text-xs font-normal text-gray-600">
           {sectionOpen.mindBody ? '閉じる' : '開く'}
         </span>
       </summary>

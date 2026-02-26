@@ -22,7 +22,7 @@ export function TriggerCards({ triggers, sectionOpen, setSectionOpen }: TriggerC
           <span>🔬</span>
           心身相関の発見
         </span>
-        <span className="text-xs font-normal text-gray-400">
+        <span className="text-xs font-normal text-gray-600">
           {sectionOpen.triggers ? '閉じる' : '開く'}
         </span>
       </summary>

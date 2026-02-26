@@ -30,7 +30,7 @@ export function InsightList({ insightTab, insights, insightGenerating, onRegener
         </button>
       </div>
       {insights.length === 0 ? (
-        <div className="bg-gray-50 p-6 rounded-xl text-center text-gray-500 text-sm">
+        <div className="bg-gray-50 p-6 rounded-xl text-center text-gray-700 text-sm">
           まだ分析データがありません。週次は毎週月曜、月次は毎月1日、年次は1月1日に自動生成されます（cron 設定時）。上の「再生成」で手動生成もできます。
         </div>
       ) : (
@@ -40,7 +40,7 @@ export function InsightList({ insightTab, insights, insightGenerating, onRegener
               key={i.id}
               className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"
             >
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-gray-700 mb-2">
                 {i.startDate} 〜 {i.endDate}
               </p>
               <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{i.summary}</p>

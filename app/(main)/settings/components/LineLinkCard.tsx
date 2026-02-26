@@ -100,7 +100,7 @@ export default function LineLinkCard() {
     return (
       <div className="bg-white p-4 rounded-xl border opacity-60">
         <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
-        <p className="text-xs text-gray-500 mt-0.5">読み込み中...</p>
+        <p className="text-xs text-gray-700 mt-0.5">読み込み中...</p>
       </div>
     );
   }
@@ -109,7 +109,7 @@ export default function LineLinkCard() {
     return (
       <div className="bg-white p-4 rounded-xl border border-gray-200 bg-gray-50/50">
         <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
-        <p className="text-xs text-gray-500 mt-0.5">服薬リマインド・チャットから記録（希望者のみ）</p>
+        <p className="text-xs text-gray-700 mt-0.5">服薬リマインド・チャットから記録（希望者のみ）</p>
         <p className="text-xs text-amber-600 mt-2">※ 現在利用できません（管理者が環境変数を設定すると使えます）</p>
       </div>
     );
@@ -121,7 +121,7 @@ export default function LineLinkCard() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
-            <p className="text-xs text-gray-600 mt-0.5">服薬リマインド・チャットから記録が可能</p>
+            <p className="text-xs text-gray-700 mt-0.5">服薬リマインド・チャットから記録が可能</p>
           </div>
           <button
             onClick={handleUnlink}
@@ -132,7 +132,7 @@ export default function LineLinkCard() {
           </button>
         </div>
         <div className="pt-2 border-t border-green-200 space-y-2">
-          <p className="text-xs text-gray-600">Rich Menu は友だち追加時に自動表示されます。表示されない場合のみ:</p>
+          <p className="text-xs text-gray-700">Rich Menu は友だち追加時に自動表示されます。表示されない場合のみ:</p>
           <button
             onClick={handleSetupRichMenu}
             disabled={richMenuLoading}
@@ -168,7 +168,7 @@ export default function LineLinkCard() {
             チャットで <strong className="bg-yellow-100 px-1 rounded">連携 {code}</strong> と送信
           </li>
         </ol>
-        <p className="text-xs text-gray-500 mt-2">コードは10分間有効です</p>
+        <p className="text-xs text-gray-700 mt-2">コードは10分間有効です</p>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function LineLinkCard() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-bold text-gray-800">📱 LINE連携</h3>
-          <p className="text-xs text-gray-500 mt-0.5">服薬リマインド・チャットから記録（希望者のみ）</p>
+          <p className="text-xs text-gray-700 mt-0.5">服薬リマインド・チャットから記録（希望者のみ）</p>
         </div>
         <button
           onClick={handleLinkStart}
@@ -189,7 +189,7 @@ export default function LineLinkCard() {
         </button>
       </div>
       <div className="pt-2 border-t border-gray-100 space-y-2">
-        <p className="text-xs text-gray-500">Rich Menu は友だち追加時に自動表示（表示されない場合のみ再設定可）</p>
+          <p className="text-xs text-gray-700">Rich Menu は友だち追加時に自動表示（表示されない場合のみ再設定可）</p>
         <button
           onClick={handleSetupRichMenu}
           disabled={richMenuLoading}

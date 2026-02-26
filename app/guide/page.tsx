@@ -22,9 +22,9 @@ export default async function GuidePage({ searchParams }: Props) {
             ←
           </Link>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-slate-500 font-medium tracking-wide">How to use</p>
+            <p className="text-sm text-slate-700 font-medium tracking-wide">How to use</p>
             <h1 className="text-xl font-bold text-slate-800">アプリの使い方</h1>
-            <p className="text-xs text-slate-500">はじめての方もこれでバッチリ</p>
+            <p className="text-xs text-slate-700">はじめての方もこれでバッチリ</p>
           </div>
         </div>
 
@@ -63,7 +63,7 @@ export default async function GuidePage({ searchParams }: Props) {
             <p>
               記録画面で食事の写真を撮影・アップロードすると、AIが画像から料理内容を読み取り、カロリー・タンパク質・脂質・炭水化物・食物繊維・塩分などの目安を推定します。<strong>文字でメモを書いただけの場合も「文字から栄養を推定」ボタンで、同様にカロリー・PFCなどの数値を推定できます。</strong> 推定結果は記録の栄養欄に反映でき、その日のアドバイス（オネエのコメント）でも食事内容を踏まえたフィードバックを受けられます。
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-700">
               分析には OpenAI（画像は GPT-4o、文字は GPT-4o-mini）を使用しています。あくまで推定であり、医療・栄養の判断は主治医や栄養士の指導に従ってください。
             </p>
           </div>
@@ -162,7 +162,7 @@ export default async function GuidePage({ searchParams }: Props) {
             <p>
               <strong>🌅 おはよう相棒</strong> … 毎朝、天気・服装・花粉・直近の記録からAIが予測する気分・体調の波をお届けします。プロフィールで現在地を設定すると、その地域の天気が反映されます。
             </p>
-            <p className="text-xs text-gray-500">通知・LINE連携は希望者のみの機能です。</p>
+            <p className="text-xs text-gray-700">通知・LINE連携は希望者のみの機能です。</p>
             <div id="notification" className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
               <p className="font-bold text-slate-800 mb-2">通知が有効にならない場合</p>
               <p className="text-sm text-gray-700 mb-2"><strong>Android（Chrome）:</strong></p>
@@ -218,7 +218,7 @@ export default async function GuidePage({ searchParams }: Props) {
 
         {/* 開発者向け */}
         <section className="rounded-xl bg-gray-50/80 px-4 py-3 border border-gray-100">
-          <p className="text-xs text-gray-400 italic">
+          <p className="text-xs text-gray-600 italic">
             ※ 機能を追加・変更したときは、このページの該当セクションを更新してください。（開発者向け）
           </p>
         </section>

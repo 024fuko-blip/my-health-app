@@ -1,6 +1,6 @@
 export default function FooterLink() {
   return (
-    <div className="mt-4 text-center text-[10px] text-gray-400">
+    <div className="mt-4 text-center text-[10px] text-gray-600">
       <a href="/" className="hover:underline">
         トップへ
       </a>

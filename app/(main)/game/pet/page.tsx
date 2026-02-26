@@ -404,7 +404,7 @@ export default function GamePetPage() {
               </div>
             )}
             <div className="mt-2 flex items-center justify-center gap-2">
-              <span className="text-sm text-gray-500">幸福度</span>
+              <span className="text-sm text-gray-700">幸福度</span>
               <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-400 rounded-full transition-all"
@@ -417,7 +417,7 @@ export default function GamePetPage() {
             </div>
             {dataToUse.pet?.exp_to_next && dataToUse.pet.exp_to_next.needed > 0 && (
               <div className="mt-2 flex items-center justify-center gap-2">
-                <span className="text-xs text-gray-500">EXP</span>
+                <span className="text-xs text-gray-700">EXP</span>
                 <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-violet-400 rounded-full transition-all"
@@ -432,7 +432,7 @@ export default function GamePetPage() {
               </p>
             )}
             {(dataToUse.pet?.adopted_at != null || (dataToUse.pet?.feed_count ?? 0) > 0) && (
-              <div className="mt-3 pt-3 border-t border-amber-100 text-xs text-gray-500 text-left">
+              <div className="mt-3 pt-3 border-t border-amber-100 text-xs text-gray-700 text-left">
                 <p><strong>育成ログ</strong></p>
                 {dataToUse.pet?.adopted_at && (
                   <p>迎えて {Math.max(0, Math.floor((Date.now() - new Date(dataToUse.pet.adopted_at).getTime()) / (1000 * 60 * 60 * 24)))} 日目</p>
