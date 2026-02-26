@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ensureSession, handleUnauthorized, apiFetch } from "@/lib/api-client";
-import { BADGE_DEFS } from "@/lib/game-stats";
+import { BADGE_DEFS } from "@/lib/game-badges";
 
 const DEFAULT_BADGES = BADGE_DEFS.map((def) => ({
   id: def.id,
