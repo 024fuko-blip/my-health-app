@@ -13,6 +13,12 @@ steps:
       - 'AUTH_SECRET=dummy_secret_for_build_only'
       - '--build-arg'
       - 'NEXTAUTH_SECRET=dummy_secret_for_build_only'
+      - '--build-arg'
+      - 'GOOGLE_CLIENT_ID=dummy_client_id'
+      - '--build-arg'
+      - 'GOOGLE_CLIENT_SECRET=dummy_client_secret'
+      - '--build-arg'
+      - 'NEXTAUTH_URL=http://localhost:3000'
       - '.'
   - name: 'gcr.io/cloud-builders/docker'
     args:
