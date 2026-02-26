@@ -26,6 +26,13 @@ export default function LoginForm() {
     }
   }, [session, status, router, searchParams]);
 
+  // 未同意時はチェック付き同意画面へ直接リダイレクト（中間画面をスキップ）
+  useEffect(() => {
+    if (!checkingConsent && !hasConsent) {
+      router.replace("/consent");
+    }
+  }, [checkingConsent, hasConsent, router]);
+
   const handleGoogleSignIn = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -48,27 +55,8 @@ export default function LoginForm() {
 
   if (!hasConsent) {
     return (
-        <div className="min-h-screen bg-[var(--color-card)] px-4 flex items-center justify-center">
-        <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
-          <h1 className="text-2xl font-bold text-gray-900">同意画面</h1>
-          <p className="text-sm text-gray-700">
-            先にプライバシーポリシーと利用規約への同意が必要です。
-          </p>
-          <div className="text-xs text-gray-500">
-            以下のページで同意するとログインできます。
-          </div>
-          <div className="space-x-3 text-sm">
-            <a href="/privacy" className="text-blue-600 hover:underline">プライバシーポリシー</a>
-            <a href="/terms" className="text-blue-600 hover:underline">利用規約</a>
-          </div>
-          <button
-            type="button"
-            onClick={() => router.push("/consent")}
-            className="w-full bg-[var(--color-sage)] text-white p-3 font-bold"
-          >
-            同意画面へ
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-card)] p-4">
+        <div className="text-gray-500">リダイレクト中...</div>
       </div>
     );
   }
