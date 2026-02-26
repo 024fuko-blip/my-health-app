@@ -104,7 +104,11 @@ export async function PUT(req: Request) {
       longitude,
     } = body;
 
-    const personality = ai_personality ?? 'tsundere';
+    const VALID_PERSONALITIES = ['tsundere', 'kibishime', 'amayama', 'naruse'] as const;
+    const personality =
+      ai_personality && VALID_PERSONALITIES.includes(ai_personality as (typeof VALID_PERSONALITIES)[number])
+        ? (ai_personality as (typeof VALID_PERSONALITIES)[number])
+        : 'tsundere';
     const genderStr = typeof gender === 'string' ? gender : 'unspecified';
 
     const data = {

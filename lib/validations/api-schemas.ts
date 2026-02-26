@@ -69,7 +69,8 @@ export type HealthLogPatchBody = z.infer<typeof healthLogPatchSchema>;
 /** user-settings PUT ボディ */
 const PERSONALITIES = ['tsundere', 'kibishime', 'amayama', 'naruse'] as const;
 const personalityEnum = z.enum(PERSONALITIES);
-const optionalNumField = z.union([z.number(), z.string()]).optional();
+/** 数値フィールド（フォームから string や null が来る場合あり） */
+const optionalNumField = z.union([z.number(), z.string(), z.null()]).optional();
 
 export const userSettingsPutSchema = z.object({
   mode_ibd: z.boolean().optional(),
@@ -80,7 +81,8 @@ export const userSettingsPutSchema = z.object({
   current_medications: z.union([z.string(), z.null()]).optional(),
   medication_reminder_times: z.union([z.string(), z.null()]).optional(),
   gender: z.string().optional(),
-  ai_personality: personalityEnum.optional(),
+  /** DB に古い値が残っている場合があるため string で受け取り、ルート側で検証 */
+  ai_personality: z.string().optional(),
   profile_name: z.union([z.string(), z.null()]).optional(),
   birth_date: z.union([z.string(), z.null()]).optional(),
   height: optionalNumField,
