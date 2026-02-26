@@ -49,8 +49,20 @@ export function useDashboardData(period: PeriodDays, insightTab: InsightTab) {
           mode_diet: Boolean(settings.mode_diet),
         });
         try {
-          const medData = JSON.parse(settings.current_medications || '{}') as { medications?: MedicationWithNdb[] };
-          setMedications(medData.medications ?? []);
+          const medData = JSON.parse(settings.current_medications || '{}') as {
+            medications?: MedicationWithNdb[];
+            name?: string;
+            timings?: string[];
+          };
+          if (medData.medications && Array.isArray(medData.medications)) {
+            setMedications(medData.medications);
+          } else if (medData.name || (medData.timings && medData.timings.length > 0)) {
+            setMedications([
+              { id: Date.now(), name: medData.name || '薬', timings: medData.timings || [] },
+            ]);
+          } else {
+            setMedications([]);
+          }
         } catch {
           setMedications([]);
         }

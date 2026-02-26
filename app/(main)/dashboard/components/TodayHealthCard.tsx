@@ -14,6 +14,7 @@ export function TodayHealthCard({ todayLog, modes }: TodayHealthCardProps) {
       <h2 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
         <span>📋</span> 今日の体調
       </h2>
+
       {todayLog ? (
         <div className="space-y-2 text-sm">
           <div className="flex flex-wrap gap-2">
@@ -44,7 +45,7 @@ export function TodayHealthCard({ todayLog, modes }: TodayHealthCardProps) {
         </div>
       ) : (
         <p className="text-gray-700 text-sm">
-          まだ今日の記録がないわ。記録してから出直しなさい！
+          まだ今日の記録がない。記録してから確認してね。
         </p>
       )}
     </div>

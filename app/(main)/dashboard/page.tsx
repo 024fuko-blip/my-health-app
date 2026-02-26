@@ -56,7 +56,7 @@ export default function DashboardPage() {
         />
       ) : (
         <>
-          <MedicationCard medications={medications} />
+          <MedicationCard medications={medications} todayLog={todayLog} />
           <TodayHealthCard todayLog={todayLog} modes={modes} />
           <PeriodToggle period={period} setPeriod={setPeriod} />
           <HealthChart
