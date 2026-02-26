@@ -5,7 +5,7 @@ interface MindBodyScoreProps {
   mindScore: string | null;
   bodyScore: string | null;
   sectionOpen: { mindBody: boolean };
-  setSectionOpen: React.Dispatch<React.SetStateAction<import('../hooks/useDashboardData').SectionOpen>>;
+  setSectionOpen: React.Dispatch<React.SetStateAction<import('@/lib/dashboard-types').SectionOpen>>;
 }
 
 export function MindBodyScore({

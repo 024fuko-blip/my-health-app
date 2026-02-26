@@ -1,184 +1,35 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ensureSession, handleUnauthorized, apiFetch, apiPut, apiPatch, apiDelete } from '@/lib/api-client';
-import { PATH, DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from '@/lib/constants';
+
+import { useState } from 'react';
 import { getPeriodStatus } from '@/lib/period-status';
 import { LogDetailModal } from './components/LogDetailModal';
-import type { HealthLogApiResponse, CalendarEditForm } from '../record/hooks/record-form-types';
+import { CalendarCell } from './components/CalendarCell';
+import { PeriodLegend } from './components/PeriodLegend';
+import { useCalendarData } from './hooks/useCalendarData';
 
 export default function CalendarPage() {
-  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [logs, setLogs] = useState<HealthLogApiResponse[]>([]);
-  const [selectedLog, setSelectedLog] = useState<HealthLogApiResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // ✏️ 編集モード用のState
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<CalendarEditForm>({});
-  
-  // 生理周期情報
-  const [periodSettings, setPeriodSettings] = useState({
-    lastPeriodDate: '',
-    periodCycle: DEFAULT_PERIOD_CYCLE,
-    periodDuration: DEFAULT_PERIOD_DURATION,
-    gender: 'unspecified',
-    showPeriodOnCalendar: true,
-  });
-  const [fullSettings, setFullSettings] = useState<Record<string, unknown>>({});
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1;
-  const firstDay = new Date(year, month - 1, 1).getDay();
-  const lastDate = new Date(year, month, 0).getDate();
+  const {
+    year,
+    month,
+    firstDay,
+    lastDate,
+    logs,
+    selectedLog,
+    setSelectedLog,
+    loading,
+    isEditing,
+    setIsEditing,
+    editForm,
+    setEditForm,
+    periodSettings,
+    handleToggleShowPeriod,
+    handleDateClick,
+    handleDelete,
+    handleUpdate,
+  } = useCalendarData(currentDate);
 
-  // データ取得
-  const fetchLogs = async () => {
-    setLoading(true);
-    const session = await ensureSession(router);
-    if (!session) {
-      setLoading(false);
-      return;
-    }
-
-    // 設定を取得（生理周期情報含む）
-    const settingsRes = await apiFetch('/api/user-settings');
-    if (settingsRes.ok) {
-      const settingsData = await settingsRes.json();
-      setFullSettings(settingsData);
-      try {
-        const medHistory = JSON.parse(settingsData.medical_history || '{}');
-        setPeriodSettings({
-          lastPeriodDate: medHistory.lastPeriodDate || '',
-          periodCycle: medHistory.periodCycle ?? DEFAULT_PERIOD_CYCLE,
-          periodDuration: medHistory.periodDuration ?? DEFAULT_PERIOD_DURATION,
-          gender: settingsData.gender || 'unspecified',
-          showPeriodOnCalendar: medHistory.showPeriodOnCalendar !== false,
-        });
-      } catch {
-        // パースエラー時はデフォルト値を維持
-      }
-    }
-
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDate}`;
-
-    const res = await apiFetch(`/api/health-logs?startDate=${startDate}&endDate=${endDate}`);
-    if (res.status === 401) {
-      handleUnauthorized(router);
-      setLoading(false);
-      return;
-    }
-    const data = res.ok ? await res.json() : [];
-    if (Array.isArray(data)) setLogs(data);
-    if (!res.ok) {
-      console.error('Calendar fetch error:', res.status, await res.text().catch(() => ''));
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchLogs();
-  }, [currentDate]);
-
-  /** 生理周期のカレンダー表示を切り替え（即時保存） */
-  const handleToggleShowPeriod = async () => {
-    const next = !periodSettings.showPeriodOnCalendar;
-    setPeriodSettings((s) => ({ ...s, showPeriodOnCalendar: next }));
-    try {
-      const existing = JSON.parse((fullSettings.medical_history as string) || '{}');
-      const medicalData = JSON.stringify({
-        ...existing,
-        showPeriodOnCalendar: next,
-      });
-      const result = await apiPut<Record<string, unknown>>('/api/user-settings', {
-        ...fullSettings,
-        medical_history: medicalData,
-      });
-      if (result.ok) setFullSettings((prev) => ({ ...prev, medical_history: medicalData }));
-      else console.error('Failed to save showPeriodOnCalendar', result.error);
-    } catch (e) {
-      console.error('Toggle save error:', e);
-      setPeriodSettings((s) => ({ ...s, showPeriodOnCalendar: !next })); // ロールバック
-    }
-  };
-
-  // 日付クリック
-  const handleDateClick = (day: number) => {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const log = logs.find(l => l.date === dateStr);
-    
-    if (log) {
-      setSelectedLog(log);
-      setEditForm(log); // 編集用にデータをコピー
-      setIsEditing(false); // 最初は閲覧モード
-    } else {
-      // 記録がない日は何もしない
-      alert(`${dateStr} の記録はありません。記録ページから入力してください 📝`);
-    }
-  };
-
-  // 🗑️ 削除処理
-  const handleDelete = async () => {
-    if (!confirm('本当に削除しますか？この操作は取り消せません。')) return;
-
-    const delResult = await apiDelete(`/api/health-logs?id=${selectedLog!.id}`);
-
-    if (delResult.ok) {
-      alert('削除しました🗑️');
-      setSelectedLog(null);
-      fetchLogs(); // カレンダー再読み込み
-    } else {
-      if (delResult.status === 401) {
-        alert('セッションが切れました。再度ログインしてください。');
-        router.replace(PATH.LOGIN);
-        return;
-      }
-      console.error('Delete error:', delResult.status);
-      alert('削除エラー');
-    }
-  };
-
-  // 💾 更新処理
-  const handleUpdate = async () => {
-    const result = await apiPatch<Record<string, unknown>>('/api/health-logs', {
-      id: selectedLog!.id,
-      general_mood: editForm.general_mood,
-      pain_level: editForm.pain_level,
-      meal_description: editForm.meal_description,
-      memo: editForm.memo,
-      weight: editForm.weight,
-      steps: editForm.steps,
-      period_status: editForm.period_status,
-      stool_type: editForm.stool_type,
-      alcohol_amount: editForm.alcohol_amount,
-      stress_level: editForm.stress_level,
-      sleep_quality: editForm.sleep_quality,
-      body_fat: editForm.body_fat,
-      calories: editForm.calories,
-      protein: editForm.protein,
-    });
-
-    if (result.ok) {
-      alert('修正しました✨');
-      setIsEditing(false);
-      setSelectedLog((prev) =>
-        prev ? ({ ...prev, ...editForm } as HealthLogApiResponse) : null
-      ); // 表示を更新
-      fetchLogs(); // カレンダー再読み込み
-    } else {
-      if (result.status === 401) {
-        alert('セッションが切れました。再度ログインしてください。');
-        router.replace(PATH.LOGIN);
-        return;
-      }
-      console.error('Update error:', result.status, result.error);
-      alert('更新エラー');
-    }
-  };
-
-  // 月変更
   const changeMonth = (diff: number) => {
     setCurrentDate(new Date(year, month - 1 + diff, 1));
     setSelectedLog(null);
@@ -186,136 +37,69 @@ export default function CalendarPage() {
 
   const renderCalendarCells = () => {
     const cells = [];
-    for (let i = 0; i < firstDay; i++) cells.push(<div key={`empty-${i}`} className="h-24 bg-gray-50 border border-gray-100"></div>);
-    
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(<div key={`empty-${i}`} className="h-24 bg-gray-50 border border-gray-100"></div>);
+    }
     for (let day = 1; day <= lastDate; day++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const log = logs.find(l => l.date === dateStr);
-      
-      // 生理周期の状態を取得（女性のみ・表示ON時のみ）
-      const periodStatus = periodSettings.showPeriodOnCalendar && periodSettings.gender === 'female'
-        ? getPeriodStatus(dateStr, periodSettings.lastPeriodDate, periodSettings.periodCycle, periodSettings.periodDuration)
-        : { type: null };
-      
-      // 背景色を決定（優先度: 記録の体調 > 生理周期）
-      let bgColor = "bg-white";
-      let borderColor = "border-gray-100";
-      
-      // 生理周期による色分け（薄くシンプル）
-      if (periodStatus.type === 'period') {
-        bgColor = "bg-pink-50/70";
-        borderColor = "border-pink-100";
-      } else if (periodStatus.type === 'ovulation') {
-        bgColor = "bg-purple-50/50";
-        borderColor = "border-purple-100";
-      } else if (periodStatus.type === 'fertile') {
-        bgColor = "bg-purple-50/40";
-        borderColor = "border-purple-100";
-      } else if (periodStatus.type === 'pms') {
-        bgColor = "bg-amber-50/50";
-        borderColor = "border-amber-100";
-      }
-      
-      // 記録がある場合は体調で上書き（生理周期情報がない場合のみ）
-      if (log && !periodStatus.type && log.general_mood != null) {
-        if (log.general_mood <= 2) {
-          bgColor = "bg-red-50";
-        } else if (log.general_mood === 3) {
-          bgColor = "bg-blue-50";
-        } else if (log.general_mood >= 4) {
-          bgColor = "bg-green-50";
-        }
-      }
-
+      const log = logs.find((l) => l.date === dateStr);
+      const periodStatus =
+        periodSettings.showPeriodOnCalendar && periodSettings.gender === 'female'
+          ? getPeriodStatus(dateStr, periodSettings.lastPeriodDate, periodSettings.periodCycle, periodSettings.periodDuration)
+          : { type: null };
       cells.push(
-        <div 
-          key={day} 
-          onClick={() => handleDateClick(day)} 
-          className={`h-24 border p-1 cursor-pointer transition-colors relative ${bgColor} ${borderColor} hover:opacity-80`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-bold ${log ? 'text-gray-800' : 'text-gray-400'}`}>{day}</span>
-            {/* 生理周期アイコン（表示ON時のみ） */}
-            <div className="flex gap-0.5">
-              {periodStatus.type === 'period' && <span className="text-xs opacity-80" title="生理予測">🩸</span>}
-              {periodStatus.type === 'ovulation' && <span className="text-xs opacity-80" title="排卵日">🥚</span>}
-              {periodStatus.type === 'fertile' && <span className="text-xs opacity-80" title="妊娠しやすい">💜</span>}
-              {periodStatus.type === 'pms' && <span className="text-xs opacity-80" title="PMS期間">⚠️</span>}
-            </div>
-          </div>
-          {log && (
-            <div className="mt-1 flex flex-wrap gap-1 content-start">
-              {(log.pain_level ?? 0) >= 3 && <span title="腹痛">⚡</span>}
-              {(log.alcohol_amount ?? 0) > 0 && <span title="飲酒">🍺</span>}
-              {log.ai_comment && <span title="AI">🤖</span>}
-              {(log.period_status === '生理中' || log.period_status === '生理終了') && (
-                <span title={log.period_status === '生理終了' ? '生理終了（記録）' : '生理中（記録）'}>
-                  {log.period_status === '生理終了' ? '✓' : '💧'}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        <CalendarCell
+          key={day}
+          day={day}
+          log={log}
+          periodStatus={periodStatus}
+          onDateClick={handleDateClick}
+        />
       );
     }
     return cells;
   };
 
+  if (loading) return <div className="p-4">読み込み中...</div>;
+
   return (
     <div className="pb-24">
       <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-xl shadow-sm">
-        <button onClick={() => changeMonth(-1)} className="p-2 text-gray-500 hover:bg-gray-100 rounded">◀</button>
-        <h2 className="text-xl font-bold">{year}年 {month}月</h2>
-        <button onClick={() => changeMonth(1)} className="p-2 text-gray-500 hover:bg-gray-100 rounded">▶</button>
+        <button
+          onClick={() => changeMonth(-1)}
+          className="p-2 text-gray-500 hover:bg-gray-100 rounded"
+        >
+          ◀
+        </button>
+        <h2 className="text-xl font-bold">
+          {year}年 {month}月
+        </h2>
+        <button
+          onClick={() => changeMonth(1)}
+          className="p-2 text-gray-500 hover:bg-gray-100 rounded"
+        >
+          ▶
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-7 text-center bg-gray-50 border-b">
-          {['日', '月', '火', '水', '木', '金', '土'].map(d => <div key={d} className="py-2 text-xs font-bold text-gray-500">{d}</div>)}
+          {['日', '月', '火', '水', '木', '金', '土'].map((d) => (
+            <div key={d} className="py-2 text-xs font-bold text-gray-500">
+              {d}
+            </div>
+          ))}
         </div>
         <div className="grid grid-cols-7">{renderCalendarCells()}</div>
       </div>
-      
-      {/* 生理周期 ON/OFF トグル + 凡例（女性・最終生理日設定済みのみ） */}
+
       {periodSettings.gender === 'female' && periodSettings.lastPeriodDate && (
-        <div className="mt-4 bg-white p-3 shadow-kirei-card border border-[var(--color-border)]">
-          <label className="flex items-center gap-2 cursor-pointer mb-3">
-            <input
-              type="checkbox"
-              checked={periodSettings.showPeriodOnCalendar}
-              onChange={handleToggleShowPeriod}
-              className="w-4 h-4"
-            />
-            <span className="text-sm font-medium">生理周期で色分けする</span>
-          </label>
-          {periodSettings.showPeriodOnCalendar && (
-            <>
-              <h3 className="text-xs font-bold text-[var(--color-text-muted)] mb-2">📅 カレンダーの見方</h3>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-1">
-                  <span className="w-4 h-4 bg-pink-50/70 border border-pink-100"></span>
-                  <span className="text-[var(--color-text-muted)]">🩸 生理予測</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="w-4 h-4 bg-purple-50/50 border border-purple-100"></span>
-                  <span className="text-[var(--color-text-muted)]">🥚 排卵日</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="w-4 h-4 bg-purple-50/40 border border-purple-100"></span>
-                  <span className="text-[var(--color-text-muted)]">💜 妊娠しやすい</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="w-4 h-4 bg-amber-50/50 border border-amber-100"></span>
-                  <span className="text-[var(--color-text-muted)]">⚠️ PMS/肌荒れ期</span>
-                </div>
-              </div>
-              <p className="text-xs text-[var(--color-text-muted)] mt-2">💧 = 生理中、✓ = 生理終了（記録）</p>
-            </>
-          )}
-        </div>
+        <PeriodLegend
+          showPeriodOnCalendar={periodSettings.showPeriodOnCalendar}
+          onToggle={handleToggleShowPeriod}
+        />
       )}
 
-      {/* 詳細・編集モーダル */}
       {selectedLog && (
         <LogDetailModal
           selectedLog={selectedLog}

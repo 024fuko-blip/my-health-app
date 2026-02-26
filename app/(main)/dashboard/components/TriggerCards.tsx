@@ -3,7 +3,7 @@
 interface TriggerCardsProps {
   triggers: Array<{ label: string; ratio: number; description: string }>;
   sectionOpen: { triggers: boolean };
-  setSectionOpen: React.Dispatch<React.SetStateAction<import('../hooks/useDashboardData').SectionOpen>>;
+  setSectionOpen: React.Dispatch<React.SetStateAction<import('@/lib/dashboard-types').SectionOpen>>;
 }
 
 export function TriggerCards({ triggers, sectionOpen, setSectionOpen }: TriggerCardsProps) {

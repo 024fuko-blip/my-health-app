@@ -13,6 +13,7 @@ import {
   replyAsCompanion,
   buildChatContextFromSettings,
 } from '@/lib/line-chat';
+import { getLineFallback } from '@/lib/line-fallback-messages';
 import { generateHealthPrediction } from '@/lib/line-health-prediction';
 import {
   createRichMenu,
@@ -94,8 +95,13 @@ export async function POST(req: Request) {
         let text = (event.message.text ?? '').trim();
         if (text.length > 500) {
           if (replyToken && config.accessToken) {
+            const linkedForLimit = await prisma.lineLink.findFirst({
+              where: { lineUserId },
+              include: { user: { include: { userSettings: true } } },
+            });
+            const personality = linkedForLimit?.user?.userSettings?.aiPersonality ?? null;
             await replyLineMessages(config.accessToken, replyToken, [
-              { type: 'text', text: 'メッセージが長すぎるわ。500文字以内で送ってね。' },
+              { type: 'text', text: getLineFallback('message_too_long', personality) },
             ]);
           }
           continue;
@@ -109,6 +115,9 @@ export async function POST(req: Request) {
             where: { code },
           });
           if (linkReq && new Date() < linkReq.expiresAt) {
+            const userSettings = await prisma.userSettings.findUnique({
+              where: { userId: linkReq.userId },
+            });
             await prisma.$transaction([
               prisma.lineLinkRequest.delete({ where: { code } }),
               prisma.lineLink.upsert({
@@ -118,10 +127,11 @@ export async function POST(req: Request) {
               }),
             ]);
             if (replyToken && config.accessToken) {
+              const personality = userSettings?.aiPersonality ?? null;
               await replyLineMessages(config.accessToken, replyToken, [
                 {
                   type: 'text',
-                  text: '連携完了！服薬リマインダーと記録がLINEで受け取れるようになったわ。相談もできるようになったから、何でも聞いてね。下のメニューからアプリを開けるわよ。',
+                  text: getLineFallback('link_complete', personality),
                 },
                 buildWelcomeButtons(),
               ]);
@@ -202,8 +212,9 @@ export async function POST(req: Request) {
               });
             }
             if (replyToken && config.accessToken) {
+              const personality = linked.user.userSettings?.aiPersonality ?? null;
               await replyLineMessages(config.accessToken, replyToken, [
-                { type: 'text', text: '記録しておいたわ。' },
+                { type: 'text', text: getLineFallback('recorded', personality) },
               ]);
             }
             continue;
@@ -232,8 +243,13 @@ export async function POST(req: Request) {
       if (event.type === 'postback' && event.postback?.data && replyToken && config.accessToken) {
         const data = event.postback.data;
         if (data === 'record' || data === 'pet') {
+          const linkedForPostback = await prisma.lineLink.findFirst({
+            where: { lineUserId },
+            include: { user: { include: { userSettings: true } } },
+          });
+          const personality = linkedForPostback?.user?.userSettings?.aiPersonality ?? null;
           await replyLineMessages(config.accessToken, replyToken, [
-            { type: 'text', text: 'アプリを開いてね。下のメニューから選んでちょうだい。' },
+            { type: 'text', text: getLineFallback('open_app', personality) },
           ]);
         }
       }

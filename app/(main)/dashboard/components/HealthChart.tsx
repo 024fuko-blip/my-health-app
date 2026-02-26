@@ -26,7 +26,7 @@ interface HealthChartProps {
   selectedItems: Set<string>;
   toggleItem: (key: string) => void;
   sectionOpen: { chart: boolean };
-  setSectionOpen: React.Dispatch<React.SetStateAction<import('../hooks/useDashboardData').SectionOpen>>;
+  setSectionOpen: React.Dispatch<React.SetStateAction<import('@/lib/dashboard-types').SectionOpen>>;
 }
 
 export function HealthChart({

@@ -12,6 +12,7 @@ import { getServerEnv } from '@/lib/env';
 import { getTodayJST, getTomorrowJST } from '@/lib/date-utils';
 import { buildMedicationSchedule } from '@/lib/medication-schedule';
 import { safeParseJson } from '@/lib/json-utils';
+import { getLineFallback } from '@/lib/line-fallback-messages';
 
 /** 現在時刻を JST で "HH:00" ～ "HH:45" の15分単位に丸める */
 function getCurrentTimeSlotJST(): string {
@@ -106,7 +107,8 @@ export async function POST(req: Request) {
         if (latestLog?.aiComment && latestLog.aiComment.trim()) {
           const comment = latestLog.aiComment.trim().replace(/\s+/g, ' ');
           const truncated = comment.length > 60 ? comment.slice(0, 57) + '…' : comment;
-          body += `\n\nオネエより: ${truncated}`;
+          const fromLabel = getLineFallback('reminder_from', settings?.aiPersonality ?? null);
+          body += `\n\n${fromLabel}: ${truncated}`;
         }
         const title = '💊 服薬リマインダー';
         for (const sub of subs) {

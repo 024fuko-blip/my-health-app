@@ -1,17 +1,12 @@
 "use client";
 
-const CORRELATION_LABELS: Record<string, string> = {
-  sleep_mood: '睡眠↔体調',
-  stress_mood: 'ストレス↔体調',
-  period_mood: '生理↔体調',
-  alcohol_pain_next: '飲酒→翌日腹痛',
-  stress_mood_next: 'ストレス→翌日体調',
-};
+import { CORRELATION_LABELS } from '@/lib/dashboard-constants';
+import type { SectionOpen } from '@/lib/dashboard-types';
 
 interface CorrelationMapProps {
   correlations: Record<string, number>;
   sectionOpen: { correlation: boolean };
-  setSectionOpen: React.Dispatch<React.SetStateAction<import('../hooks/useDashboardData').SectionOpen>>;
+  setSectionOpen: React.Dispatch<React.SetStateAction<SectionOpen>>;
 }
 
 export function CorrelationMap({

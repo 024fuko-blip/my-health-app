@@ -6,6 +6,7 @@
 import OpenAI from 'openai';
 import prisma from '@/lib/prisma';
 import { getCharaPrompt } from '@/lib/chara-settings';
+import { getLineFallback } from '@/lib/line-fallback-messages';
 import { getCoordsFromPrefecture } from '@/lib/prefectures';
 import { getPastDates } from '@/lib/date-utils';
 import { getServerEnv } from '@/lib/env';
@@ -129,5 +130,5 @@ ${logsText}
     temperature: 0.7,
   });
 
-  return completion.choices[0]?.message?.content?.trim() ?? '今日の体調予想ができなかったわ。あとで試してね。';
+  return completion.choices[0]?.message?.content?.trim() ?? getLineFallback('prediction_failed', settings.aiPersonality ?? null);
 }

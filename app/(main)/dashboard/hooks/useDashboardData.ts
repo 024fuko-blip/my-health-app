@@ -5,45 +5,11 @@ import { useRouter } from 'next/navigation';
 import type { HealthLogApiResponse, UserSettingsMode } from '@/app/(main)/record/hooks/record-form-types';
 import { ensureSession, handleUnauthorized, apiFetch, apiPost } from '@/lib/api-client';
 import { computeMindScore, computeBodyScore, buildChartData } from '@/lib/dashboard-utils';
+import { CHART_ITEMS } from '@/lib/dashboard-constants';
+import type { InsightRow, SectionOpen, MedicationWithNdb, PeriodDays, InsightTab } from '@/lib/dashboard-types';
 
-export type PeriodDays = 7 | 30;
-export type InsightTab = 'daily' | 'weekly' | 'monthly' | 'yearly';
-
-export interface InsightRow {
-  id: string;
-  level: string;
-  startDate: string;
-  endDate: string;
-  summary: string;
-  metadata: Record<string, unknown> | null;
-}
-
-export interface SectionOpen {
-  report: boolean;
-  chart: boolean;
-  mindBody: boolean;
-  correlation: boolean;
-  triggers: boolean;
-}
-
-export interface MedicationWithNdb {
-  id: number;
-  name: string;
-  timings: string[];
-  ndb?: { drugCode: string; categoryName: string; price: number | null; isGeneric: boolean };
-}
-
-const CHART_COLOR_PRIMARY = '#475569';
-const CHART_COLOR_ACCENT = '#7c3aed';
-
-export const CHART_ITEMS = [
-  { key: '体調', color: CHART_COLOR_PRIMARY, label: '体調', mode: null },
-  { key: '腹痛', color: CHART_COLOR_ACCENT, label: '腹痛', mode: 'mode_ibd' },
-  { key: 'トイレ', color: CHART_COLOR_PRIMARY, label: 'トイレ', mode: 'mode_ibd' },
-  { key: '気分', color: CHART_COLOR_ACCENT, label: '気分', mode: 'mode_mental' },
-  { key: '体重', color: CHART_COLOR_PRIMARY, label: '体重', mode: 'mode_diet' },
-  { key: 'アルコール', color: CHART_COLOR_ACCENT, label: 'アルコール', mode: 'mode_alcohol' },
-] as const;
+export type { PeriodDays, InsightTab, InsightRow, SectionOpen, MedicationWithNdb } from '@/lib/dashboard-types';
+export { CHART_ITEMS } from '@/lib/dashboard-constants';
 
 export function useDashboardData(period: PeriodDays, insightTab: InsightTab) {
   const router = useRouter();

@@ -6,6 +6,7 @@
 import OpenAI from 'openai';
 import { getServerEnv } from './env';
 import { getCharaPrompt } from './chara-settings';
+import { getLineFallback } from './line-fallback-messages';
 import { safeParseJson } from './json-utils';
 
 export interface LineChatContext {
@@ -83,7 +84,7 @@ export async function replyAsCompanion(
     : userMessage;
 
   const env = getServerEnv();
-  if (!env.OPENAI_API_KEY) return '申し訳ない、今は相談に乗れないの。あとで試してね。';
+  if (!env.OPENAI_API_KEY) return getLineFallback('api_unavailable', context.aiPersonality);
 
   const chara = getCharaPrompt(context.aiPersonality, 'line');
 
@@ -115,5 +116,5 @@ ${context.modeIbd ? '- IBD（炎症性腸疾患）あり。腸に負担のかか
     temperature: 0.7,
   });
 
-  return completion.choices[0]?.message?.content?.trim() ?? 'ごめん、ちょっと考えがまとまらなかった。もう一度聞いてくれる？';
+  return completion.choices[0]?.message?.content?.trim() ?? getLineFallback('ai_empty', context.aiPersonality);
 }
