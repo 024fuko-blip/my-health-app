@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { updateStatsAfterLog } from '@/lib/game-stats';
 import { updateCorrelationStatsAfterLog } from '@/lib/correlation/save';
+import { calcHealthLogExp, grantPetExp } from '@/lib/pet-exp';
 import { isValidDateStr } from '@/lib/date-utils';
 import { parseJsonBody, withSession, errorResponse } from '@/lib/api-utils';
 import { toStringOrNull, toNumOrNull, safeNumber } from '@/lib/json-utils';
@@ -133,7 +134,29 @@ export async function POST(req: Request) {
       updateCorrelationStatsAfterLog(session.userId, String(date)),
     ]);
 
-    return NextResponse.json(toApiShape(log));
+    const gameStats = await prisma.userGameStats.findUnique({
+      where: { userId: session.userId },
+    });
+    const streak = gameStats?.currentStreak ?? 0;
+    const expGained = calcHealthLogExp(
+      {
+        meal_description,
+        sleep_quality,
+        pain_level,
+        stress_level,
+        general_mood,
+      },
+      streak
+    );
+    const petResult = await grantPetExp(session.userId, expGained);
+
+    return NextResponse.json({
+      ...toApiShape(log),
+      pet_reaction:
+        expGained > 0
+          ? { exp_gained: expGained, leveled_up: petResult.leveledUp, streak }
+          : undefined,
+    });
   });
 }
 

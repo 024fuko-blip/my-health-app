@@ -1,10 +1,36 @@
 "use client";
 
 import { PET_SPECIES } from "@/lib/pet-shop";
-import type { PetData } from "../hooks/usePetGame";
+import { getMangaSymbolForPet } from "@/lib/manga-symbols";
+import { MangaSymbol } from "@/app/components/MangaSymbol";
+import { PetVisual } from "./PetVisual";
+import type { PetData } from "../hooks/pet-game-types";
+import type { PetSpecialFlags } from "@/lib/pet-health";
+
+/** ねこ8段階の表示名（ビジュアル・ロードマップ準拠） */
+const CAT_STAGE_LABELS: Record<string, string> = {
+  stage_1: "ユメたまご",
+  stage_2: "よちよちベビー",
+  stage_3: "わんぱくチャイルド",
+  stage_4: "のびのび学生",
+  stage_5: "気ままな青年",
+  stage_6: "夢の板前さん",
+  stage_7: "銀河の王様",
+  stage_8: "夢守神(守護獣)",
+};
 
 interface PetCardProps {
   data: PetData;
+  healthLevel: number;
+  healthScore?: number;
+  specialFlags?: PetSpecialFlags;
+  scoreBreakdown?: {
+    stepsScore: number;
+    caloriesScore: number;
+    sleepScore: number;
+    loginBonus: number;
+    decayPenalty: number;
+  } | null;
   petName: string;
   petSpecies: string;
   saving: boolean;
@@ -15,6 +41,10 @@ interface PetCardProps {
 
 export function PetCard({
   data,
+  healthLevel,
+  healthScore,
+  specialFlags,
+  scoreBreakdown,
   petName,
   petSpecies,
   saving,
@@ -35,25 +65,55 @@ export function PetCard({
           ? "bg-slate-800 text-white"
           : "bg-amber-50";
 
-  const animClass =
-    pet.stage === "baby"
-      ? "pet-anim-baby"
-      : pet.stage === "junior"
-        ? "pet-anim-junior"
-        : "pet-anim-adult";
+  const stageLabel =
+    pet.stage && CAT_STAGE_LABELS[pet.stage]
+      ? CAT_STAGE_LABELS[pet.stage]
+      : pet.stage === "baby"
+        ? "ベビー"
+        : pet.stage === "junior"
+          ? "ジュニア"
+          : pet.stage === "adult"
+            ? "アダルト"
+            : pet.stage;
+
+  const mangaKey = getMangaSymbolForPet({
+    stage: pet.stage,
+    happiness: pet.happiness ?? undefined,
+    sleepy: pet.sleepy,
+    worried: pet.worried,
+    low_mood: pet.low_mood,
+  });
 
   return (
     <div className={`border-2 border-amber-200 p-6 text-center shadow-sm min-h-[200px] ${roomBg}`}>
-      <div className={`text-6xl mb-2 relative inline-block touch-manipulation ${animClass}`}>
-        {pet.current_outfit_emoji && (
-          <span className="mr-1">{pet.current_outfit_emoji}</span>
+      <div className="relative inline-block">
+        {mangaKey && (
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+            <MangaSymbol symbol={mangaKey} />
+          </div>
         )}
-        <span>{pet.species_emoji}</span>
+        <div className={specialFlags?.sleepy ? "opacity-60" : ""}>
+          <PetVisual healthLevel={healthLevel} alt={pet.pet_name} size={180} />
+        </div>
+        {specialFlags?.sleepy && (
+          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl pointer-events-none select-none animate-pulse z-10">
+            💤
+          </span>
+        )}
+        {pet.current_outfit_emoji && (
+          <span className="absolute -bottom-1 -right-1 text-2xl">{pet.current_outfit_emoji}</span>
+        )}
       </div>
 
       <div className="flex justify-center gap-1 mt-1 flex-wrap">
-        {pet.sleepy && (
+        {(pet.sleepy || specialFlags?.sleepy) && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">😴 眠そう</span>
+        )}
+        {specialFlags?.nightOwl && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">🦉 夜ふかし</span>
+        )}
+        {specialFlags?.earlyBird && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">🐦 早起き</span>
         )}
         {pet.wearing_mask && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">😷 花粉対策中</span>
@@ -71,7 +131,7 @@ export function PetCard({
         <span className="text-xs text-amber-600 font-medium">Lv.{pet.level ?? 1}</span>
         {pet.stage && (
           <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800">
-            {pet.stage === "baby" ? "ベビー" : pet.stage === "junior" ? "ジュニア" : "アダルト"}
+            {stageLabel}
           </span>
         )}
       </div>
@@ -100,15 +160,45 @@ export function PetCard({
       )}
 
       <div className="mt-2 flex items-center justify-center gap-2">
-        <span className="text-sm text-slate-800">幸福度</span>
+        <span className="text-sm text-slate-800">健康スコア</span>
         <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-amber-400 rounded-full transition-all"
-            style={{ width: `${pet.happiness ?? 0}%` }}
+            className={`h-full rounded-full transition-all ${
+              (healthScore ?? 0) >= 80
+                ? "bg-amber-400"
+                : (healthScore ?? 0) >= 40
+                  ? "bg-green-400"
+                  : "bg-red-400"
+            }`}
+            style={{ width: `${healthScore ?? pet.happiness ?? 0}%` }}
           />
         </div>
-        <span className="text-sm font-bold text-amber-700">{pet.happiness ?? 0}</span>
+        <span className="text-sm font-bold text-amber-700">{healthScore ?? pet.happiness ?? 0}</span>
       </div>
+
+      {scoreBreakdown && (
+        <details className="mt-1 text-left">
+          <summary className="text-xs text-slate-500 hover:underline cursor-pointer text-center">
+            スコア内訳
+          </summary>
+          <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-slate-600 px-2">
+            <span>🚶 歩数</span>
+            <span className="text-right font-medium">+{Math.round(scoreBreakdown.stepsScore)}</span>
+            <span>🍽️ カロリー</span>
+            <span className="text-right font-medium">+{Math.round(scoreBreakdown.caloriesScore)}</span>
+            <span>😴 睡眠</span>
+            <span className="text-right font-medium">+{Math.round(scoreBreakdown.sleepScore)}</span>
+            <span>📱 ログイン</span>
+            <span className="text-right font-medium">+{Math.round(scoreBreakdown.loginBonus)}</span>
+            {scoreBreakdown.decayPenalty > 0 && (
+              <>
+                <span className="text-red-500">⏳ 放置減衰</span>
+                <span className="text-right font-medium text-red-500">-{Math.round(scoreBreakdown.decayPenalty)}</span>
+              </>
+            )}
+          </div>
+        </details>
+      )}
 
       {pet.exp_to_next && pet.exp_to_next.needed > 0 && (
         <div className="mt-2 flex items-center justify-center gap-2">

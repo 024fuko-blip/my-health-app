@@ -1,22 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import type { RouterLike } from '@/lib/api-client';
-import { ensureSession, apiFetch } from '@/lib/api-client';
-import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION, PATH } from '@/lib/constants';
+import { ensureSession, apiFetch, handleUnauthorized } from '@/lib/api-client';
+import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from '@/lib/constants';
+import { parseMedications, parsePeriodSettings, type ParsedPeriodSettings, type ParsedMedication } from '@/lib/parse-settings';
 import type { HealthLogRow, UserSettingsMode } from './record-form-types';
 
-export interface PeriodSettings {
-  lastPeriodDate: string;
-  periodCycle: number;
-  periodDuration: number;
-  /** カレンダー・記録画面に生理周期を表示するか（デフォルト true） */
-  showPeriodOnCalendar: boolean;
-}
-
-export interface Medication {
-  id: number;
-  name: string;
-  timings: string[];
-}
+export type PeriodSettings = ParsedPeriodSettings;
+export type Medication = ParsedMedication;
 
 export interface InitData {
   modes: UserSettingsMode;
@@ -48,7 +38,7 @@ export function useRecordInit(router: RouterLike) {
 
         const settingsRes = await apiFetch('/api/user-settings');
         if (settingsRes.status === 401) {
-          router.replace(PATH.LOGIN);
+          handleUnauthorized(router);
           return;
         }
         const settings = settingsRes.ok ? await settingsRes.json() : null;
@@ -75,33 +65,8 @@ export function useRecordInit(router: RouterLike) {
           };
           aiPersonality = (settings.ai_personality as string) || 'tsundere';
           gender = (settings.gender as string) || 'unspecified';
-
-          try {
-            const medData = JSON.parse(settings.current_medications || '{}');
-            if (medData.medications && Array.isArray(medData.medications)) {
-              meds = medData.medications;
-            } else if (medData.name || medData.timings) {
-              if (medData.name || (medData.timings && medData.timings.length > 0)) {
-                meds = [
-                  { id: Date.now(), name: medData.name || '薬', timings: medData.timings || [] },
-                ];
-              }
-            }
-          } catch {
-            /* no medications */
-          }
-
-          try {
-            const medHistory = JSON.parse(settings.medical_history || '{}');
-            periodSettings = {
-              lastPeriodDate: medHistory.lastPeriodDate || '',
-              periodCycle: medHistory.periodCycle ?? DEFAULT_PERIOD_CYCLE,
-              periodDuration: medHistory.periodDuration ?? DEFAULT_PERIOD_DURATION,
-              showPeriodOnCalendar: medHistory.showPeriodOnCalendar !== false,
-            };
-          } catch {
-            /* keep defaults */
-          }
+          meds = parseMedications(settings.current_medications);
+          periodSettings = parsePeriodSettings(settings.medical_history);
 
           if (settings.normal_temperature != null)
             defaultTemperature = String(settings.normal_temperature);
@@ -111,7 +76,7 @@ export function useRecordInit(router: RouterLike) {
         const today = new Date().toISOString().split('T')[0];
         const logRes = await apiFetch(`/api/health-logs?date=${today}`);
         if (logRes.status === 401) {
-          router.replace(PATH.LOGIN);
+          handleUnauthorized(router);
           return;
         }
         const log = logRes.ok ? await logRes.json() : null;

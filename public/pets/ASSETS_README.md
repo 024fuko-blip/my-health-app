@@ -52,7 +52,34 @@
 cozy room background, 3D chibi style, [テーマ], warm lighting, game environment, 1024x768
 ```
 
-## 4. 家具（10種）
+## 4. 気ままな青年（Lv.5 サングラス）
+
+配置先: `public/pets/cat/stage_5_sunglasses.png`
+```
+3D chibi cat with sunglasses, cool pose, casual style, kawaii game character, transparent background, 512x512
+```
+
+## 5. 液体ねこ（Lv.4 のびのび学生）
+
+配置先: `public/pets/cat/stage_4_liquid.png`
+```
+Liquid cat, melted blob shape, fits in cup, "cats are liquid" meme style, cute kawaii, semi-transparent, transparent background, 512x512
+```
+
+## 6. 液体ねこ用容器（5種）
+
+配置先: `public/pets/containers/{id}.png`
+- mug: マグカップ
+- box: 段ボール箱
+- bowl: どんぶり
+- vase: 花瓶
+- pot: 植木鉢
+
+```
+Cute container [名前], 3D chibi style, empty vessel, transparent or white background, 256x256
+```
+
+## 7. 家具（10種）
 
 配置先: `public/pets/furniture/{id}.png`
 - plant, lamp, rug, bookshelf, sofa, aquarium, plushie, clock, cushion, picture

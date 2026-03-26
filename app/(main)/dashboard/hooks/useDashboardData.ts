@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { HealthLogApiResponse, UserSettingsMode } from '@/app/(main)/record/hooks/record-form-types';
 import { ensureSession, handleUnauthorized, apiFetch, apiPost } from '@/lib/api-client';
+import { parseMedications } from '@/lib/parse-settings';
 import { computeMindScore, computeBodyScore, buildChartData } from '@/lib/dashboard-utils';
 import { CHART_ITEMS } from '@/lib/dashboard-constants';
 import type { InsightRow, SectionOpen, MedicationWithNdb, PeriodDays, InsightTab } from '@/lib/dashboard-types';
@@ -48,24 +49,7 @@ export function useDashboardData(period: PeriodDays, insightTab: InsightTab) {
           mode_mental: Boolean(settings.mode_mental),
           mode_diet: Boolean(settings.mode_diet),
         });
-        try {
-          const medData = JSON.parse(settings.current_medications || '{}') as {
-            medications?: MedicationWithNdb[];
-            name?: string;
-            timings?: string[];
-          };
-          if (medData.medications && Array.isArray(medData.medications)) {
-            setMedications(medData.medications);
-          } else if (medData.name || (medData.timings && medData.timings.length > 0)) {
-            setMedications([
-              { id: Date.now(), name: medData.name || '薬', timings: medData.timings || [] },
-            ]);
-          } else {
-            setMedications([]);
-          }
-        } catch {
-          setMedications([]);
-        }
+        setMedications(parseMedications(settings.current_medications) as MedicationWithNdb[]);
       }
 
       if (insightTab !== 'daily') {

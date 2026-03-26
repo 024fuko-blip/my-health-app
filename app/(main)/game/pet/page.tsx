@@ -12,18 +12,24 @@ import { PetFeedTab } from "./components/PetFeedTab";
 import { PetOutfitTab } from "./components/PetOutfitTab";
 import { PetRoomTab } from "./components/PetRoomTab";
 import { PetPlayTab } from "./components/PetPlayTab";
+import { PetLiquidTab } from "./components/PetLiquidTab";
 
 const TABS = [
   { key: "feed" as const, label: "🍖 餌" },
   { key: "outfit" as const, label: "👗 着替" },
   { key: "room" as const, label: "🏠 部屋" },
   { key: "play" as const, label: "🎮 遊ぶ" },
+  { key: "liquid" as const, label: "💤 液体" },
 ] as const;
 
 export default function GamePetPage() {
   const {
     loading,
     data,
+    healthLevel,
+    healthScore,
+    specialFlags,
+    scoreBreakdown,
     tab, setTab,
     minigame, setMinigame,
     petName, setPetName,
@@ -121,6 +127,10 @@ export default function GamePetPage() {
         <>
           <PetCard
             data={data}
+            healthLevel={healthLevel}
+            healthScore={healthScore}
+            specialFlags={specialFlags}
+            scoreBreakdown={scoreBreakdown}
             petName={petName}
             petSpecies={petSpecies}
             saving={saving}
@@ -135,13 +145,14 @@ export default function GamePetPage() {
             </div>
           )}
 
-          <div className="flex gap-2 border-b border-gray-200 pb-2">
-            {TABS.map((t) => (
+          <div className="flex gap-2 border-b border-gray-200 pb-2 overflow-x-auto scrollbar-hide">
+            {(petSpecies === "cat" ? TABS : TABS.filter((t) => t.key !== "liquid")).map(
+              (t) => (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={`flex-1 py-2 font-bold text-sm ${
+                className={`flex-1 min-w-14 py-2 font-bold text-sm shrink-0 ${
                   tab === t.key
                     ? "bg-amber-500 text-white"
                     : "bg-slate-100 text-slate-800"
@@ -149,7 +160,8 @@ export default function GamePetPage() {
               >
                 {t.label}
               </button>
-            ))}
+            )
+            )}
           </div>
 
           {tab === "feed" && (
@@ -163,6 +175,9 @@ export default function GamePetPage() {
           )}
           {tab === "play" && (
             <PetPlayTab onMinigame={setMinigame} />
+          )}
+          {tab === "liquid" && petSpecies === "cat" && (
+            <PetLiquidTab speciesEmoji={data.pet?.species_emoji ?? "🐱"} />
           )}
 
           {minigame === "sudoku" && (

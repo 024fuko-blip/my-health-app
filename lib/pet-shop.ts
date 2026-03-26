@@ -70,6 +70,47 @@ export function getLevelFromExp(exp: number): number {
 /** 進化ステージ: Baby(Lv1-4), Junior(Lv5-7), Adult(Lv8-10) */
 export type EvolutionStage = "baby" | "junior" | "adult";
 
+/** ねこ専用8段階進化（stage_1〜stage_8） */
+export type CatStage = "stage_1" | "stage_2" | "stage_3" | "stage_4" | "stage_5" | "stage_6" | "stage_7" | "stage_8";
+
+/** ねこ8段階の擬音・演出（ビジュアル・ロードマップ準拠） */
+export const CAT_STAGE_ONOMATOPOEIA: Record<CatStage, string> = {
+  stage_1: "ぷるぷる",
+  stage_2: "ごろん",
+  stage_3: "シャー!",
+  stage_4: "とろ〜ん",
+  stage_5: "ぺしぺし",
+  stage_6: "シュバババ!",
+  stage_7: "キラキラ",
+  stage_8: "ふんわり",
+};
+
+/** ねこ8段階の累計EXP閾値（stage_Nに到達する最小EXP） */
+export const CAT_EXP_THRESHOLDS: number[] = [0, 0, 100, 250, 450, 700, 1000, 1400, 1900];
+
+/** 累計EXPからねこのステージを算出（ねこ専用） */
+export function getCatStage(exp: number): CatStage {
+  for (let i = CAT_EXP_THRESHOLDS.length - 1; i >= 1; i--) {
+    if (exp >= (CAT_EXP_THRESHOLDS[i] ?? 0)) return `stage_${i}` as CatStage;
+  }
+  return "stage_1";
+}
+
+/** ねこ：次のステージまでに必要なEXP（stage_8では needed=0） */
+export function getCatExpToNextStage(exp: number): { current: number; needed: number } {
+  const stage = getCatStage(exp);
+  const stageNum = parseInt(stage.replace("stage_", ""), 10);
+  if (stageNum >= 8) {
+    return { current: 0, needed: 0 };
+  }
+  const currentThreshold = CAT_EXP_THRESHOLDS[stageNum] ?? 0;
+  const nextThreshold = CAT_EXP_THRESHOLDS[stageNum + 1] ?? currentThreshold;
+  return {
+    current: exp - currentThreshold,
+    needed: nextThreshold - currentThreshold,
+  };
+}
+
 export function getEvolutionStage(level: number): EvolutionStage {
   if (level <= 4) return "baby";
   if (level <= 7) return "junior";

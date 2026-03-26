@@ -11,6 +11,9 @@ export const DEFAULT_PERIOD_CYCLE = 28;
 /** デフォルト生理期間（日数） */
 export const DEFAULT_PERIOD_DURATION = 5;
 
+/** 歩数目標（Lv.3 わんぱくチャイルド達成条件） */
+export const DEFAULT_STEP_GOAL = 8000;
+
 /** HTTP ステータスコード（DRY・意図の明確化） */
 export const HTTP_STATUS = {
   OK: 200,

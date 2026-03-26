@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ensureSession, apiFetch, apiPut } from '@/lib/api-client';
-import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION, PATH } from '@/lib/constants';
+import { ensureSession, apiFetch, apiPut, handleUnauthorized } from '@/lib/api-client';
+import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from '@/lib/constants';
 import {
   DRINK_PRESETS,
   calculateDecompositionTime,
@@ -179,7 +179,7 @@ export function useRecordForm() {
       if (!session) return;
       const logRes = await apiFetch(`/api/health-logs?date=${date}`);
       if (logRes.status === 401) {
-        router.replace(PATH.LOGIN);
+        handleUnauthorized(router);
         return;
       }
       const log = logRes.ok ? await logRes.json() : null;
@@ -263,8 +263,10 @@ export function useRecordForm() {
     decompositionHours, soberTime,
     isSubmitting: submit.isSubmitting,
     resultModal: submit.resultModal,
+    reactionOverlay: submit.reactionOverlay,
     handleSubmit: submit.handleSubmit,
     handleCloseModal: submit.handleCloseModal,
+    handleReactionComplete: submit.handleReactionComplete,
     nutritionData: meal.nutritionData,
     setNutritionData: meal.setNutritionData,
     isAnalyzing: meal.isAnalyzing,

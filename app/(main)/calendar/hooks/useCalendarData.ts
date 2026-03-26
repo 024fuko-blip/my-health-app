@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ensureSession, handleUnauthorized, apiFetch, apiPut, apiPatch, apiDelete } from '@/lib/api-client';
-import { PATH, DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from '@/lib/constants';
+import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from '@/lib/constants';
+import { parsePeriodSettings } from '@/lib/parse-settings';
 import type { HealthLogApiResponse, CalendarEditForm } from '@/app/(main)/record/hooks/record-form-types';
 
 export interface PeriodSettings {
@@ -52,18 +53,11 @@ export function useCalendarData(currentDate: Date) {
     if (settingsRes.ok) {
       const settingsData = await settingsRes.json();
       setFullSettings(settingsData);
-      try {
-        const medHistory = JSON.parse(settingsData.medical_history || '{}');
-        setPeriodSettings({
-          lastPeriodDate: medHistory.lastPeriodDate || '',
-          periodCycle: medHistory.periodCycle ?? DEFAULT_PERIOD_CYCLE,
-          periodDuration: medHistory.periodDuration ?? DEFAULT_PERIOD_DURATION,
-          gender: settingsData.gender || 'unspecified',
-          showPeriodOnCalendar: medHistory.showPeriodOnCalendar !== false,
-        });
-      } catch {
-        // パースエラー時はデフォルト値を維持
-      }
+      const ps = parsePeriodSettings(settingsData.medical_history);
+      setPeriodSettings({
+        ...ps,
+        gender: settingsData.gender || 'unspecified',
+      });
     }
 
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
@@ -129,8 +123,7 @@ export function useCalendarData(currentDate: Date) {
       fetchLogs();
     } else {
       if (delResult.status === 401) {
-        alert('セッションが切れました。再度ログインしてください。');
-        router.replace(PATH.LOGIN);
+        handleUnauthorized(router);
         return;
       }
       console.error('Delete error:', delResult.status);
@@ -167,8 +160,7 @@ export function useCalendarData(currentDate: Date) {
       fetchLogs();
     } else {
       if (result.status === 401) {
-        alert('セッションが切れました。再度ログインしてください。');
-        router.replace(PATH.LOGIN);
+        handleUnauthorized(router);
         return;
       }
       console.error('Update error:', result.status, result.error);

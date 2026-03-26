@@ -3,6 +3,7 @@
 import type React from 'react';
 import { getCyclePhase, getCycleComment } from '@/lib/cycle-phase';
 import { ResultModal } from './components/ResultModal';
+import { RecordReactionOverlay } from './components/RecordReactionOverlay';
 import { MentalSection } from './components/MentalSection';
 import { IbdSection } from './components/IbdSection';
 import { DietSection } from './components/DietSection';
@@ -332,6 +333,15 @@ export default function RecordPage() {
         </button>
       </form>
 
+      {form.reactionOverlay && (
+        <RecordReactionOverlay
+          speciesEmoji="🐱"
+          streak={form.reactionOverlay.streak}
+          expGained={form.reactionOverlay.expGained}
+          leveledUp={form.reactionOverlay.leveledUp}
+          onComplete={form.handleReactionComplete}
+        />
+      )}
       {form.resultModal && (
         <ResultModal
           msg={form.resultModal.msg}

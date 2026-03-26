@@ -3,69 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ensureSession, handleUnauthorized, apiFetch, apiPost, apiPut } from "@/lib/api-client";
+import {
+  computeHealthScore,
+  rehydrateHealthScore,
+  saveHealthSnapshot,
+  happinessToHealthLevel,
+  type HealthScoreResult,
+  type PetSpecialFlags,
+} from "@/lib/pet-health";
+import type { PetData } from "./pet-game-types";
 
-export interface PetState {
-  pet_name: string;
-  pet_species: string;
-  species_emoji: string;
-  stage?: "baby" | "junior" | "adult";
-  happiness: number;
-  last_fed_at: string | null;
-  current_outfit_id: string | null;
-  current_outfit_emoji: string | null;
-  level?: number;
-  exp_points?: number;
-  exp_to_next?: { current: number; needed: number };
-  adopted_at: string | null;
-  feed_count?: number;
-  mood_face?: string;
-  mood_label?: string;
-  mood_comment?: string;
-  sleepy?: boolean;
-  wearing_mask?: boolean;
-  worried?: boolean;
-  low_mood?: boolean;
-  weather?: { temp: number; desc: string } | null;
-}
-
-export interface FoodItem {
-  id: string;
-  name: string;
-  cost: number;
-  emoji: string;
-  happiness_gain: number;
-  owned: number;
-}
-
-export interface OutfitItem {
-  id: string;
-  name: string;
-  cost: number;
-  emoji: string | null;
-  owned: boolean;
-  equipped: boolean;
-}
-
-export interface RoomItem {
-  id: string;
-  name: string;
-  cost: number;
-  emoji: string;
-  owned: boolean | number;
-  equipped?: boolean;
-}
-
-export interface PetData {
-  pet: PetState | null;
-  points: number;
-  inventory: Record<string, number>;
-  foods: FoodItem[];
-  outfits: OutfitItem[];
-  rooms?: RoomItem[];
-  furniture?: Array<{ id: string; name: string; cost: number; emoji: string; owned: number }>;
-  current_room_id?: string | null;
-  placed_furniture?: Array<{ itemId: string; position: string }>;
-}
+export type { PetState, FoodItem, OutfitItem, RoomItem, FurnitureItem, PetData, PetTabData } from "./pet-game-types";
 
 const DEFAULT_PET_DATA: PetData = {
   pet: null,
@@ -83,12 +31,13 @@ export function usePetGame() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PetData | null>(null);
-  const [tab, setTab] = useState<"feed" | "outfit" | "room" | "play">("feed");
+  const [tab, setTab] = useState<"feed" | "outfit" | "room" | "play" | "liquid">("feed");
   const [minigame, setMinigame] = useState<"sudoku" | "memory" | "pet" | "quiz" | null>(null);
   const [petName, setPetName] = useState("");
   const [petSpecies, setPetSpecies] = useState("cat");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [scoreResult, setScoreResult] = useState<HealthScoreResult | null>(null);
 
   const fetchPet = useCallback(async () => {
     try {
@@ -97,19 +46,36 @@ export function usePetGame() {
         setLoading(false);
         return;
       }
-      const res = await apiFetch("/api/pet");
-      if (res.status === 401) {
+
+      const today = new Date().toISOString().split("T")[0];
+      const [petRes, logRes] = await Promise.all([
+        apiFetch("/api/pet"),
+        apiFetch(`/api/health-logs?date=${today}`),
+      ]);
+
+      if (petRes.status === 401) {
         handleUnauthorized(router);
         setLoading(false);
         return;
       }
-      if (res.ok) {
-        const j = await res.json();
+
+      if (petRes.ok) {
+        const j = await petRes.json() as PetData;
         setData(j);
         if (j.pet) {
           setPetName(j.pet.pet_name);
           setPetSpecies(j.pet.pet_species);
         }
+
+        const todayLog = logRes.ok ? await logRes.json() : null;
+        const result = computeHealthScore({
+          steps: todayLog?.steps ?? null,
+          calories: todayLog?.calories ?? null,
+          sleepQuality: todayLog?.sleep_quality ?? null,
+          lastLogin: j.pet?.last_fed_at ?? null,
+        });
+        setScoreResult(result);
+        saveHealthSnapshot(result);
       } else {
         setData(DEFAULT_PET_DATA);
       }
@@ -121,6 +87,8 @@ export function usePetGame() {
   }, [router]);
 
   useEffect(() => {
+    const cached = rehydrateHealthScore();
+    if (cached) setScoreResult(cached);
     fetchPet();
   }, [fetchPet]);
 
@@ -242,9 +210,21 @@ export function usePetGame() {
 
   const dataToUse = data ?? DEFAULT_PET_DATA;
 
+  const healthLevel = scoreResult
+    ? scoreResult.healthLevel
+    : happinessToHealthLevel(dataToUse.pet?.happiness ?? 50);
+
+  const healthScore = scoreResult?.score ?? (dataToUse.pet?.happiness ?? 50);
+  const specialFlags: PetSpecialFlags = scoreResult?.flags ?? { sleepy: false, nightOwl: false, earlyBird: false };
+  const scoreBreakdown = scoreResult?.breakdown ?? null;
+
   return {
     loading,
     data: dataToUse,
+    healthLevel,
+    healthScore,
+    specialFlags,
+    scoreBreakdown,
     tab, setTab,
     minigame, setMinigame,
     petName, setPetName,

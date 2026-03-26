@@ -40,15 +40,16 @@ export function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   return fetch(url, { ...DEFAULT_OPTIONS, ...init });
 }
 
-/**
- * JSON ボディで POST。401 時は handleUnauthorized を呼ぶ想定。
- */
-export async function apiPost<T>(
+type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error?: string };
+
+/** JSON ボディで任意 HTTP メソッドを送信する基底関数 */
+async function apiMutate<T>(
+  method: string,
   url: string,
   body: unknown
-): Promise<{ ok: true; data: T } | { ok: false; status: number; error?: string }> {
+): Promise<ApiResult<T>> {
   const res = await fetch(url, {
-    method: 'POST',
+    method,
     ...DEFAULT_OPTIONS,
     body: JSON.stringify(body),
   });
@@ -59,38 +60,16 @@ export async function apiPost<T>(
   return { ok: true, data: (await res.json()) as T };
 }
 
-/** JSON ボディで PUT。apiPost と同様の戻り値。 */
-export async function apiPut<T>(
-  url: string,
-  body: unknown
-): Promise<{ ok: true; data: T } | { ok: false; status: number; error?: string }> {
-  const res = await fetch(url, {
-    method: 'PUT',
-    ...DEFAULT_OPTIONS,
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    return { ok: false, status: res.status, error: err.error ?? res.statusText };
-  }
-  return { ok: true, data: (await res.json()) as T };
+export function apiPost<T>(url: string, body: unknown): Promise<ApiResult<T>> {
+  return apiMutate<T>('POST', url, body);
 }
 
-/** JSON ボディで PATCH。apiPost と同様の戻り値。 */
-export async function apiPatch<T>(
-  url: string,
-  body: unknown
-): Promise<{ ok: true; data: T } | { ok: false; status: number; error?: string }> {
-  const res = await fetch(url, {
-    method: 'PATCH',
-    ...DEFAULT_OPTIONS,
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    return { ok: false, status: res.status, error: err.error ?? res.statusText };
-  }
-  return { ok: true, data: (await res.json()) as T };
+export function apiPut<T>(url: string, body: unknown): Promise<ApiResult<T>> {
+  return apiMutate<T>('PUT', url, body);
+}
+
+export function apiPatch<T>(url: string, body: unknown): Promise<ApiResult<T>> {
+  return apiMutate<T>('PATCH', url, body);
 }
 
 /** DELETE リクエスト。credentials 付き。 */

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { RouterLike } from '@/lib/api-client';
 import { EMOTIONS } from '@/lib/record-constants';
 import { ensureSession, apiPost, handleUnauthorized } from '@/lib/api-client';
@@ -102,6 +102,13 @@ interface UseRecordSubmitDeps {
 export function useRecordSubmit({ router, getSnapshot, onSaveSuccess }: UseRecordSubmitDeps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resultModal, setResultModal] = useState<{ show: boolean; msg: string } | null>(null);
+  const [reactionOverlay, setReactionOverlay] = useState<{
+    expGained: number;
+    leveledUp: boolean;
+    streak: number;
+  } | null>(null);
+
+  const pendingModalMsg = useRef<string | null>(null);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -166,11 +173,30 @@ export function useRecordSubmit({ router, getSnapshot, onSaveSuccess }: UseRecor
         aiComment,
       });
 
-      const saveRes = await apiPost<unknown>('/api/health-logs', payload);
+      const saveRes = await apiPost<{
+        pet_reaction?: { exp_gained: number; leveled_up: boolean; streak?: number };
+      }>('/api/health-logs', payload);
       setIsSubmitting(false);
 
       if (saveRes.ok) {
-        setResultModal({ show: true, msg: aiComment });
+        const petReaction = saveRes.data.pet_reaction;
+        const petLine =
+          petReaction && petReaction.exp_gained > 0
+            ? `ぽっちのEXP +${petReaction.exp_gained}！${
+                petReaction.leveled_up ? " 進化した！" : ""
+              }\n\n`
+            : "";
+
+        if (petReaction && petReaction.exp_gained > 0) {
+          pendingModalMsg.current = petLine + aiComment;
+          setReactionOverlay({
+            expGained: petReaction.exp_gained,
+            leveledUp: petReaction.leveled_up,
+            streak: petReaction.streak ?? 1,
+          });
+        } else {
+          setResultModal({ show: true, msg: petLine + aiComment });
+        }
         onSaveSuccess();
       } else {
         if (saveRes.status === 401) handleUnauthorized(router);
@@ -185,5 +211,21 @@ export function useRecordSubmit({ router, getSnapshot, onSaveSuccess }: UseRecor
     router.push('/dashboard');
   }, [router]);
 
-  return { isSubmitting, resultModal, handleSubmit, handleCloseModal };
+  const handleReactionComplete = useCallback(() => {
+    setReactionOverlay(null);
+    const msg = pendingModalMsg.current;
+    if (msg) {
+      pendingModalMsg.current = null;
+      setResultModal({ show: true, msg });
+    }
+  }, []);
+
+  return {
+    isSubmitting,
+    resultModal,
+    reactionOverlay,
+    handleSubmit,
+    handleCloseModal,
+    handleReactionComplete,
+  };
 }

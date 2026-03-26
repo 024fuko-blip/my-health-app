@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ensureSession, handleUnauthorized, apiFetch, apiPut } from "@/lib/api-client";
-import { PATH, DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from "@/lib/constants";
+import { DEFAULT_PERIOD_CYCLE, DEFAULT_PERIOD_DURATION } from "@/lib/constants";
+import { parseMedications, parsePeriodSettings } from "@/lib/parse-settings";
 import type { MedicationNdb } from "../components/MedicationManager";
 
 export interface Medication {
@@ -50,47 +51,13 @@ export function useHealthSettings() {
         setFullSettings(data);
         setGender(data.gender ?? "unspecified");
 
-        let pCycle = DEFAULT_PERIOD_CYCLE;
-        let pDuration = DEFAULT_PERIOD_DURATION;
-        let lastPeriod = "";
-        try {
-          const historyData = JSON.parse(data.medical_history || "{}");
-          pCycle = historyData.periodCycle ?? DEFAULT_PERIOD_CYCLE;
-          pDuration = historyData.periodDuration ?? DEFAULT_PERIOD_DURATION;
-          lastPeriod = historyData.lastPeriodDate ?? "";
-          setShowPeriodOnCalendar(historyData.showPeriodOnCalendar !== false);
-        } catch {
-          // ignore
-        }
-        setPeriodCycle(pCycle);
-        setPeriodDuration(pDuration);
-        setLastPeriodDate(lastPeriod);
+        const ps = parsePeriodSettings(data.medical_history);
+        setPeriodCycle(ps.periodCycle);
+        setPeriodDuration(ps.periodDuration);
+        setLastPeriodDate(ps.lastPeriodDate);
+        setShowPeriodOnCalendar(ps.showPeriodOnCalendar);
 
-        let meds: Medication[] = [];
-        try {
-          const medData = JSON.parse(data.current_medications || "{}") as {
-            medications?: { id?: number; name: string; timings?: string[]; ndb?: MedicationNdb }[];
-            name?: string;
-            timings?: string[];
-          };
-          if (medData.medications && Array.isArray(medData.medications)) {
-            meds = medData.medications.map((m) => ({
-              id: m.id ?? Date.now(),
-              name: m.name,
-              timings: m.timings ?? [],
-              ndb: m.ndb,
-            }));
-          } else if (medData.name) {
-            meds = [{ id: Date.now(), name: medData.name, timings: medData.timings || [] }];
-          }
-        } catch {
-          if (data.current_medications) {
-            meds = [
-              { id: Date.now(), name: String(data.current_medications), timings: [] },
-            ];
-          }
-        }
-        setMedications(meds);
+        setMedications(parseMedications(data.current_medications) as Medication[]);
 
         let times = { ...DEFAULT_REMINDER_TIMES };
         try {
@@ -147,7 +114,7 @@ export function useHealthSettings() {
       setFullSettings(payload);
       alert("保存しました");
     } else if (result.status === 401) {
-      router.replace(PATH.LOGIN);
+      handleUnauthorized(router);
     } else {
       alert("保存に失敗しました" + (result.error ? ` (${result.error})` : ""));
     }

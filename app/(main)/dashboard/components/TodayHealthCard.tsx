@@ -2,6 +2,7 @@
 
 import type { HealthLogApiResponse } from '@/app/(main)/record/hooks/record-form-types';
 import type { UserSettingsMode } from '@/app/(main)/record/hooks/record-form-types';
+import { DEFAULT_STEP_GOAL } from '@/lib/constants';
 
 interface TodayHealthCardProps {
   todayLog: HealthLogApiResponse | null;
@@ -36,6 +37,18 @@ export function TodayHealthCard({ todayLog, modes }: TodayHealthCardProps) {
             {todayLog.pain_level != null && modes.mode_ibd && (
               <span className="px-2 py-1 rounded-full bg-slate-200 text-slate-700">
                 腹痛 {todayLog.pain_level}/5
+              </span>
+            )}
+            {todayLog.steps != null && modes.mode_diet && (
+              <span
+                className={`px-2 py-1 rounded-full font-medium ${
+                  (todayLog.steps ?? 0) >= DEFAULT_STEP_GOAL
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                🚶 {todayLog.steps.toLocaleString()}歩
+                {(todayLog.steps ?? 0) >= DEFAULT_STEP_GOAL ? ' ✓目標' : ` /${DEFAULT_STEP_GOAL.toLocaleString()}`}
               </span>
             )}
           </div>
