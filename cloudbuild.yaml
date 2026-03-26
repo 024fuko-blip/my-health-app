@@ -38,7 +38,7 @@ steps:
       - 'asia-northeast2'
       - '--allow-unauthenticated'
       - '--add-cloudsql-instances'
-      - 'my-health-app-485805:asia-northeast2:my-health-db'
+      - 'fukushi-map-app:asia-northeast2:my-health-db'
 
 timeout: '1200s'
 options:
