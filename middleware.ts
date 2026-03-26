@@ -1,6 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+const CANONICAL_HOST = 'my-health-apps-81772171421.asia-northeast2.run.app';
+
 export async function middleware(request: NextRequest) {
+  const host = request.headers.get('host') ?? '';
+  if (host && host !== CANONICAL_HOST && host.endsWith('.run.app')) {
+    const canonical = new URL(request.url);
+    canonical.host = CANONICAL_HOST;
+    canonical.port = '';
+    return NextResponse.redirect(canonical, 301);
+  }
+
   const pathname = request.nextUrl.pathname;
   const isAuthRequired =
     pathname.startsWith('/dashboard') ||
