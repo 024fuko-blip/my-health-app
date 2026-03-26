@@ -140,11 +140,11 @@ export async function POST(req: Request) {
     const streak = gameStats?.currentStreak ?? 0;
     const expGained = calcHealthLogExp(
       {
-        meal_description,
-        sleep_quality,
-        pain_level,
-        stress_level,
-        general_mood,
+        meal_description: toStringOrNull(meal_description),
+        sleep_quality: toStringOrNull(sleep_quality),
+        pain_level: toNumOrNull(pain_level),
+        stress_level: toNumOrNull(stress_level),
+        general_mood: toNumOrNull(general_mood),
       },
       streak
     );

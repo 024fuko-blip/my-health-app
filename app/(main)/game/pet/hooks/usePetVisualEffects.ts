@@ -16,7 +16,7 @@ import { RABBIT_BLINK_IMAGES, type PetVisualState } from "@/lib/pet-health";
 /** 数秒おきに一瞬だけ true を返す瞬きタイマー */
 export function useBlinkEffect(activeIdx: number): boolean {
   const [blinking, setBlinking] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!(activeIdx in RABBIT_BLINK_IMAGES)) {
@@ -53,7 +53,7 @@ export function useBlinkEffect(activeIdx: number): boolean {
 /** damaged モード時に不定期で震えを発火するタイマー */
 export function useIntermittentShake(mode: string): boolean {
   const [shaking, setShaking] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (mode !== "damaged") {

@@ -92,7 +92,7 @@ export function RecordReactionOverlay({
           )}
         </div>
 
-        {/* タップで閉じる */
+        {/* タップで閉じる */}
         <button
           type="button"
           onClick={onComplete}
