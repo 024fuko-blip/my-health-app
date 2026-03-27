@@ -8,7 +8,6 @@ import type { PetData } from "../hooks/pet-game-types";
 import type { PetSpecialFlags } from "@/lib/pet-health";
 import { getImagesForSpecies, getBlinkImagesForSpecies } from "@/lib/pet-health";
 
-/** ねこ8段階の表示名（ビジュアル・ロードマップ準拠） */
 const CAT_STAGE_LABELS: Record<string, string> = {
   stage_1: "ユメたまご",
   stage_2: "よちよちベビー",
@@ -20,7 +19,6 @@ const CAT_STAGE_LABELS: Record<string, string> = {
   stage_8: "夢守神(守護獣)",
 };
 
-/** いぬ5段階の表示名 */
 const DOG_STAGE_LABELS: Record<string, string> = {
   stage_1: "おすわりパピー",
   stage_2: "ほねほねバディ",
@@ -28,6 +26,13 @@ const DOG_STAGE_LABELS: Record<string, string> = {
   stage_4: "わんわん大王",
   stage_5: "チャンピオン犬",
 };
+
+const ROOM_STYLES: Record<string, { bg: string; ground: string }> = {
+  room_forest: { bg: "from-emerald-200 via-green-100 to-lime-50", ground: "from-green-400 to-emerald-500" },
+  room_ocean:  { bg: "from-sky-200 via-cyan-100 to-blue-50",      ground: "from-cyan-400 to-blue-400" },
+  room_night:  { bg: "from-indigo-900 via-slate-800 to-violet-900", ground: "from-slate-700 to-slate-600" },
+};
+const DEFAULT_ROOM_STYLE = { bg: "from-sky-200 via-sky-100 to-emerald-50", ground: "from-lime-400 to-green-500" };
 
 interface PetCardProps {
   data: PetData;
@@ -66,14 +71,8 @@ export function PetCard({
   if (!pet) return null;
 
   const roomId = data.current_room_id ?? "room_default";
-  const roomBg =
-    roomId === "room_forest"
-      ? "bg-green-50"
-      : roomId === "room_ocean"
-        ? "bg-blue-50"
-        : roomId === "room_night"
-          ? "bg-slate-800 text-white"
-          : "bg-amber-50";
+  const isNight = roomId === "room_night";
+  const room = ROOM_STYLES[roomId] ?? DEFAULT_ROOM_STYLE;
 
   const speciesStageLabels = pet.pet_species === "dog" ? DOG_STAGE_LABELS : CAT_STAGE_LABELS;
   const stageLabel =
@@ -95,193 +94,213 @@ export function PetCard({
     low_mood: pet.low_mood,
   });
 
+  const statusBadges: Array<{ key: string; emoji: string; text: string; colors: string }> = [];
+  if (pet.weather) {
+    statusBadges.push({
+      key: "weather",
+      emoji: isNight ? "🌙" : "☀️",
+      text: `${pet.weather.desc} ${Math.round(pet.weather.temp)}°C`,
+      colors: isNight ? "bg-indigo-900/60 text-indigo-100" : "bg-white/70 text-slate-700",
+    });
+  }
+  if (pet.wearing_mask) {
+    statusBadges.push({ key: "mask", emoji: "😷", text: "花粉対策中", colors: "bg-green-100/80 text-green-800" });
+  }
+  if (pet.sleepy || specialFlags?.sleepy) {
+    statusBadges.push({ key: "sleepy", emoji: "😴", text: "眠そう", colors: "bg-indigo-100/80 text-indigo-700" });
+  }
+  if (specialFlags?.nightOwl) {
+    statusBadges.push({ key: "owl", emoji: "🦉", text: "夜ふかし", colors: "bg-purple-100/80 text-purple-700" });
+  }
+  if (specialFlags?.earlyBird) {
+    statusBadges.push({ key: "bird", emoji: "🐦", text: "早起き", colors: "bg-sky-100/80 text-sky-700" });
+  }
+  if (pet.worried) {
+    statusBadges.push({ key: "worried", emoji: "😟", text: "心配そう", colors: "bg-amber-100/80 text-amber-700" });
+  } else if (pet.low_mood) {
+    statusBadges.push({ key: "low", emoji: "😢", text: "元気ない", colors: "bg-slate-100/80 text-slate-600" });
+  }
+
+  const daysAdopted = pet.adopted_at
+    ? Math.max(0, Math.floor((Date.now() - new Date(pet.adopted_at).getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
+
   return (
-    <div className={`border-2 border-amber-200 p-6 text-center shadow-sm min-h-[200px] ${roomBg}`}>
-      <div className="relative inline-block">
-        {mangaKey && (
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
-            <MangaSymbol symbol={mangaKey} />
-          </div>
-        )}
-        <div className={specialFlags?.sleepy ? "opacity-60" : ""}>
-          <PetVisual
-            healthLevel={healthLevel}
-            images={getImagesForSpecies(pet.pet_species)}
-            blinkImages={getBlinkImagesForSpecies(pet.pet_species)}
-            alt={pet.pet_name}
-            size={180}
-          />
-        </div>
-        {specialFlags?.sleepy && (
-          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl pointer-events-none select-none animate-pulse z-10">
-            💤
-          </span>
-        )}
-        {pet.current_outfit_emoji && (
-          <span className="absolute -bottom-1 -right-1 text-2xl">{pet.current_outfit_emoji}</span>
-        )}
-      </div>
-
-      <div className="flex justify-center gap-1 mt-1 flex-wrap">
-        {(pet.sleepy || specialFlags?.sleepy) && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">😴 眠そう</span>
-        )}
-        {specialFlags?.nightOwl && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">🦉 夜ふかし</span>
-        )}
-        {specialFlags?.earlyBird && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">🐦 早起き</span>
-        )}
-        {pet.wearing_mask && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">😷 花粉対策中</span>
-        )}
-        {pet.worried && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">😟 心配そう</span>
-        )}
-        {pet.low_mood && !pet.worried && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">😢 元気ない</span>
-        )}
-      </div>
-
-      <p className="font-bold text-gray-800 text-lg mt-2">{pet.pet_name}</p>
-      <div className="flex items-center justify-center gap-2 mt-0.5">
-        <span className="text-xs text-amber-600 font-medium">Lv.{pet.level ?? 1}</span>
-        {pet.stage && (
-          <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800">
-            {stageLabel}
-          </span>
-        )}
-      </div>
-
-      {(pet.mood_comment || pet.sleepy || pet.worried) && (
-        <div className="mt-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100">
-          <span className="text-2xl mr-1" aria-hidden>
-            {pet.sleepy
-              ? "😴"
-              : pet.worried
-                ? "😟"
-                : pet.low_mood
-                  ? "😢"
-                  : pet.mood_face ?? "😐"}
-          </span>
-          <span className="text-sm text-slate-700 italic">
-            「{pet.sleepy
-              ? "眠そう... おやすみしてね"
-              : pet.worried
-                ? "大丈夫？ 無理しないでね"
-                : pet.low_mood
-                  ? "元気だしていこう..."
-                  : pet.mood_comment ?? "んー"}」
-          </span>
-        </div>
-      )}
-
-      <div className="mt-2 flex items-center justify-center gap-2">
-        <span className="text-sm text-slate-800">健康スコア</span>
-        <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${
-              (healthScore ?? 0) >= 80
-                ? "bg-amber-400"
-                : (healthScore ?? 0) >= 40
-                  ? "bg-green-400"
-                  : "bg-red-400"
-            }`}
-            style={{ width: `${healthScore ?? pet.happiness ?? 0}%` }}
-          />
-        </div>
-        <span className="text-sm font-bold text-amber-700">{healthScore ?? pet.happiness ?? 0}</span>
-      </div>
-
-      {scoreBreakdown && (
-        <details className="mt-1 text-left">
-          <summary className="text-xs text-slate-500 hover:underline cursor-pointer text-center">
-            スコア内訳
-          </summary>
-          <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-slate-600 px-2">
-            <span>🚶 歩数</span>
-            <span className="text-right font-medium">+{Math.round(scoreBreakdown.stepsScore)}</span>
-            <span>🍽️ カロリー</span>
-            <span className="text-right font-medium">+{Math.round(scoreBreakdown.caloriesScore)}</span>
-            <span>😴 睡眠</span>
-            <span className="text-right font-medium">+{Math.round(scoreBreakdown.sleepScore)}</span>
-            <span>📱 ログイン</span>
-            <span className="text-right font-medium">+{Math.round(scoreBreakdown.loginBonus)}</span>
-            {scoreBreakdown.decayPenalty > 0 && (
-              <>
-                <span className="text-red-500">⏳ 放置減衰</span>
-                <span className="text-right font-medium text-red-500">-{Math.round(scoreBreakdown.decayPenalty)}</span>
-              </>
-            )}
-          </div>
-        </details>
-      )}
-
-      {pet.exp_to_next && pet.exp_to_next.needed > 0 && (
-        <div className="mt-2 flex items-center justify-center gap-2">
-          <span className="text-xs text-slate-800">EXP</span>
-          <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-violet-400 rounded-full transition-all"
-              style={{ width: `${(pet.exp_to_next.current / pet.exp_to_next.needed) * 100}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {pet.weather && (
-        <p className="mt-2 text-sm text-slate-700">
-          🌤 {pet.weather.desc} {Math.round(pet.weather.temp)}°C
-        </p>
-      )}
-
-      {(pet.adopted_at != null || (pet.feed_count ?? 0) > 0) && (
-        <div className="mt-3 pt-3 border-t border-amber-100 text-sm text-slate-700 text-left">
-          <p><strong>育成ログ</strong></p>
-          {pet.adopted_at && (
-            <p>迎えて {Math.max(0, Math.floor((Date.now() - new Date(pet.adopted_at).getTime()) / (1000 * 60 * 60 * 24)))} 日目</p>
-          )}
-          <p>餌を {pet.feed_count ?? 0} 回あげた</p>
-        </div>
-      )}
-
-      <details className="mt-2 text-left">
-        <summary className="text-xs text-amber-600 hover:underline cursor-pointer">
-          名前・種類を変える
-        </summary>
-        <form
-          onSubmit={(e) => { e.preventDefault(); onUpdatePet(); }}
-          className="mt-2 p-3 bg-amber-50 rounded-lg space-y-2"
-        >
-          <input
-            value={petName}
-            onChange={(e) => onPetNameChange(e.target.value)}
-            placeholder="名前"
-            className="w-full p-2 border rounded text-sm"
-          />
-          <div className="flex gap-2">
-            {PET_SPECIES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => onPetSpeciesChange(s.id)}
-                className={`px-2 py-1 rounded text-sm ${
-                  petSpecies === s.id ? "bg-amber-200" : "bg-white border"
-                }`}
+    <div className="rounded-2xl overflow-hidden shadow-lg border border-white/40">
+      {/* --- 野原ビジュアルエリア --- */}
+      <div className={`relative bg-gradient-to-b ${room.bg} pt-3 pb-8`}>
+        {/* ステータスバッジ（天気 + 花粉 etc.） */}
+        {statusBadges.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-3 mb-2 justify-end">
+            {statusBadges.map((b) => (
+              <span
+                key={b.key}
+                className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full backdrop-blur-sm ${b.colors}`}
               >
-                {s.emoji} {s.name}
-              </button>
+                {b.emoji} {b.text}
+              </span>
             ))}
           </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full py-2 bg-amber-500 text-white rounded font-bold text-sm disabled:opacity-50"
+        )}
+
+        {/* ペット本体 */}
+        <div className="flex justify-center">
+          <div className="relative">
+            {mangaKey && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                <MangaSymbol symbol={mangaKey} />
+              </div>
+            )}
+            <div className={specialFlags?.sleepy ? "opacity-60" : ""}>
+              <PetVisual
+                healthLevel={healthLevel}
+                images={getImagesForSpecies(pet.pet_species)}
+                blinkImages={getBlinkImagesForSpecies(pet.pet_species)}
+                alt={pet.pet_name}
+                size={240}
+              />
+            </div>
+            {specialFlags?.sleepy && (
+              <span className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl pointer-events-none select-none animate-pulse z-10">
+                💤
+              </span>
+            )}
+            {pet.current_outfit_emoji && (
+              <span className="absolute -bottom-1 -right-1 text-3xl drop-shadow">{pet.current_outfit_emoji}</span>
+            )}
+          </div>
+        </div>
+
+        {/* 地面グラデーション */}
+        <div className={`absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-r ${room.ground} opacity-60 rounded-b-none`} />
+        <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-white/30 to-transparent" />
+      </div>
+
+      {/* --- 情報エリア --- */}
+      <div className={`px-5 py-4 space-y-3 ${isNight ? "bg-slate-900 text-white" : "bg-white"}`}>
+        {/* 名前 + レベル */}
+        <div className="text-center">
+          <p className={`font-bold text-xl ${isNight ? "text-white" : "text-gray-800"}`}>{pet.pet_name}</p>
+          <div className="flex items-center justify-center gap-2 mt-0.5">
+            <span className={`text-xs font-medium ${isNight ? "text-amber-300" : "text-amber-600"}`}>
+              Lv.{pet.level ?? 1}
+            </span>
+            {pet.stage && (
+              <span className={`text-xs px-2 py-0.5 rounded-full ${isNight ? "bg-amber-900/40 text-amber-200" : "bg-amber-100 text-amber-800"}`}>
+                {stageLabel}
+              </span>
+            )}
+            {daysAdopted != null && (
+              <span className={`text-xs ${isNight ? "text-slate-400" : "text-slate-400"}`}>
+                {daysAdopted}日目
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* 吹き出しコメント */}
+        {(pet.mood_comment || pet.sleepy || pet.worried) && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${isNight ? "bg-slate-800 border border-slate-700" : "bg-amber-50 border border-amber-100"}`}>
+            <span className="text-xl shrink-0" aria-hidden>
+              {pet.sleepy ? "😴" : pet.worried ? "😟" : pet.low_mood ? "😢" : pet.mood_face ?? "😐"}
+            </span>
+            <span className={`text-sm italic ${isNight ? "text-slate-300" : "text-slate-600"}`}>
+              「{pet.sleepy
+                ? "眠そう... おやすみしてね"
+                : pet.worried
+                  ? "大丈夫？ 無理しないでね"
+                  : pet.low_mood
+                    ? "元気だしていこう..."
+                    : pet.mood_comment ?? "んー"}」
+            </span>
+          </div>
+        )}
+
+        {/* 健康スコア */}
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-medium shrink-0 ${isNight ? "text-slate-400" : "text-slate-500"}`}>
+            健康スコア
+          </span>
+          <div className={`flex-1 h-2.5 rounded-full overflow-hidden ${isNight ? "bg-slate-700" : "bg-gray-200"}`}>
+            <div
+              className={`h-full rounded-full transition-all ${
+                (healthScore ?? 0) >= 80 ? "bg-amber-400"
+                  : (healthScore ?? 0) >= 40 ? "bg-green-400"
+                  : "bg-red-400"
+              }`}
+              style={{ width: `${Math.max(2, healthScore ?? pet.happiness ?? 0)}%` }}
+            />
+          </div>
+          <span className={`text-sm font-bold min-w-[2.5ch] text-right ${isNight ? "text-amber-300" : "text-amber-700"}`}>
+            {healthScore ?? pet.happiness ?? 0}
+          </span>
+        </div>
+
+        {scoreBreakdown && (
+          <details className="text-left">
+            <summary className={`text-xs hover:underline cursor-pointer text-center ${isNight ? "text-slate-400" : "text-slate-400"}`}>
+              スコア内訳
+            </summary>
+            <div className={`mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs px-2 ${isNight ? "text-slate-400" : "text-slate-500"}`}>
+              <span>🚶 歩数</span>
+              <span className="text-right font-medium">+{Math.round(scoreBreakdown.stepsScore)}</span>
+              <span>🍽️ カロリー</span>
+              <span className="text-right font-medium">+{Math.round(scoreBreakdown.caloriesScore)}</span>
+              <span>😴 睡眠</span>
+              <span className="text-right font-medium">+{Math.round(scoreBreakdown.sleepScore)}</span>
+              <span>📱 ログイン</span>
+              <span className="text-right font-medium">+{Math.round(scoreBreakdown.loginBonus)}</span>
+              {scoreBreakdown.decayPenalty > 0 && (
+                <>
+                  <span className="text-red-400">⏳ 放置減衰</span>
+                  <span className="text-right font-medium text-red-400">-{Math.round(scoreBreakdown.decayPenalty)}</span>
+                </>
+              )}
+            </div>
+          </details>
+        )}
+
+        {/* 育成ログ + 名前変更 */}
+        <details className="text-left">
+          <summary className={`text-xs cursor-pointer ${isNight ? "text-amber-400 hover:text-amber-300" : "text-amber-600 hover:underline"}`}>
+            名前・種類を変える
+          </summary>
+          <form
+            onSubmit={(e) => { e.preventDefault(); onUpdatePet(); }}
+            className={`mt-2 p-3 rounded-lg space-y-2 ${isNight ? "bg-slate-800" : "bg-amber-50"}`}
           >
-            更新
-          </button>
-        </form>
-      </details>
+            <input
+              value={petName}
+              onChange={(e) => onPetNameChange(e.target.value)}
+              placeholder="名前"
+              className={`w-full p-2 border rounded text-sm ${isNight ? "bg-slate-700 border-slate-600 text-white" : ""}`}
+            />
+            <div className="flex gap-2 flex-wrap">
+              {PET_SPECIES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => onPetSpeciesChange(s.id)}
+                  className={`px-2 py-1 rounded text-sm ${
+                    petSpecies === s.id
+                      ? isNight ? "bg-amber-700 text-amber-100" : "bg-amber-200"
+                      : isNight ? "bg-slate-700 text-slate-300 border border-slate-600" : "bg-white border"
+                  }`}
+                >
+                  {s.emoji} {s.name}
+                </button>
+              ))}
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full py-2 bg-amber-500 text-white rounded font-bold text-sm disabled:opacity-50"
+            >
+              更新
+            </button>
+          </form>
+        </details>
+      </div>
     </div>
   );
 }
