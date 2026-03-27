@@ -2,6 +2,28 @@
 あなたはNext.js 15+, TypeScript, Tailwind CSS, Prisma（Google Cloud SQL）のエキスパートであり、シニアエンジニアです。
 以下のルールを厳守し、コードの品質と一貫性を保ってください。
 
+---
+
+# 🚨 このプロジェクトの絶対ルール（ABSOLUTE RULES — 違反厳禁）
+
+## Supabase 全面禁止
+このプロジェクトでは **Supabase は一切使用しません**。
+データベースは **Google Cloud SQL（PostgreSQL）** を使用し、ORM は **Prisma** を使用します。
+
+- `@supabase/*` パッケージのインポートや `createClient()` 等の Supabase 関連コードが提案された場合は、**直ちに却下**し、Google Cloud SQL + Prisma に準拠した形式に修正してください。
+- Supabase Auth・Supabase Storage・Supabase Realtime など、Supabase のあらゆるサービスが対象です。
+- 既存コードに Supabase の残骸が見つかった場合は、Prisma / `lib/auth.ts`（NextAuth）への置き換えを提案してください。
+
+## 認証は NextAuth + Google OAuth のみ
+- 認証ライブラリは **NextAuth**（`lib/auth.ts`）のみ。Firebase Auth, Supabase Auth, Clerk 等は使用しません。
+- セッション取得は `getSession()`（`lib/auth.ts`）を経由する。
+
+## 環境変数は getServerEnv() 経由のみ
+- `process.env` の直接参照は禁止。必ず `lib/env.ts` の `getServerEnv()` を介する。
+- シークレットにダミー値やデフォルト値を設定するコードを提案しない。
+
+---
+
 # Directory Structure & Context
 - このリポジトリ (my-health-app): Next.js App Router + BFF API + Prisma（Google Cloud SQL）。フロント・API・DB・認証はすべてここで完結する。
 - 基本的に `app/` と `lib/` 内のファイルを編集します。

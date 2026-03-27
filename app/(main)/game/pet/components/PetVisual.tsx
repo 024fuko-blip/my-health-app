@@ -18,6 +18,7 @@ import {
 interface PetVisualProps {
   healthLevel: number;
   images?: [string, string, string];
+  blinkImages?: Partial<Record<number, string>>;
   alt?: string;
   size?: number;
   className?: string;
@@ -65,6 +66,7 @@ function SparkleParticles() {
 export function PetVisual({
   healthLevel,
   images = DEFAULT_PET_IMAGES,
+  blinkImages = RABBIT_BLINK_IMAGES,
   alt = "ペット",
   size = 180,
   className = "",
@@ -92,8 +94,8 @@ export function PetVisual({
           {images.map((baseSrc, i) => {
             const isActive = i === activeIdx;
             const displaySrc =
-              isActive && isBlinking && RABBIT_BLINK_IMAGES[i]
-                ? RABBIT_BLINK_IMAGES[i]!
+              isActive && isBlinking && blinkImages[i]
+                ? blinkImages[i]!
                 : baseSrc;
 
             return (

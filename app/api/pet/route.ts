@@ -15,6 +15,8 @@ import {
   getEvolutionStage,
   getCatStage,
   getCatExpToNextStage,
+  getDogStage,
+  getDogExpToNextStage,
 } from '@/lib/pet-shop';
 import { fetchWeather } from '@/lib/weather';
 import { getCoordsFromPrefecture } from '@/lib/prefectures';
@@ -101,9 +103,20 @@ export async function GET() {
       const expPoints = pet?.expPoints ?? 0;
       const mood = getMoodFromHappiness(happiness);
       const isCat = pet?.petSpecies === "cat";
-      const expToNext = isCat ? getCatExpToNextStage(expPoints) : getExpToNextLevel(expPoints);
-      const stage = isCat ? getCatStage(expPoints) : getEvolutionStage(getLevelFromExp(expPoints));
-      const level = isCat ? parseInt(stage.replace("stage_", ""), 10) : getLevelFromExp(expPoints);
+      const isDog = pet?.petSpecies === "dog";
+      const expToNext = isCat
+        ? getCatExpToNextStage(expPoints)
+        : isDog
+          ? getDogExpToNextStage(expPoints)
+          : getExpToNextLevel(expPoints);
+      const stage = isCat
+        ? getCatStage(expPoints)
+        : isDog
+          ? getDogStage(expPoints)
+          : getEvolutionStage(getLevelFromExp(expPoints));
+      const level = (isCat || isDog)
+        ? parseInt(stage.replace("stage_", ""), 10)
+        : getLevelFromExp(expPoints);
 
       const currentRoomId = pet?.currentRoomId ?? null;
       const catalog = buildShopCatalog(inventory, pet?.currentOutfitId ?? null, currentRoomId);

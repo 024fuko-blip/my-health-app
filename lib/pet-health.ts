@@ -38,7 +38,11 @@ export {
   PLACEHOLDER_PET_IMAGE,
   RABBIT_IMAGES,
   RABBIT_BLINK_IMAGES,
+  DOG_IMAGES,
+  DOG_BLINK_IMAGES,
   DEFAULT_PET_IMAGES,
+  getImagesForSpecies,
+  getBlinkImagesForSpecies,
 } from "./pet-health-visual";
 
 export {

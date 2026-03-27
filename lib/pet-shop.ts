@@ -73,6 +73,9 @@ export type EvolutionStage = "baby" | "junior" | "adult";
 /** ねこ専用8段階進化（stage_1〜stage_8） */
 export type CatStage = "stage_1" | "stage_2" | "stage_3" | "stage_4" | "stage_5" | "stage_6" | "stage_7" | "stage_8";
 
+/** いぬ専用5段階進化（stage_1〜stage_5） */
+export type DogStage = "stage_1" | "stage_2" | "stage_3" | "stage_4" | "stage_5";
+
 /** ねこ8段階の擬音・演出（ビジュアル・ロードマップ準拠） */
 export const CAT_STAGE_ONOMATOPOEIA: Record<CatStage, string> = {
   stage_1: "ぷるぷる",
@@ -105,6 +108,41 @@ export function getCatExpToNextStage(exp: number): { current: number; needed: nu
   }
   const currentThreshold = CAT_EXP_THRESHOLDS[stageNum] ?? 0;
   const nextThreshold = CAT_EXP_THRESHOLDS[stageNum + 1] ?? currentThreshold;
+  return {
+    current: exp - currentThreshold,
+    needed: nextThreshold - currentThreshold,
+  };
+}
+
+/** いぬ5段階の擬音・演出 */
+export const DOG_STAGE_ONOMATOPOEIA: Record<DogStage, string> = {
+  stage_1: "くぅ〜ん",
+  stage_2: "ガジガジ!",
+  stage_3: "ワンワン!",
+  stage_4: "バウッ!!",
+  stage_5: "キラーン✨",
+};
+
+/** いぬ5段階の累計EXP閾値（stage_Nに到達する最小EXP） */
+export const DOG_EXP_THRESHOLDS: number[] = [0, 0, 150, 400, 800, 1300];
+
+/** 累計EXPからいぬのステージを算出 */
+export function getDogStage(exp: number): DogStage {
+  for (let i = DOG_EXP_THRESHOLDS.length - 1; i >= 1; i--) {
+    if (exp >= (DOG_EXP_THRESHOLDS[i] ?? 0)) return `stage_${i}` as DogStage;
+  }
+  return "stage_1";
+}
+
+/** いぬ：次のステージまでに必要なEXP（stage_5では needed=0） */
+export function getDogExpToNextStage(exp: number): { current: number; needed: number } {
+  const stage = getDogStage(exp);
+  const stageNum = parseInt(stage.replace("stage_", ""), 10);
+  if (stageNum >= 5) {
+    return { current: 0, needed: 0 };
+  }
+  const currentThreshold = DOG_EXP_THRESHOLDS[stageNum] ?? 0;
+  const nextThreshold = DOG_EXP_THRESHOLDS[stageNum + 1] ?? currentThreshold;
   return {
     current: exp - currentThreshold,
     needed: nextThreshold - currentThreshold,

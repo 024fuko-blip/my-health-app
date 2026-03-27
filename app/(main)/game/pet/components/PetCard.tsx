@@ -6,6 +6,7 @@ import { MangaSymbol } from "@/app/components/MangaSymbol";
 import { PetVisual } from "./PetVisual";
 import type { PetData } from "../hooks/pet-game-types";
 import type { PetSpecialFlags } from "@/lib/pet-health";
+import { getImagesForSpecies, getBlinkImagesForSpecies } from "@/lib/pet-health";
 
 /** ねこ8段階の表示名（ビジュアル・ロードマップ準拠） */
 const CAT_STAGE_LABELS: Record<string, string> = {
@@ -17,6 +18,15 @@ const CAT_STAGE_LABELS: Record<string, string> = {
   stage_6: "夢の板前さん",
   stage_7: "銀河の王様",
   stage_8: "夢守神(守護獣)",
+};
+
+/** いぬ5段階の表示名 */
+const DOG_STAGE_LABELS: Record<string, string> = {
+  stage_1: "おすわりパピー",
+  stage_2: "ほねほねバディ",
+  stage_3: "マッスルわんこ",
+  stage_4: "わんわん大王",
+  stage_5: "チャンピオン犬",
 };
 
 interface PetCardProps {
@@ -65,9 +75,10 @@ export function PetCard({
           ? "bg-slate-800 text-white"
           : "bg-amber-50";
 
+  const speciesStageLabels = pet.pet_species === "dog" ? DOG_STAGE_LABELS : CAT_STAGE_LABELS;
   const stageLabel =
-    pet.stage && CAT_STAGE_LABELS[pet.stage]
-      ? CAT_STAGE_LABELS[pet.stage]
+    pet.stage && speciesStageLabels[pet.stage]
+      ? speciesStageLabels[pet.stage]
       : pet.stage === "baby"
         ? "ベビー"
         : pet.stage === "junior"
@@ -93,7 +104,13 @@ export function PetCard({
           </div>
         )}
         <div className={specialFlags?.sleepy ? "opacity-60" : ""}>
-          <PetVisual healthLevel={healthLevel} alt={pet.pet_name} size={180} />
+          <PetVisual
+            healthLevel={healthLevel}
+            images={getImagesForSpecies(pet.pet_species)}
+            blinkImages={getBlinkImagesForSpecies(pet.pet_species)}
+            alt={pet.pet_name}
+            size={180}
+          />
         </div>
         {specialFlags?.sleepy && (
           <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl pointer-events-none select-none animate-pulse z-10">

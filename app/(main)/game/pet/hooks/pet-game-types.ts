@@ -4,7 +4,9 @@ export interface PetState {
   pet_name: string;
   pet_species: string;
   species_emoji: string;
-  stage?: "baby" | "junior" | "adult" | "stage_1" | "stage_2" | "stage_3" | "stage_4" | "stage_5" | "stage_6" | "stage_7" | "stage_8";
+  stage?: "baby" | "junior" | "adult"
+    | "stage_1" | "stage_2" | "stage_3" | "stage_4" | "stage_5"
+    | "stage_6" | "stage_7" | "stage_8";
   happiness: number;
   last_fed_at: string | null;
   current_outfit_id: string | null;
