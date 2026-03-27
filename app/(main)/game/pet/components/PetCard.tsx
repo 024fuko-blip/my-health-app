@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { PET_SPECIES } from "@/lib/pet-shop";
 import { getMangaSymbolForPet } from "@/lib/manga-symbols";
 import { MangaSymbol } from "@/app/components/MangaSymbol";
@@ -275,21 +276,30 @@ export function PetCard({
               placeholder="名前"
               className={`w-full p-2 border rounded text-sm ${isNight ? "bg-slate-700 border-slate-600 text-white" : ""}`}
             />
-            <div className="flex gap-2 flex-wrap">
-              {PET_SPECIES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => onPetSpeciesChange(s.id)}
-                  className={`px-2 py-1 rounded text-sm ${
-                    petSpecies === s.id
-                      ? isNight ? "bg-amber-700 text-amber-100" : "bg-amber-200"
-                      : isNight ? "bg-slate-700 text-slate-300 border border-slate-600" : "bg-white border"
-                  }`}
-                >
-                  {s.emoji} {s.name}
-                </button>
-              ))}
+            <div className="grid grid-cols-3 gap-2">
+              {PET_SPECIES.map((s) => {
+                const sImages = getImagesForSpecies(s.id);
+                const hasImg = sImages[1].startsWith("/pets/");
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => onPetSpeciesChange(s.id)}
+                    className={`flex flex-col items-center gap-0.5 px-1 py-2 rounded-lg text-xs transition-all ${
+                      petSpecies === s.id
+                        ? isNight ? "bg-amber-700 text-amber-100 ring-2 ring-amber-400" : "bg-amber-100 ring-2 ring-amber-400"
+                        : isNight ? "bg-slate-700 text-slate-300 border border-slate-600" : "bg-white border"
+                    }`}
+                  >
+                    {hasImg ? (
+                      <Image src={sImages[1]} alt={s.name} width={40} height={40} className="object-contain" />
+                    ) : (
+                      <span className="text-2xl leading-none">{s.emoji}</span>
+                    )}
+                    <span>{s.name}</span>
+                  </button>
+                );
+              })}
             </div>
             <button
               type="submit"

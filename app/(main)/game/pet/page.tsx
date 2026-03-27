@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { PET_SPECIES } from "@/lib/pet-shop";
+import { getImagesForSpecies } from "@/lib/pet-health";
 import { usePetGame } from "./hooks/usePetGame";
 import { PetCard } from "./components/PetCard";
 import { PetGame } from "./components/PetGame";
@@ -70,58 +72,105 @@ export default function GamePetPage() {
       </div>
 
       {!data.pet ? (
-        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
-          {message && (
-            <div className={`mb-3 px-3 py-2 rounded-lg text-sm ${
-              message.includes("失敗") || message.includes("エラー")
-                ? "bg-red-50 border border-red-200 text-red-800"
-                : "bg-green-50 border border-green-200 text-green-800"
-            }`}>
-              {message}
+        <div className="rounded-2xl overflow-hidden shadow-lg border border-white/40">
+          {/* プレビューエリア */}
+          <div className="relative bg-gradient-to-b from-sky-200 via-sky-100 to-emerald-50 pt-6 pb-10">
+            <div className="flex justify-center">
+              {(() => {
+                const previewImages = getImagesForSpecies(petSpecies);
+                const previewSrc = previewImages[1];
+                const speciesInfo = PET_SPECIES.find((s) => s.id === petSpecies);
+                return previewSrc.startsWith("/pets/") ? (
+                  <Image
+                    src={previewSrc}
+                    alt={speciesInfo?.name ?? "ペット"}
+                    width={200}
+                    height={200}
+                    className="object-contain drop-shadow-lg"
+                    priority
+                  />
+                ) : (
+                  <span className="text-[120px] leading-none drop-shadow-lg">
+                    {speciesInfo?.emoji ?? "🐾"}
+                  </span>
+                );
+              })()}
             </div>
-          )}
-          <p className="text-sm text-amber-800 mb-3">
-            個性的でぶさかわいい<strong>6種類</strong>から1匹選んで、名前をつけて迎えよう。迎えたあとは餌や着せ替えで育成していけるよ！
-          </p>
-          <h2 className="font-bold text-amber-900 mb-3">ぽっちを迎えよう</h2>
-          <form onSubmit={handleCreatePet} className="space-y-3">
-            <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1">名前</label>
-              <input
-                type="text"
-                value={petName}
-                onChange={(e) => setPetName(e.target.value)}
-                placeholder="ぽっち"
-                className="w-full p-2 border rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1">種類（6種類から選択）</label>
-              <div className="flex gap-2 flex-wrap">
-                {PET_SPECIES.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setPetSpecies(s.id)}
-                    className={`px-3 py-2 rounded-lg border-2 text-sm font-medium ${
-                      petSpecies === s.id
-                        ? "border-amber-500 bg-amber-100"
-                        : "border-gray-200 bg-white"
-                    }`}
-                  >
-                    {s.emoji} {s.name}
-                  </button>
-                ))}
+            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-r from-lime-400 to-green-500 opacity-60" />
+            <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-white/30 to-transparent" />
+          </div>
+
+          {/* フォームエリア */}
+          <div className="bg-white px-5 py-5 space-y-4">
+            {message && (
+              <div className={`px-3 py-2 rounded-lg text-sm ${
+                message.includes("失敗") || message.includes("エラー")
+                  ? "bg-red-50 border border-red-200 text-red-800"
+                  : "bg-green-50 border border-green-200 text-green-800"
+              }`}>
+                {message}
               </div>
+            )}
+            <div className="text-center">
+              <h2 className="font-bold text-lg text-amber-900">ぽっちを迎えよう</h2>
+              <p className="text-xs text-amber-700 mt-1">
+                個性的でかわいい<strong>6種類</strong>から1匹選んで、名前をつけて迎えよう！
+              </p>
             </div>
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full py-3 bg-amber-500 text-white font-bold rounded-xl disabled:opacity-50"
-            >
-              {saving ? "作成中..." : "ぽっちを迎える"}
-            </button>
-          </form>
+            <form onSubmit={handleCreatePet} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-800 mb-1">名前</label>
+                <input
+                  type="text"
+                  value={petName}
+                  onChange={(e) => setPetName(e.target.value)}
+                  placeholder="ぽっち"
+                  className="w-full p-2.5 border rounded-xl text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-800 mb-2">種類</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PET_SPECIES.map((s) => {
+                    const speciesImages = getImagesForSpecies(s.id);
+                    const hasImage = speciesImages[1].startsWith("/pets/");
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setPetSpecies(s.id)}
+                        className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                          petSpecies === s.id
+                            ? "border-amber-500 bg-amber-50 shadow-md scale-[1.03]"
+                            : "border-gray-200 bg-white hover:border-amber-300"
+                        }`}
+                      >
+                        {hasImage ? (
+                          <Image
+                            src={speciesImages[1]}
+                            alt={s.name}
+                            width={56}
+                            height={56}
+                            className="object-contain"
+                          />
+                        ) : (
+                          <span className="text-4xl leading-none">{s.emoji}</span>
+                        )}
+                        <span className="text-xs">{s.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full py-3 bg-amber-500 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-amber-600 transition"
+              >
+                {saving ? "作成中..." : "ぽっちを迎える"}
+              </button>
+            </form>
+          </div>
         </div>
       ) : (
         <>
