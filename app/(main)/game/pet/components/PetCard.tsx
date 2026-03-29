@@ -52,6 +52,7 @@ interface PetCardProps {
   saving: boolean;
   onPetNameChange: (v: string) => void;
   onPetSpeciesChange: (v: string) => void;
+  onChangeSpecies: (species: string) => void;
   onUpdatePet: () => void;
 }
 
@@ -66,6 +67,7 @@ export function PetCard({
   saving,
   onPetNameChange,
   onPetSpeciesChange,
+  onChangeSpecies,
   onUpdatePet,
 }: PetCardProps) {
   const pet = data.pet;
@@ -284,8 +286,9 @@ export function PetCard({
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => onPetSpeciesChange(s.id)}
-                    className={`flex flex-col items-center gap-0.5 px-1 py-2 rounded-lg text-xs transition-all ${
+                    disabled={saving}
+                    onClick={() => onChangeSpecies(s.id)}
+                    className={`flex flex-col items-center gap-0.5 px-1 py-2 rounded-lg text-xs transition-all disabled:opacity-50 ${
                       petSpecies === s.id
                         ? isNight ? "bg-amber-700 text-amber-100 ring-2 ring-amber-400" : "bg-amber-100 ring-2 ring-amber-400"
                         : isNight ? "bg-slate-700 text-slate-300 border border-slate-600" : "bg-white border"

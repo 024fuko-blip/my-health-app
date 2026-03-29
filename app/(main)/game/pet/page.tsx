@@ -45,6 +45,7 @@ export default function GamePetPage() {
     handleRoomUpdate,
     handleEquip,
     handleUpdatePet,
+    handleChangeSpecies,
   } = usePetGame();
 
   if (loading) return <div className="p-4">読み込み中...</div>;
@@ -186,6 +187,7 @@ export default function GamePetPage() {
             saving={saving}
             onPetNameChange={setPetName}
             onPetSpeciesChange={setPetSpecies}
+            onChangeSpecies={handleChangeSpecies}
             onUpdatePet={handleUpdatePet}
           />
 

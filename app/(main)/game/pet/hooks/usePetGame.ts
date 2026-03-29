@@ -220,6 +220,29 @@ export function usePetGame() {
     }
   }, [petName, petSpecies, fetchPet]);
 
+  const handleChangeSpecies = useCallback(async (newSpecies: string) => {
+    setPetSpecies(newSpecies);
+    setSaving(true);
+    setMessage(null);
+    try {
+      const result = await apiPost<Record<string, unknown>>("/api/pet", {
+        pet_name: petName.trim() || "ぽっち",
+        pet_species: newSpecies,
+      });
+      if (result.ok) {
+        setMessage(`${newSpecies === "dog" ? "いぬ" : newSpecies === "cat" ? "ねこ" : newSpecies}に変更しました！`);
+        await fetchPet();
+      } else {
+        setMessage(result.error ?? "変更に失敗しました");
+      }
+    } catch (err) {
+      setMessage("通信エラーです。再度お試しください。");
+      console.error("changeSpecies error:", err);
+    } finally {
+      setSaving(false);
+    }
+  }, [petName, fetchPet]);
+
   const dataToUse = data ?? DEFAULT_PET_DATA;
 
   const healthLevel = scoreResult
@@ -250,5 +273,6 @@ export function usePetGame() {
     handleRoomUpdate,
     handleEquip,
     handleUpdatePet,
+    handleChangeSpecies,
   };
 }
