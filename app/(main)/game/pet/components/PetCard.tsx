@@ -28,12 +28,12 @@ const DOG_STAGE_LABELS: Record<string, string> = {
   stage_5: "チャンピオン犬",
 };
 
-const ROOM_STYLES: Record<string, { bg: string; ground: string }> = {
-  room_forest: { bg: "from-emerald-200 via-green-100 to-lime-50", ground: "from-green-400 to-emerald-500" },
-  room_ocean:  { bg: "from-sky-200 via-cyan-100 to-blue-50",      ground: "from-cyan-400 to-blue-400" },
-  room_night:  { bg: "from-indigo-900 via-slate-800 to-violet-900", ground: "from-slate-700 to-slate-600" },
+const ROOM_STYLES: Record<string, { sky: string; ground: string }> = {
+  room_forest: { sky: "linear-gradient(to bottom, #a7f3d0, #d1fae5, #ecfccb)", ground: "linear-gradient(to right, #4ade80, #10b981)" },
+  room_ocean:  { sky: "linear-gradient(to bottom, #bae6fd, #cffafe, #dbeafe)", ground: "linear-gradient(to right, #22d3ee, #60a5fa)" },
+  room_night:  { sky: "linear-gradient(to bottom, #312e81, #1e293b, #4c1d95)", ground: "linear-gradient(to right, #334155, #475569)" },
 };
-const DEFAULT_ROOM_STYLE = { bg: "from-sky-200 via-sky-100 to-emerald-50", ground: "from-lime-400 to-green-500" };
+const DEFAULT_ROOM = { sky: "linear-gradient(to bottom, #bae6fd, #e0f2fe, #d1fae5)", ground: "linear-gradient(to right, #a3e635, #22c55e)" };
 
 interface PetCardProps {
   data: PetData;
@@ -73,7 +73,7 @@ export function PetCard({
 
   const roomId = data.current_room_id ?? "room_default";
   const isNight = roomId === "room_night";
-  const room = ROOM_STYLES[roomId] ?? DEFAULT_ROOM_STYLE;
+  const room = ROOM_STYLES[roomId] ?? DEFAULT_ROOM;
 
   const speciesStageLabels = pet.pet_species === "dog" ? DOG_STAGE_LABELS : CAT_STAGE_LABELS;
   const stageLabel =
@@ -129,7 +129,7 @@ export function PetCard({
   return (
     <div className="rounded-2xl overflow-hidden shadow-lg border border-white/40">
       {/* --- 野原ビジュアルエリア --- */}
-      <div className={`relative bg-gradient-to-b ${room.bg} pt-3 pb-8`}>
+      <div className="relative pt-3 pb-8" style={{ background: room.sky }}>
         {/* ステータスバッジ（天気 + 花粉 etc.） */}
         {statusBadges.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-3 mb-2 justify-end">
@@ -173,8 +173,8 @@ export function PetCard({
         </div>
 
         {/* 地面グラデーション */}
-        <div className={`absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-r ${room.ground} opacity-60 rounded-b-none`} />
-        <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-white/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-6 opacity-60" style={{ background: room.ground }} />
+        <div className="absolute bottom-0 left-0 right-0 h-3" style={{ background: "linear-gradient(to top, rgba(255,255,255,0.3), transparent)" }} />
       </div>
 
       {/* --- 情報エリア --- */}

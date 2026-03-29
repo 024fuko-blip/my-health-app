@@ -74,7 +74,7 @@ export default function GamePetPage() {
       {!data.pet ? (
         <div className="rounded-2xl overflow-hidden shadow-lg border border-white/40">
           {/* プレビューエリア */}
-          <div className="relative bg-gradient-to-b from-sky-200 via-sky-100 to-emerald-50 pt-6 pb-10">
+          <div className="relative pt-6 pb-10" style={{ background: "linear-gradient(to bottom, #bae6fd, #e0f2fe, #d1fae5)" }}>
             <div className="flex justify-center">
               {(() => {
                 const previewImages = getImagesForSpecies(petSpecies);
@@ -96,8 +96,8 @@ export default function GamePetPage() {
                 );
               })()}
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-r from-lime-400 to-green-500 opacity-60" />
-            <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-white/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-6 opacity-60" style={{ background: "linear-gradient(to right, #a3e635, #22c55e)" }} />
+            <div className="absolute bottom-0 left-0 right-0 h-3" style={{ background: "linear-gradient(to top, rgba(255,255,255,0.3), transparent)" }} />
           </div>
 
           {/* フォームエリア */}
