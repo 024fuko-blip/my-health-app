@@ -79,8 +79,9 @@ export default function GamePetPage() {
               {(() => {
                 const previewImages = getImagesForSpecies(petSpecies);
                 const previewSrc = previewImages[1];
+                const hasOwnImg = previewSrc.includes(`/pets/${petSpecies}/`);
                 const speciesInfo = PET_SPECIES.find((s) => s.id === petSpecies);
-                return previewSrc.startsWith("/pets/") ? (
+                return hasOwnImg ? (
                   <Image
                     src={previewSrc}
                     alt={speciesInfo?.name ?? "ペット"}
@@ -133,7 +134,7 @@ export default function GamePetPage() {
                 <div className="grid grid-cols-3 gap-2">
                   {PET_SPECIES.map((s) => {
                     const speciesImages = getImagesForSpecies(s.id);
-                    const hasImage = speciesImages[1].startsWith("/pets/");
+                    const hasImage = speciesImages[1].includes(`/pets/${s.id}/`);
                     return (
                       <button
                         key={s.id}

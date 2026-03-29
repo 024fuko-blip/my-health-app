@@ -279,7 +279,7 @@ export function PetCard({
             <div className="grid grid-cols-3 gap-2">
               {PET_SPECIES.map((s) => {
                 const sImages = getImagesForSpecies(s.id);
-                const hasImg = sImages[1].startsWith("/pets/");
+                const hasOwnImg = sImages[1].includes(`/pets/${s.id}/`);
                 return (
                   <button
                     key={s.id}
@@ -291,7 +291,7 @@ export function PetCard({
                         : isNight ? "bg-slate-700 text-slate-300 border border-slate-600" : "bg-white border"
                     }`}
                   >
-                    {hasImg ? (
+                    {hasOwnImg ? (
                       <Image src={sImages[1]} alt={s.name} width={40} height={40} className="object-contain" />
                     ) : (
                       <span className="text-2xl leading-none">{s.emoji}</span>

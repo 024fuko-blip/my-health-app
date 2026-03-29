@@ -200,12 +200,24 @@ export function usePetGame() {
 
   const handleUpdatePet = useCallback(async () => {
     setSaving(true);
-    const result = await apiPost<Record<string, unknown>>("/api/pet", {
-      pet_name: petName.trim() || "ぽっち",
-      pet_species: petSpecies,
-    });
-    if (result.ok) await fetchPet();
-    setSaving(false);
+    setMessage(null);
+    try {
+      const result = await apiPost<Record<string, unknown>>("/api/pet", {
+        pet_name: petName.trim() || "ぽっち",
+        pet_species: petSpecies,
+      });
+      if (result.ok) {
+        setMessage("更新しました！");
+        await fetchPet();
+      } else {
+        setMessage(result.error ?? "更新に失敗しました");
+      }
+    } catch (err) {
+      setMessage("通信エラーです。再度お試しください。");
+      console.error("updatePet error:", err);
+    } finally {
+      setSaving(false);
+    }
   }, [petName, petSpecies, fetchPet]);
 
   const dataToUse = data ?? DEFAULT_PET_DATA;
