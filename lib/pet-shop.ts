@@ -50,6 +50,8 @@ export const PET_SPECIES = [
   { id: "duck", name: "アヒル", emoji: "🐤" },
 ] as const;
 
+export type PetSpeciesId = (typeof PET_SPECIES)[number]["id"];
+
 export const MAX_HAPPINESS = 100;
 
 /** レベルごとに必要な累計EXP（レベル2なら50、レベル3なら120...） */
@@ -76,6 +78,37 @@ export type CatStage = "stage_1" | "stage_2" | "stage_3" | "stage_4" | "stage_5"
 /** いぬ専用5段階進化（stage_1〜stage_5） */
 export type DogStage = "stage_1" | "stage_2" | "stage_3" | "stage_4" | "stage_5";
 
+/** ステージ表示ラベル（各種族） */
+export const SPECIES_STAGE_LABELS: Record<string, Record<string, string>> = {
+  cat: {
+    stage_1: "ユメたまご",
+    stage_2: "よちよちベビー",
+    stage_3: "わんぱくチャイルド",
+    stage_4: "のびのび学生",
+    stage_5: "気ままな青年",
+    stage_6: "夢の板前さん",
+    stage_7: "銀河の王様",
+    stage_8: "夢守神(守護獣)",
+  },
+  dog: {
+    stage_1: "おすわりパピー",
+    stage_2: "ほねほねバディ",
+    stage_3: "マッスルわんこ",
+    stage_4: "わんわん大王",
+    stage_5: "チャンピオン犬",
+  },
+};
+
+const GENERIC_STAGE_LABELS: Record<string, string> = {
+  baby: "ベビー",
+  junior: "ジュニア",
+  adult: "アダルト",
+};
+
+export function getStageLabel(species: string, stage: string): string {
+  return SPECIES_STAGE_LABELS[species]?.[stage] ?? GENERIC_STAGE_LABELS[stage] ?? stage;
+}
+
 /** ねこ8段階の擬音・演出（ビジュアル・ロードマップ準拠） */
 export const CAT_STAGE_ONOMATOPOEIA: Record<CatStage, string> = {
   stage_1: "ぷるぷる",
@@ -91,29 +124,6 @@ export const CAT_STAGE_ONOMATOPOEIA: Record<CatStage, string> = {
 /** ねこ8段階の累計EXP閾値（stage_Nに到達する最小EXP） */
 export const CAT_EXP_THRESHOLDS: number[] = [0, 0, 100, 250, 450, 700, 1000, 1400, 1900];
 
-/** 累計EXPからねこのステージを算出（ねこ専用） */
-export function getCatStage(exp: number): CatStage {
-  for (let i = CAT_EXP_THRESHOLDS.length - 1; i >= 1; i--) {
-    if (exp >= (CAT_EXP_THRESHOLDS[i] ?? 0)) return `stage_${i}` as CatStage;
-  }
-  return "stage_1";
-}
-
-/** ねこ：次のステージまでに必要なEXP（stage_8では needed=0） */
-export function getCatExpToNextStage(exp: number): { current: number; needed: number } {
-  const stage = getCatStage(exp);
-  const stageNum = parseInt(stage.replace("stage_", ""), 10);
-  if (stageNum >= 8) {
-    return { current: 0, needed: 0 };
-  }
-  const currentThreshold = CAT_EXP_THRESHOLDS[stageNum] ?? 0;
-  const nextThreshold = CAT_EXP_THRESHOLDS[stageNum + 1] ?? currentThreshold;
-  return {
-    current: exp - currentThreshold,
-    needed: nextThreshold - currentThreshold,
-  };
-}
-
 /** いぬ5段階の擬音・演出 */
 export const DOG_STAGE_ONOMATOPOEIA: Record<DogStage, string> = {
   stage_1: "くぅ〜ん",
@@ -126,28 +136,53 @@ export const DOG_STAGE_ONOMATOPOEIA: Record<DogStage, string> = {
 /** いぬ5段階の累計EXP閾値（stage_Nに到達する最小EXP） */
 export const DOG_EXP_THRESHOLDS: number[] = [0, 0, 150, 400, 800, 1300];
 
-/** 累計EXPからいぬのステージを算出 */
-export function getDogStage(exp: number): DogStage {
-  for (let i = DOG_EXP_THRESHOLDS.length - 1; i >= 1; i--) {
-    if (exp >= (DOG_EXP_THRESHOLDS[i] ?? 0)) return `stage_${i}` as DogStage;
+/* ─── 汎用ステージ解決 ─── */
+
+interface SpeciesStageConfig {
+  thresholds: number[];
+  maxStage: number;
+}
+
+const SPECIES_STAGE_CONFIG: Record<string, SpeciesStageConfig> = {
+  cat: { thresholds: CAT_EXP_THRESHOLDS, maxStage: 8 },
+  dog: { thresholds: DOG_EXP_THRESHOLDS, maxStage: 5 },
+};
+
+function resolveStage(config: SpeciesStageConfig, exp: number): string {
+  for (let i = config.thresholds.length - 1; i >= 1; i--) {
+    if (exp >= (config.thresholds[i] ?? 0)) return `stage_${i}`;
   }
   return "stage_1";
 }
 
-/** いぬ：次のステージまでに必要なEXP（stage_5では needed=0） */
-export function getDogExpToNextStage(exp: number): { current: number; needed: number } {
-  const stage = getDogStage(exp);
-  const stageNum = parseInt(stage.replace("stage_", ""), 10);
-  if (stageNum >= 5) {
-    return { current: 0, needed: 0 };
-  }
-  const currentThreshold = DOG_EXP_THRESHOLDS[stageNum] ?? 0;
-  const nextThreshold = DOG_EXP_THRESHOLDS[stageNum + 1] ?? currentThreshold;
-  return {
-    current: exp - currentThreshold,
-    needed: nextThreshold - currentThreshold,
-  };
+function resolveExpToNextStage(config: SpeciesStageConfig, exp: number): { current: number; needed: number } {
+  const stageNum = parseInt(resolveStage(config, exp).replace("stage_", ""), 10);
+  if (stageNum >= config.maxStage) return { current: 0, needed: 0 };
+  const cur = config.thresholds[stageNum] ?? 0;
+  const next = config.thresholds[stageNum + 1] ?? cur;
+  return { current: exp - cur, needed: next - cur };
 }
+
+/** 種族に固有ステージがあれば stage 文字列を、なければ null */
+export function getSpeciesStage(species: string, exp: number): string | null {
+  const cfg = SPECIES_STAGE_CONFIG[species];
+  return cfg ? resolveStage(cfg, exp) : null;
+}
+
+/** 種族に固有ステージがあればEXP進捗を、なければ汎用レベル進捗 */
+export function getSpeciesExpToNext(species: string, exp: number): { current: number; needed: number } {
+  const cfg = SPECIES_STAGE_CONFIG[species];
+  return cfg ? resolveExpToNextStage(cfg, exp) : getExpToNextLevel(exp);
+}
+
+/** @deprecated getSpeciesStage("cat", exp) を使う */
+export function getCatStage(exp: number): CatStage { return resolveStage(SPECIES_STAGE_CONFIG.cat, exp) as CatStage; }
+/** @deprecated getSpeciesExpToNext("cat", exp) を使う */
+export function getCatExpToNextStage(exp: number) { return resolveExpToNextStage(SPECIES_STAGE_CONFIG.cat, exp); }
+/** @deprecated getSpeciesStage("dog", exp) を使う */
+export function getDogStage(exp: number): DogStage { return resolveStage(SPECIES_STAGE_CONFIG.dog, exp) as DogStage; }
+/** @deprecated getSpeciesExpToNext("dog", exp) を使う */
+export function getDogExpToNextStage(exp: number) { return resolveExpToNextStage(SPECIES_STAGE_CONFIG.dog, exp); }
 
 export function getEvolutionStage(level: number): EvolutionStage {
   if (level <= 4) return "baby";

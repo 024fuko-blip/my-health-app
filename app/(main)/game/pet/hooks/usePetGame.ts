@@ -198,50 +198,38 @@ export function usePetGame() {
     }
   }, [fetchPet]);
 
-  const handleUpdatePet = useCallback(async () => {
+  const savePet = useCallback(async (overrides?: { name?: string; species?: string }) => {
+    const nameToSave = (overrides?.name ?? petName).trim() || "ぽっち";
+    const speciesToSave = overrides?.species ?? petSpecies;
+    if (overrides?.species) setPetSpecies(speciesToSave);
+
     setSaving(true);
     setMessage(null);
     try {
       const result = await apiPost<Record<string, unknown>>("/api/pet", {
-        pet_name: petName.trim() || "ぽっち",
-        pet_species: petSpecies,
+        pet_name: nameToSave,
+        pet_species: speciesToSave,
       });
       if (result.ok) {
-        setMessage("更新しました！");
+        setMessage(overrides?.species ? `${speciesToSave}に変更しました！` : "更新しました！");
         await fetchPet();
       } else {
         setMessage(result.error ?? "更新に失敗しました");
       }
     } catch (err) {
       setMessage("通信エラーです。再度お試しください。");
-      console.error("updatePet error:", err);
+      console.error("savePet error:", err);
     } finally {
       setSaving(false);
     }
   }, [petName, petSpecies, fetchPet]);
 
-  const handleChangeSpecies = useCallback(async (newSpecies: string) => {
-    setPetSpecies(newSpecies);
-    setSaving(true);
-    setMessage(null);
-    try {
-      const result = await apiPost<Record<string, unknown>>("/api/pet", {
-        pet_name: petName.trim() || "ぽっち",
-        pet_species: newSpecies,
-      });
-      if (result.ok) {
-        setMessage(`${newSpecies === "dog" ? "いぬ" : newSpecies === "cat" ? "ねこ" : newSpecies}に変更しました！`);
-        await fetchPet();
-      } else {
-        setMessage(result.error ?? "変更に失敗しました");
-      }
-    } catch (err) {
-      setMessage("通信エラーです。再度お試しください。");
-      console.error("changeSpecies error:", err);
-    } finally {
-      setSaving(false);
-    }
-  }, [petName, fetchPet]);
+  const handleUpdatePet = useCallback(() => savePet(), [savePet]);
+
+  const handleChangeSpecies = useCallback(
+    (newSpecies: string) => savePet({ species: newSpecies }),
+    [savePet],
+  );
 
   const dataToUse = data ?? DEFAULT_PET_DATA;
 

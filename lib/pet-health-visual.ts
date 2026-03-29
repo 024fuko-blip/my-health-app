@@ -46,48 +46,51 @@ export function getActiveImageIndex(healthLevel: number): number {
 
 /* ─── 画像定数 ─── */
 
+import type { PetSpeciesId } from "./pet-shop";
+
+type PetImageSet = [string, string, string];
+type BlinkImageMap = Partial<Record<number, string>>;
+
 export const PLACEHOLDER_PET_IMAGE = "https://via.placeholder.com/400";
 
-export const RABBIT_IMAGES: [string, string, string] = [
+export const RABBIT_IMAGES: PetImageSet = [
   "/pets/rabbit/baby.png",
   "/pets/rabbit/normal.png",
   "/pets/rabbit/super.png",
 ];
 
-export const RABBIT_BLINK_IMAGES: Partial<Record<number, string>> = {
+export const RABBIT_BLINK_IMAGES: BlinkImageMap = {
   1: "/pets/rabbit/normal_active.png",
   2: "/pets/rabbit/super_alt.png",
 };
 
-export const DOG_IMAGES: [string, string, string] = [
+export const DOG_IMAGES: PetImageSet = [
   "/pets/dog/baby.png",
   "/pets/dog/normal.png",
   "/pets/dog/super.png",
 ];
 
-export const DOG_BLINK_IMAGES: Partial<Record<number, string>> = {
+export const DOG_BLINK_IMAGES: BlinkImageMap = {
   1: "/pets/dog/normal_active.png",
   2: "/pets/dog/super_alt.png",
 };
 
 export const DEFAULT_PET_IMAGES = RABBIT_IMAGES;
 
-const SPECIES_IMAGES: Record<string, [string, string, string]> = {
+const SPECIES_IMAGES: Partial<Record<PetSpeciesId, PetImageSet>> = {
   rabbit: RABBIT_IMAGES,
   dog: DOG_IMAGES,
 };
 
-const SPECIES_BLINK_IMAGES: Record<string, Partial<Record<number, string>>> = {
+const SPECIES_BLINK_IMAGES: Partial<Record<PetSpeciesId, BlinkImageMap>> = {
   rabbit: RABBIT_BLINK_IMAGES,
   dog: DOG_BLINK_IMAGES,
 };
 
-/** 種族IDから表示用画像セットを取得（未登録種族は RABBIT をフォールバック） */
-export function getImagesForSpecies(species: string): [string, string, string] {
-  return SPECIES_IMAGES[species] ?? RABBIT_IMAGES;
+export function getImagesForSpecies(species: string): PetImageSet {
+  return SPECIES_IMAGES[species as PetSpeciesId] ?? RABBIT_IMAGES;
 }
 
-/** 種族IDからブリンク画像マップを取得 */
-export function getBlinkImagesForSpecies(species: string): Partial<Record<number, string>> {
-  return SPECIES_BLINK_IMAGES[species] ?? RABBIT_BLINK_IMAGES;
+export function getBlinkImagesForSpecies(species: string): BlinkImageMap {
+  return SPECIES_BLINK_IMAGES[species as PetSpeciesId] ?? RABBIT_BLINK_IMAGES;
 }

@@ -1,70 +1,20 @@
-# Role & Behavioral Guidelines
-あなたはNext.js 15+, TypeScript, Tailwind CSS, Prisma（Google Cloud SQL）のエキスパートであり、シニアエンジニアです。
-以下のルールを厳守し、コードの品質と一貫性を保ってください。
+# プロジェクト補足ルール
+# 基本ルールは .cursor/rules/project-conventions.mdc を参照。
+# このファイルは .cursor/rules でカバーしきれない補足事項のみ記述する。
 
 ---
 
-# 🚨 このプロジェクトの絶対ルール（ABSOLUTE RULES — 違反厳禁）
+## Supabase 全面禁止（念押し）
+- `@supabase/*` パッケージのインポートや `createClient()` 等は一切禁止。
+- 既存コードに残骸が見つかったら Prisma / `lib/auth.ts`（NextAuth）に置き換える。
 
-## Supabase 全面禁止
-このプロジェクトでは **Supabase は一切使用しません**。
-データベースは **Google Cloud SQL（PostgreSQL）** を使用し、ORM は **Prisma** を使用します。
-
-- `@supabase/*` パッケージのインポートや `createClient()` 等の Supabase 関連コードが提案された場合は、**直ちに却下**し、Google Cloud SQL + Prisma に準拠した形式に修正してください。
-- Supabase Auth・Supabase Storage・Supabase Realtime など、Supabase のあらゆるサービスが対象です。
-- 既存コードに Supabase の残骸が見つかった場合は、Prisma / `lib/auth.ts`（NextAuth）への置き換えを提案してください。
-
-## 認証は NextAuth + Google OAuth のみ
-- 認証ライブラリは **NextAuth**（`lib/auth.ts`）のみ。Firebase Auth, Supabase Auth, Clerk 等は使用しません。
-- セッション取得は `getSession()`（`lib/auth.ts`）を経由する。
-
-## 環境変数は getServerEnv() 経由のみ
-- `process.env` の直接参照は禁止。必ず `lib/env.ts` の `getServerEnv()` を介する。
-- シークレットにダミー値やデフォルト値を設定するコードを提案しない。
-
----
-
-# Directory Structure & Context
-- このリポジトリ (my-health-app): Next.js App Router + BFF API + Prisma（Google Cloud SQL）。フロント・API・DB・認証はすべてここで完結する。
-- 基本的に `app/` と `lib/` 内のファイルを編集します。
-
-# Critical Technical Rules (Strictly Follow)
-
-## 1. 認証 & DB
-- **認証**: NextAuth（Google OAuth）。API では `lib/auth.ts` の `getSession()` でユーザー取得。認証 UI は `signIn` / `signOut`（next-auth/react）。
-- **DB**: 必ず `lib/prisma` の Prisma クライアントを使用する。接続先は環境変数 `DATABASE_URL`（Google Cloud SQL 想定）。
-
-## 2. API ルート
-- 認証が必要な API では `const session = await getSession(); if (!session) return ... 401` を最初に実行する。
-- `cookies()` には必ず `await` を付ける（Next.js 15+）。
-
-## 3. 環境変数・シークレット
-- 環境変数は `process.env` を直接叩かず、`lib/env.ts` の `getServerEnv()` を介して参照する。
-- シークレットにデフォルト値（"temporary-secret" 等）を設定するコードを提案しない。
-
-## 4. 動的レンダリング
-- DB 接続や認証が必要なページでは `force-dynamic` を明示するか、`Suspense` で境界を切り分ける。UI 修正・機能追加時も同様に維持する。
-- Supabase が残っていれば削除または Prisma / lib/auth への置き換えを提案する。
-
-## 5. AI アドバイス
-- AI アドバイス・レポートの実装は `app/api/advice/route.ts` および `app/api/report/route.ts` のみ。オネエの口調（charaSetting）を勝手に変えない。
-
-
-## 目的：ビルドエラーの根本解決と開発ルールの徹底
-ダミーの環境変数（"placeholder"など）による場当たり的な修正を禁止します。認証は **NextAuth + Google OAuth**（`lib/auth.ts`）で実装済み。DB は **Prisma + Google Cloud SQL** のみを使用する。
-
-## 技術的な注意
-- Dockerfile / Cloud Build では `ARG` で AUTH_SECRET, DATABASE_URL を注入。実行時は Cloud Run の環境変数で本物の値（AUTH_SECRET, DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL）を渡す。
-- 認証は `lib/auth.ts`（NextAuth + Google OAuth）、DB は Prisma（Google Cloud SQL）を使用する。Supabase は使用しない。
-
-## 今後の開発ルール（Cursor Rules）
-今後、以下のルールを遵守してコードを生成してください。
-- 環境変数は `process.env` を直接叩かず、バリデーション済みの `env.ts` 等のスキーマを介して管理する。
-- ページコンポーネントでDB接続や認証が必要な場合は、必ず `force-dynamic` を明示するか、`Suspense` で境界を切り分け、ビルド時のエラーを構造的に防ぐ。
-- シークレット情報にデフォルト値（"temporary-secret"等）を設定するコードを提案しない。
+## ビルド & デプロイ
+- Dockerfile / Cloud Build では `ARG` で AUTH_SECRET, DATABASE_URL を注入。
+- 実行時は Cloud Run の環境変数で本物の値を渡す:
+  AUTH_SECRET, DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL
 
 ## 本番デプロイ (/up)
-ユーザーが `/up` または「デプロイ」「本番反映」と言ったら、`.cursor/rules/deploy-production.mdc` を読み込み、記載されたコマンドでGoogle Cloud Runにデプロイを実行する。
+ユーザーが `/up` または「デプロイ」「本番反映」と言ったら、`.cursor/rules/deploy-production.mdc` を読み込み、記載されたコマンドで Google Cloud Run にデプロイする。
 
 デプロイ先:
 - サービス名: my-health-apps

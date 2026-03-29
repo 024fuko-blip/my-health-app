@@ -11,12 +11,9 @@ import {
   MAX_HAPPINESS,
   getMoodFromHappiness,
   getLevelFromExp,
-  getExpToNextLevel,
   getEvolutionStage,
-  getCatStage,
-  getCatExpToNextStage,
-  getDogStage,
-  getDogExpToNextStage,
+  getSpeciesStage,
+  getSpeciesExpToNext,
 } from '@/lib/pet-shop';
 import { fetchWeather } from '@/lib/weather';
 import { getCoordsFromPrefecture } from '@/lib/prefectures';
@@ -101,21 +98,14 @@ export async function GET() {
 
       const happiness = pet ? Math.min(MAX_HAPPINESS, pet.happiness ?? 50) : 0;
       const expPoints = pet?.expPoints ?? 0;
+      const petSpecies = pet?.petSpecies ?? "cat";
       const mood = getMoodFromHappiness(happiness);
-      const isCat = pet?.petSpecies === "cat";
-      const isDog = pet?.petSpecies === "dog";
-      const expToNext = isCat
-        ? getCatExpToNextStage(expPoints)
-        : isDog
-          ? getDogExpToNextStage(expPoints)
-          : getExpToNextLevel(expPoints);
-      const stage = isCat
-        ? getCatStage(expPoints)
-        : isDog
-          ? getDogStage(expPoints)
-          : getEvolutionStage(getLevelFromExp(expPoints));
-      const level = (isCat || isDog)
-        ? parseInt(stage.replace("stage_", ""), 10)
+
+      const speciesStage = getSpeciesStage(petSpecies, expPoints);
+      const expToNext = getSpeciesExpToNext(petSpecies, expPoints);
+      const stage = speciesStage ?? getEvolutionStage(getLevelFromExp(expPoints));
+      const level = speciesStage
+        ? parseInt(speciesStage.replace("stage_", ""), 10)
         : getLevelFromExp(expPoints);
 
       const currentRoomId = pet?.currentRoomId ?? null;

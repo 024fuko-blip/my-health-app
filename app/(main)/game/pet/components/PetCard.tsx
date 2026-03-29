@@ -1,32 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { PET_SPECIES } from "@/lib/pet-shop";
+import { PET_SPECIES, getStageLabel } from "@/lib/pet-shop";
 import { getMangaSymbolForPet } from "@/lib/manga-symbols";
 import { MangaSymbol } from "@/app/components/MangaSymbol";
 import { PetVisual } from "./PetVisual";
-import type { PetData } from "../hooks/pet-game-types";
+import type { PetData, PetState } from "../hooks/pet-game-types";
 import type { PetSpecialFlags } from "@/lib/pet-health";
 import { getImagesForSpecies, getBlinkImagesForSpecies } from "@/lib/pet-health";
-
-const CAT_STAGE_LABELS: Record<string, string> = {
-  stage_1: "ユメたまご",
-  stage_2: "よちよちベビー",
-  stage_3: "わんぱくチャイルド",
-  stage_4: "のびのび学生",
-  stage_5: "気ままな青年",
-  stage_6: "夢の板前さん",
-  stage_7: "銀河の王様",
-  stage_8: "夢守神(守護獣)",
-};
-
-const DOG_STAGE_LABELS: Record<string, string> = {
-  stage_1: "おすわりパピー",
-  stage_2: "ほねほねバディ",
-  stage_3: "マッスルわんこ",
-  stage_4: "わんわん大王",
-  stage_5: "チャンピオン犬",
-};
 
 const ROOM_STYLES: Record<string, { sky: string; ground: string }> = {
   room_forest: { sky: "linear-gradient(to bottom, #a7f3d0, #d1fae5, #ecfccb)", ground: "linear-gradient(to right, #4ade80, #10b981)" },
@@ -34,6 +15,32 @@ const ROOM_STYLES: Record<string, { sky: string; ground: string }> = {
   room_night:  { sky: "linear-gradient(to bottom, #312e81, #1e293b, #4c1d95)", ground: "linear-gradient(to right, #334155, #475569)" },
 };
 const DEFAULT_ROOM = { sky: "linear-gradient(to bottom, #bae6fd, #e0f2fe, #d1fae5)", ground: "linear-gradient(to right, #a3e635, #22c55e)" };
+
+interface StatusBadge {
+  key: string;
+  emoji: string;
+  text: string;
+  colors: string;
+}
+
+function buildStatusBadges(pet: PetState, specialFlags: PetSpecialFlags | undefined, isNight: boolean): StatusBadge[] {
+  const badges: StatusBadge[] = [];
+  if (pet.weather) {
+    badges.push({
+      key: "weather",
+      emoji: isNight ? "🌙" : "☀️",
+      text: `${pet.weather.desc} ${Math.round(pet.weather.temp)}°C`,
+      colors: isNight ? "bg-indigo-900/60 text-indigo-100" : "bg-white/70 text-slate-700",
+    });
+  }
+  if (pet.wearing_mask) badges.push({ key: "mask", emoji: "😷", text: "花粉対策中", colors: "bg-green-100/80 text-green-800" });
+  if (pet.sleepy || specialFlags?.sleepy) badges.push({ key: "sleepy", emoji: "😴", text: "眠そう", colors: "bg-indigo-100/80 text-indigo-700" });
+  if (specialFlags?.nightOwl) badges.push({ key: "owl", emoji: "🦉", text: "夜ふかし", colors: "bg-purple-100/80 text-purple-700" });
+  if (specialFlags?.earlyBird) badges.push({ key: "bird", emoji: "🐦", text: "早起き", colors: "bg-sky-100/80 text-sky-700" });
+  if (pet.worried) badges.push({ key: "worried", emoji: "😟", text: "心配そう", colors: "bg-amber-100/80 text-amber-700" });
+  else if (pet.low_mood) badges.push({ key: "low", emoji: "😢", text: "元気ない", colors: "bg-slate-100/80 text-slate-600" });
+  return badges;
+}
 
 interface PetCardProps {
   data: PetData;
@@ -77,17 +84,7 @@ export function PetCard({
   const isNight = roomId === "room_night";
   const room = ROOM_STYLES[roomId] ?? DEFAULT_ROOM;
 
-  const speciesStageLabels = pet.pet_species === "dog" ? DOG_STAGE_LABELS : CAT_STAGE_LABELS;
-  const stageLabel =
-    pet.stage && speciesStageLabels[pet.stage]
-      ? speciesStageLabels[pet.stage]
-      : pet.stage === "baby"
-        ? "ベビー"
-        : pet.stage === "junior"
-          ? "ジュニア"
-          : pet.stage === "adult"
-            ? "アダルト"
-            : pet.stage;
+  const stageLabel = pet.stage ? getStageLabel(pet.pet_species, pet.stage) : null;
 
   const mangaKey = getMangaSymbolForPet({
     stage: pet.stage,
@@ -97,32 +94,7 @@ export function PetCard({
     low_mood: pet.low_mood,
   });
 
-  const statusBadges: Array<{ key: string; emoji: string; text: string; colors: string }> = [];
-  if (pet.weather) {
-    statusBadges.push({
-      key: "weather",
-      emoji: isNight ? "🌙" : "☀️",
-      text: `${pet.weather.desc} ${Math.round(pet.weather.temp)}°C`,
-      colors: isNight ? "bg-indigo-900/60 text-indigo-100" : "bg-white/70 text-slate-700",
-    });
-  }
-  if (pet.wearing_mask) {
-    statusBadges.push({ key: "mask", emoji: "😷", text: "花粉対策中", colors: "bg-green-100/80 text-green-800" });
-  }
-  if (pet.sleepy || specialFlags?.sleepy) {
-    statusBadges.push({ key: "sleepy", emoji: "😴", text: "眠そう", colors: "bg-indigo-100/80 text-indigo-700" });
-  }
-  if (specialFlags?.nightOwl) {
-    statusBadges.push({ key: "owl", emoji: "🦉", text: "夜ふかし", colors: "bg-purple-100/80 text-purple-700" });
-  }
-  if (specialFlags?.earlyBird) {
-    statusBadges.push({ key: "bird", emoji: "🐦", text: "早起き", colors: "bg-sky-100/80 text-sky-700" });
-  }
-  if (pet.worried) {
-    statusBadges.push({ key: "worried", emoji: "😟", text: "心配そう", colors: "bg-amber-100/80 text-amber-700" });
-  } else if (pet.low_mood) {
-    statusBadges.push({ key: "low", emoji: "😢", text: "元気ない", colors: "bg-slate-100/80 text-slate-600" });
-  }
+  const statusBadges = buildStatusBadges(pet, specialFlags, isNight);
 
   const daysAdopted = pet.adopted_at
     ? Math.max(0, Math.floor((Date.now() - new Date(pet.adopted_at).getTime()) / (1000 * 60 * 60 * 24)))

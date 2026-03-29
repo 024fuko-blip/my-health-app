@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { getCatStage } from "@/lib/pet-shop";
+import { getSpeciesStage } from "@/lib/pet-shop";
 
 /** 健康記録POSTボディのうち、EXP計算に使うフィールド */
 export interface HealthLogExpInput {
@@ -60,20 +60,20 @@ export async function grantPetExp(
 
   const currentExp = pet.expPoints ?? 0;
   const newExp = currentExp + expGained;
-  const isCat = pet.petSpecies === "cat";
-  const oldStage = isCat ? getCatStage(currentExp) : null;
+  const species = pet.petSpecies ?? "cat";
+  const oldStage = getSpeciesStage(species, currentExp);
 
   await prisma.userPet.update({
     where: { userId },
     data: { expPoints: newExp },
   });
 
-  const newStage = isCat ? getCatStage(newExp) : undefined;
-  const leveledUp = isCat ? newStage !== oldStage : false;
+  const newStage = getSpeciesStage(species, newExp);
+  const leveledUp = newStage != null && newStage !== oldStage;
 
   return {
     newExp,
     leveledUp,
-    newStage: leveledUp ? newStage : undefined,
+    newStage: leveledUp ? (newStage ?? undefined) : undefined,
   };
 }
