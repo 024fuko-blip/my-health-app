@@ -41,6 +41,7 @@ export {
   DOG_IMAGES,
   DOG_BLINK_IMAGES,
   DEFAULT_PET_IMAGES,
+  speciesHasImages,
   getImagesForSpecies,
   getBlinkImagesForSpecies,
 } from "./pet-health-visual";

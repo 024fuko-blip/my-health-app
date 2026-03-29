@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { PET_SPECIES } from "@/lib/pet-shop";
-import { getImagesForSpecies } from "@/lib/pet-health";
+import { speciesHasImages, getImagesForSpecies } from "@/lib/pet-health";
 import { usePetGame } from "./hooks/usePetGame";
 import { PetCard } from "./components/PetCard";
 import { PetGame } from "./components/PetGame";
@@ -76,15 +76,14 @@ export default function GamePetPage() {
         <div className="rounded-2xl overflow-hidden shadow-lg border border-white/40">
           {/* プレビューエリア */}
           <div className="relative pt-6 pb-10" style={{ background: "linear-gradient(to bottom, #bae6fd, #e0f2fe, #d1fae5)" }}>
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center justify-center">
               {(() => {
-                const previewImages = getImagesForSpecies(petSpecies);
-                const previewSrc = previewImages[1];
-                const hasOwnImg = previewSrc.includes(`/pets/${petSpecies}/`);
+                const hasImg = speciesHasImages(petSpecies);
+                const images = hasImg ? getImagesForSpecies(petSpecies) : null;
                 const speciesInfo = PET_SPECIES.find((s) => s.id === petSpecies);
-                return hasOwnImg ? (
+                return images ? (
                   <Image
-                    src={previewSrc}
+                    src={images[1]}
                     alt={speciesInfo?.name ?? "ペット"}
                     width={200}
                     height={200}
@@ -92,9 +91,14 @@ export default function GamePetPage() {
                     priority
                   />
                 ) : (
-                  <span className="text-[120px] leading-none drop-shadow-lg">
-                    {speciesInfo?.emoji ?? "🐾"}
-                  </span>
+                  <>
+                    <span className="text-[120px] leading-none drop-shadow-lg">
+                      {speciesInfo?.emoji ?? "🐾"}
+                    </span>
+                    <span className="mt-1 text-xs font-bold text-slate-500 bg-white/70 px-3 py-1 rounded-full">
+                      画像準備中...
+                    </span>
+                  </>
                 );
               })()}
             </div>
@@ -134,8 +138,8 @@ export default function GamePetPage() {
                 <label className="block text-sm font-bold text-slate-800 mb-2">種類</label>
                 <div className="grid grid-cols-3 gap-2">
                   {PET_SPECIES.map((s) => {
-                    const speciesImages = getImagesForSpecies(s.id);
-                    const hasImage = speciesImages[1].includes(`/pets/${s.id}/`);
+                    const hasImg = speciesHasImages(s.id);
+                    const sImages = hasImg ? getImagesForSpecies(s.id) : null;
                     return (
                       <button
                         key={s.id}
@@ -147,9 +151,9 @@ export default function GamePetPage() {
                             : "border-gray-200 bg-white hover:border-amber-300"
                         }`}
                       >
-                        {hasImage ? (
+                        {sImages ? (
                           <Image
-                            src={speciesImages[1]}
+                            src={sImages[1]}
                             alt={s.name}
                             width={56}
                             height={56}
@@ -159,6 +163,7 @@ export default function GamePetPage() {
                           <span className="text-4xl leading-none">{s.emoji}</span>
                         )}
                         <span className="text-xs">{s.name}</span>
+                        {!hasImg && <span className="text-[9px] text-slate-400">準備中</span>}
                       </button>
                     );
                   })}

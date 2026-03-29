@@ -87,10 +87,15 @@ const SPECIES_BLINK_IMAGES: Partial<Record<PetSpeciesId, BlinkImageMap>> = {
   dog: DOG_BLINK_IMAGES,
 };
 
-export function getImagesForSpecies(species: string): PetImageSet {
-  return SPECIES_IMAGES[species as PetSpeciesId] ?? RABBIT_IMAGES;
+/** その種族に専用画像が登録されているか */
+export function speciesHasImages(species: string): boolean {
+  return (species as PetSpeciesId) in SPECIES_IMAGES;
+}
+
+export function getImagesForSpecies(species: string): PetImageSet | null {
+  return SPECIES_IMAGES[species as PetSpeciesId] ?? null;
 }
 
 export function getBlinkImagesForSpecies(species: string): BlinkImageMap {
-  return SPECIES_BLINK_IMAGES[species as PetSpeciesId] ?? RABBIT_BLINK_IMAGES;
+  return SPECIES_BLINK_IMAGES[species as PetSpeciesId] ?? {};
 }

@@ -7,7 +7,7 @@ import { MangaSymbol } from "@/app/components/MangaSymbol";
 import { PetVisual } from "./PetVisual";
 import type { PetData, PetState } from "../hooks/pet-game-types";
 import type { PetSpecialFlags } from "@/lib/pet-health";
-import { getImagesForSpecies, getBlinkImagesForSpecies } from "@/lib/pet-health";
+import { speciesHasImages, getImagesForSpecies, getBlinkImagesForSpecies } from "@/lib/pet-health";
 
 const ROOM_STYLES: Record<string, { sky: string; ground: string }> = {
   room_forest: { sky: "linear-gradient(to bottom, #a7f3d0, #d1fae5, #ecfccb)", ground: "linear-gradient(to right, #4ade80, #10b981)" },
@@ -126,15 +126,24 @@ export function PetCard({
                 <MangaSymbol symbol={mangaKey} />
               </div>
             )}
-            <div className={specialFlags?.sleepy ? "opacity-60" : ""}>
-              <PetVisual
-                healthLevel={healthLevel}
-                images={getImagesForSpecies(pet.pet_species)}
-                blinkImages={getBlinkImagesForSpecies(pet.pet_species)}
-                alt={pet.pet_name}
-                size={240}
-              />
-            </div>
+            {speciesHasImages(pet.pet_species) ? (
+              <div className={specialFlags?.sleepy ? "opacity-60" : ""}>
+                <PetVisual
+                  healthLevel={healthLevel}
+                  images={getImagesForSpecies(pet.pet_species)!}
+                  blinkImages={getBlinkImagesForSpecies(pet.pet_species)}
+                  alt={pet.pet_name}
+                  size={240}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center" style={{ width: 240, height: 240 }}>
+                <span className="text-[100px] leading-none drop-shadow-lg">{pet.species_emoji}</span>
+                <span className="mt-2 text-xs font-bold text-slate-500 bg-white/70 px-3 py-1 rounded-full">
+                  画像準備中...
+                </span>
+              </div>
+            )}
             {specialFlags?.sleepy && (
               <span className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl pointer-events-none select-none animate-pulse z-10">
                 💤
@@ -252,8 +261,8 @@ export function PetCard({
             />
             <div className="grid grid-cols-3 gap-2">
               {PET_SPECIES.map((s) => {
-                const sImages = getImagesForSpecies(s.id);
-                const hasOwnImg = sImages[1].includes(`/pets/${s.id}/`);
+                const hasImg = speciesHasImages(s.id);
+                const sImages = hasImg ? getImagesForSpecies(s.id) : null;
                 return (
                   <button
                     key={s.id}
@@ -266,12 +275,13 @@ export function PetCard({
                         : isNight ? "bg-slate-700 text-slate-300 border border-slate-600" : "bg-white border"
                     }`}
                   >
-                    {hasOwnImg ? (
+                    {sImages ? (
                       <Image src={sImages[1]} alt={s.name} width={40} height={40} className="object-contain" />
                     ) : (
                       <span className="text-2xl leading-none">{s.emoji}</span>
                     )}
                     <span>{s.name}</span>
+                    {!hasImg && <span className="text-[9px] text-slate-400">準備中</span>}
                   </button>
                 );
               })}
