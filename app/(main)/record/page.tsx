@@ -1,6 +1,7 @@
 "use client";
 
 import type React from 'react';
+import Link from 'next/link';
 import { getCyclePhase, getCycleComment } from '@/lib/cycle-phase';
 import { ResultModal } from './components/ResultModal';
 import { RecordReactionOverlay } from './components/RecordReactionOverlay';
@@ -90,6 +91,18 @@ export default function RecordPage() {
 
   return (
     <div className="space-y-6 pb-24 relative bg-[var(--color-card)]">
+      {/* かんたん記録リンク */}
+      <Link
+        href="/record/cards"
+        className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-400 to-orange-400 rounded-2xl shadow-md text-white hover:shadow-lg transition-shadow"
+      >
+        <div>
+          <p className="text-lg font-bold">かんたん記録</p>
+          <p className="text-xs opacity-90">1枚ずつカードで入力</p>
+        </div>
+        <span className="text-3xl">📝→</span>
+      </Link>
+
       <div className="p-4 rounded-xl shadow-sm bg-white border border-slate-100">
         <div className="flex items-center justify-between">
           <div>

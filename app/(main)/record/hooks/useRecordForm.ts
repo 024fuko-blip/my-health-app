@@ -209,6 +209,16 @@ export function useRecordForm() {
   const handleRemoveDrink = (id: number) =>
     setAddedDrinks((prev) => prev.filter((d) => d.id !== id));
 
+  const addDrinkByKey = useCallback((key: string, count = 1) => {
+    const preset = DRINK_PRESETS[key];
+    if (!preset) return;
+    const pure = preset.ml * (preset.percent / 100) * 0.8;
+    setAddedDrinks((prev) => [
+      ...prev,
+      { id: Date.now(), label: preset.label, ml: preset.ml, percent: preset.percent, count, pureAlcohol: pure * count },
+    ]);
+  }, []);
+
   const currentTotalPureAlcohol = addedDrinks.reduce((sum, d) => sum + d.pureAlcohol, 0);
   const currentTotalMl = addedDrinks.reduce((sum, d) => sum + d.ml * d.count, 0);
   const effectiveWeight = weight ? parseFloat(weight) || 60 : 60;
@@ -258,7 +268,7 @@ export function useRecordForm() {
     steps, setSteps,
     exerciseMinutes, setExerciseMinutes,
     previousAlcoholSummary,
-    handleAddDrink, handleRemoveDrink,
+    handleAddDrink, handleRemoveDrink, addDrinkByKey,
     currentTotalPureAlcohol, currentTotalMl,
     decompositionHours, soberTime,
     isSubmitting: submit.isSubmitting,
