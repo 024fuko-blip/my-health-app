@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const CANONICAL_HOST = 'my-health-apps-81772171421.asia-northeast2.run.app';
+const CANONICAL_HOST = 'my-health-apps-16867512037.asia-northeast2.run.app';
 
 export async function middleware(request: NextRequest) {
   const host = request.headers.get('host') ?? '';
