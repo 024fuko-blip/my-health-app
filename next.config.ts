@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  serverExternalPackages: [
+    "@google-cloud/secret-manager",
+    "google-auth-library",
+    "web-push",
+    "sharp",
+  ],
   turbopack: {
     root: path.resolve(__dirname),
   },
