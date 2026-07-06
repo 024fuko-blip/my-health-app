@@ -285,6 +285,8 @@ export default function RecordPage() {
               setProtein={form.setProtein}
               steps={form.steps}
               setSteps={form.setSteps}
+              exerciseMinutes={form.exerciseMinutes}
+              setExerciseMinutes={form.setExerciseMinutes}
             />
           </CollapsibleSection>
         )}

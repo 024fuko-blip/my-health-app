@@ -10,6 +10,8 @@ interface DietSectionProps {
   setProtein: (v: string) => void;
   steps: string;
   setSteps: (v: string) => void;
+  exerciseMinutes: string;
+  setExerciseMinutes: (v: string) => void;
 }
 
 export function DietSection({
@@ -23,6 +25,8 @@ export function DietSection({
   setProtein,
   steps,
   setSteps,
+  exerciseMinutes,
+  setExerciseMinutes,
 }: DietSectionProps) {
   return (
     <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 space-y-3">
@@ -40,7 +44,7 @@ export function DietSection({
             type="number"
             step="0.1"
             value={bodyFat}
-            onChange={(e) => setBodyFat(e.target.value)}
+            onChange={(e) => { onUserEdit?.(); setBodyFat(e.target.value); }}
             className="w-full p-2 border rounded"
           />
         </div>
@@ -49,7 +53,7 @@ export function DietSection({
           <input
             type="number"
             value={calories}
-            onChange={(e) => setCalories(e.target.value)}
+            onChange={(e) => { onUserEdit?.(); setCalories(e.target.value); }}
             className="w-full p-2 border rounded"
           />
         </div>
@@ -59,7 +63,7 @@ export function DietSection({
             type="number"
             step="0.1"
             value={protein}
-            onChange={(e) => setProtein(e.target.value)}
+            onChange={(e) => { onUserEdit?.(); setProtein(e.target.value); }}
             className="w-full p-2 border rounded"
           />
         </div>
@@ -68,7 +72,16 @@ export function DietSection({
           <input
             type="number"
             value={steps}
-            onChange={(e) => setSteps(e.target.value)}
+            onChange={(e) => { onUserEdit?.(); setSteps(e.target.value); }}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-bold">運動時間(分)</label>
+          <input
+            type="number"
+            value={exerciseMinutes}
+            onChange={(e) => { onUserEdit?.(); setExerciseMinutes(e.target.value); }}
             className="w-full p-2 border rounded"
           />
         </div>

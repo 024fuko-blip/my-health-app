@@ -415,6 +415,20 @@ export default function RecordCardsPage() {
                   <span className="text-sm text-gray-500">歩</span>
                 </div>
               </div>
+              <div className="bg-gray-50 rounded-xl p-3 text-center">
+                <label className="text-xs text-gray-500">運動時間</label>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={form.exerciseMinutes}
+                    onChange={(e) => { form.setExerciseMinutes(e.target.value); form.markUserEdit(); }}
+                    placeholder="0"
+                    className="text-2xl font-bold text-center bg-transparent w-20 outline-none"
+                  />
+                  <span className="text-sm text-gray-500">分</span>
+                </div>
+              </div>
             </div>
           </div>
         ),
